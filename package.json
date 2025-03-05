@@ -25,8 +25,12 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^9.4.0",
+    "fbx2gltf": "^0.9.7-p1",
     "figlet": "^1.5.2",
+    "gltf-pipeline": "^4.1.0",
+    "gltfjsx": "^6.5.3",
     "inquirer": "^8.2.4",
+    "obj2gltf": "^3.1.6",
     "ora": "^5.4.1"
   },
   "devDependencies": {

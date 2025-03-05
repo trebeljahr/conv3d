@@ -4,7 +4,7 @@ import { green, cyan, red } from "chalk";
 import { textSync } from "figlet";
 import { exec as execSync } from "child_process";
 import { promisify } from "util";
-import { mkdir, copyFile, readdir } from "fs/promises";
+import { mkdir, readdir, rmdir } from "fs/promises";
 import ora from "ora";
 import { lstatSync } from "fs";
 import path from "path";
@@ -25,8 +25,8 @@ program
 program.option("-i, --inputDir <path>", "Add the input directory");
 program.option("-o, --outputDir <path>", "Add the output directory");
 program.option("-m, --modelType <string>", "Add the type of model.");
-program.option("--no-tsx", "Don't create tsx files");
-program.option("--no-glb", "Don't create glb files");
+program.option("--no-tsx", "Don't create .tsx files");
+program.option("--no-binary", "Don't create .glb files but .gltf instead");
 
 const options = program.opts();
 
@@ -69,10 +69,12 @@ async function setupOutputDirs() {
   }
 }
 
-async function generateTSXforGLTF() {
+async function generateTSXforGLB() {
   const spinner = ora("Generating TSX components...").start();
   try {
-    const files = await readdir(options.outputDir);
+    const glbPath = path.resolve(options.outputDir, "glb");
+
+    const files = await readdir(glbPath);
     const glbFiles = files.filter((file) => file.endsWith(".glb"));
 
     for (const file of glbFiles) {
@@ -81,8 +83,8 @@ async function generateTSXforGLTF() {
         "tsx",
         file.replace(".glb", ".tsx")
       );
-      console.log(`gltfjsx ${file} ${outputPath} -t`);
-      // await exec(`gltfjsx ${file} ${outputPath} -t`);
+      const inputPath = path.resolve(glbPath, file);
+      await exec(`gltfjsx ${inputPath} -o ${outputPath} --types --transform`);
     }
 
     spinner.succeed("TSX components generated successfully");
@@ -126,10 +128,21 @@ async function convertFBXtoGLB() {
     for (const file of fbxFiles) {
       const outputPath = path.resolve(
         options.outputDir,
+        options.binary ? "glb" : "gltf",
         file.replace(".fbx", ".glb")
       );
       const inputPath = path.resolve(options.inputDir, file);
-      await exec(`FBX2glTF -b -i "${inputPath}" -o ${outputPath}`);
+      await exec(
+        `FBX2glTF-darwin-x64 -i "${inputPath}" -o ${outputPath} --pbr-metallic-roughness --binary`
+      );
+    }
+
+    const paths = await readdir(options.inputDir);
+    const fbmFolders = paths.filter((path) => path.endsWith(".fbm"));
+    for (const folder of fbmFolders) {
+      const folderPath = path.resolve(options.inputDir, folder);
+      console.log("Deleting folder", folderPath);
+      await rmdir(folderPath);
     }
 
     spinner.succeed("FBX conversion completed");
@@ -190,7 +203,12 @@ program
         case "OBJ":
           await convertOBJtoGLB();
           break;
+        default:
+          console.error(red("Invalid model type: ", options.modelType));
+          exit(1);
       }
+
+      if (options.tsx) await generateTSXforGLB();
 
       console.log(
         green(
