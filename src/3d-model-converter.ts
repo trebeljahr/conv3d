@@ -127,6 +127,8 @@ program
       const shouldConvertOBJ =
         options.modelType === "OBJ" || options.modelType === "ALL";
 
+      options.convertedNum = 0;
+
       if (shouldConvertGLTF) await convertModels("GLTF", filesGLTF);
       if (shouldConvertFBX) await convertModels("FBX", filesFBX);
       if (shouldConvertOBJ) await convertModels("OBJ", filesOBJ);
@@ -137,7 +139,11 @@ program
       await cleanup();
 
       console.info(
-        green(`✓  Successfully converted ${numAll} models from "${inputDir()}"`)
+        green(
+          `✓ Successfully converted ${
+            options.convertedNum
+          } models from "${inputDir()}"`
+        )
       );
       console.info(`ℹ️ Output saved to "${outputDir()}"`);
     } catch (error) {
@@ -256,7 +262,7 @@ async function generateTSX() {
     }
 
     spinner.stop();
-    console.info(green("✓  TSX components generated"));
+    console.info(green("✓ TSX components generated"));
   } catch (error) {
     spinner.fail("Failed to generate TSX components");
     console.error(red("🚨 Error generating TSX:"), error);
@@ -304,6 +310,7 @@ async function convertModels(modelType: InputFormats, modelFiles: string[]) {
     }
 
     spinner.stop();
+    options.convertedNum += modelFiles.length;
     console.info(green(`✓ ${modelType} conversion completed`));
   } catch (error) {
     spinner.fail(`${modelType} conversion failed`);
@@ -341,7 +348,9 @@ async function setupCleanup() {
 
     for (const result of improvedGlbFiles) {
       const oldPath = path.resolve(tsxPath, result);
-      const newPath = path.resolve(improvedGlbPath, result);
+      const newPath = path
+        .resolve(improvedGlbPath, result)
+        .replace("-transformed.glb", ".glb");
       await rename(oldPath, newPath);
     }
   };
