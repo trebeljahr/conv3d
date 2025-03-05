@@ -64,31 +64,27 @@ program
         exit(1);
       }
 
-      switch (options.modelType) {
-        case "GLTF":
-          await convertGLTF();
-          break;
-        case "FBX":
-          await convertFBX();
-          break;
-        case "OBJ":
-          await convertOBJ();
-          break;
-        default:
-          console.error(red("Invalid model type: ", options.modelType));
-          exit(1);
+      if (!Object.keys(converters).includes(options.modelType)) {
+        console.error(red("Invalid model type: ", options.modelType));
+        exit(1);
       }
 
+      const cleanup = await setupCleanup();
+      await convertModels();
+      await cleanup();
+
       if (options.tsx) await generateTSXforGLB();
-      else console.log(green("ℹ️ Didn't add .tsx files"));
+      else console.log("ℹ️ Didn't add .tsx files");
 
       console.log(
         green(
           `✓  Successfully converted ${
             options.modelType
           } models from "${options.inputDir.replace(home, "~")}"`
-        ),
-        green(`\nℹ️ Output saved to "${options.outputDir.replace(home, "~")}"`)
+        )
+      );
+      console.log(
+        `ℹ️ Output saved to "${options.outputDir.replace(home, "~")}"`
       );
     } catch (error) {
       console.error(red("Conversion process failed:"), error);
@@ -277,62 +273,46 @@ async function generateTSXforGLB() {
   }
 }
 
-async function convertGLTF() {
-  const spinner = ora("Converting GLTF files to GLB...").start();
+type InputFormats = keyof typeof converters;
+
+const converters = {
+  GLTF: convertSingleGltf,
+  FBX: convertSingleFbx,
+  OBJ: convertSingleObj,
+};
+
+async function convertModels() {
+  const modelType: InputFormats = options.modelType;
+
+  const inputEnding = "." + modelType.toLowerCase();
+  const spinner = ora(
+    `Converting ${modelType} files to ${options.glb ? "GLB" : "GLTF"}...`
+  ).start();
+
   try {
     const files = await readdir(options.inputDir);
-    const gltfFiles = files.filter((file) => file.endsWith(".gltf"));
+    const gltfFiles = files.filter((file) => file.endsWith(inputEnding));
 
     for (const file of gltfFiles) {
-      const outputPath = path.resolve(
-        options.outputDir,
-        file.replace(".gltf", ".glb")
-      );
-      const inputPath = path.resolve(options.inputDir, file);
-
-      await exec(
-        `gltf-pipeline -i "${inputPath}" -o "${outputPath}" ${
-          options.glb ? "-b" : ""
-        } `
-      );
+      await supplyPathTo(converters[modelType], file);
     }
 
     spinner.stop();
-    console.log(green("✓  GLTF conversion completed"));
+    console.log(green(`✓  ${modelType} conversion completed`));
   } catch (error) {
-    spinner.fail("GLTF conversion failed");
+    spinner.fail(`${modelType} conversion failed`);
     console.error(red("Error converting GLTF:"), error);
     throw error;
   }
 }
 
-async function convertFBX() {
-  const spinner = ora("Converting FBX files to GLB...").start();
-  try {
-    const files = await readdir(options.inputDir);
-    const fbxFiles = files.filter((file) => file.endsWith(".fbx"));
-
-    const pathsBefore = await readdir(options.inputDir);
-    const fbmFoldersBefore = pathsBefore.filter(
-      (file) =>
-        file.endsWith(".fbm") &&
-        isDirectory(path.resolve(options.inputDir, file))
-    );
-
-    for (const file of fbxFiles) {
-      const outputPath = path.resolve(
-        options.outputDir,
-        options.binary ? "glb" : "gltf",
-        file.replace(".fbx", ".glb")
-      );
-      const inputPath = path.resolve(options.inputDir, file);
-      await exec(
-        `FBX2glTF-darwin-x64 -i "${inputPath}" -o "${outputPath}" --pbr-metallic-roughness ${
-          options.glb ? "--binary" : ""
-        }`
-      );
-    }
-
+async function setupCleanup() {
+  const pathsBefore = await readdir(options.inputDir);
+  const fbmFoldersBefore = pathsBefore.filter(
+    (file) =>
+      file.endsWith(".fbm") && isDirectory(path.resolve(options.inputDir, file))
+  );
+  return async () => {
     const paths = await readdir(options.inputDir);
     const fbmFolders = paths.filter(
       (file) =>
@@ -345,42 +325,42 @@ async function convertFBX() {
       console.log("Deleting folder", folderPath);
       await rm(folderPath, { recursive: true, force: true });
     }
-
-    spinner.stop();
-    console.log(green("✓  FBX conversion completed"));
-  } catch (error) {
-    spinner.fail("FBX conversion failed");
-    console.error(red("Error converting FBX:"), error);
-    throw error;
-  }
+  };
 }
 
-async function convertOBJ() {
-  const spinner = ora("Converting OBJ files to GLB...").start();
-  try {
-    const files = await readdir(options.inputDir);
-    const objFiles = files.filter((file) => file.endsWith(".obj"));
+async function supplyPathTo(
+  convertFn: (i: string, o: string) => Promise<void>,
+  file: string
+) {
+  const ending = options.glb ? ".glb" : ".gltf";
+  const outputPath = path.resolve(
+    options.outputDir,
+    ending,
+    file.replace("." + options.modelType.toLowerCase(), ending)
+  );
+  const inputPath = path.resolve(options.inputDir, file);
 
-    for (const file of objFiles) {
-      const outputPath = path.resolve(
-        options.outputDir,
-        "glb",
-        file.replace(".obj", ".glb")
-      );
-      const inputPath = path.resolve(options.inputDir, file);
+  await convertFn(inputPath, outputPath);
+}
 
-      await exec(
-        `obj2gltf ${
-          options.glb ? "-b" : ""
-        } -i "${inputPath}" -o "${outputPath}"`
-      );
-    }
+async function convertSingleObj(inputPath: string, outputPath: string) {
+  await exec(
+    `obj2gltf ${options.glb ? "-b" : ""} -i "${inputPath}" -o "${outputPath}"`
+  );
+}
 
-    spinner.stop();
-    console.log(green("✓  OBJ conversion completed"));
-  } catch (error) {
-    spinner.fail("OBJ conversion failed");
-    console.error(red("Error converting OBJ:"), error);
-    throw error;
-  }
+async function convertSingleFbx(inputPath: string, outputPath: string) {
+  await exec(
+    `FBX2glTF-darwin-x64 -i "${inputPath}" -o "${outputPath}" --pbr-metallic-roughness ${
+      options.glb ? "-b" : ""
+    }`
+  );
+}
+
+async function convertSingleGltf(inputPath: string, outputPath: string) {
+  await exec(
+    `gltf-pipeline -i "${inputPath}" -o "${outputPath}" ${
+      options.glb ? "-b" : ""
+    } `
+  );
 }
