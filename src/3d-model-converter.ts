@@ -1,21 +1,18 @@
-import { Command } from "commander";
-import { prompt, registerPrompt } from "inquirer";
-import { green, cyan, red } from "chalk";
-import { textSync } from "figlet";
+import { cyan, green, red } from "chalk";
 import { exec as execSync } from "child_process";
-import { promisify } from "util";
-import { mkdir, readdir, rename, rm } from "fs/promises";
-import ora from "ora";
+import { Command } from "commander";
+import { textSync } from "figlet";
 import { lstatSync } from "fs";
+import { mkdir, readdir, rename, rm } from "fs/promises";
+import { prompt } from "inquirer";
+import ora from "ora";
+import { homedir } from "os";
 import path from "path";
 import { exit } from "process";
-import { homedir } from "os";
-import fuzzyPathPlugin from "inquirer-fuzzy-path";
+import { promisify } from "util";
 
 const exec = promisify(execSync);
 const home = homedir();
-
-registerPrompt("fuzzypath", fuzzyPathPlugin);
 
 console.log(cyan(textSync("Convert 3D", { horizontalLayout: "full" })));
 
@@ -139,17 +136,15 @@ async function promptForGlbOutput() {
 async function promptForInputFolder() {
   const { inputFolder } = await prompt([
     {
-      type: "fuzzypath",
+      type: "input",
       name: "inputFolder",
-      excludePath: (nodePath: string) =>
-        nodePath.startsWith("node_modules") || nodePath.startsWith(".git"),
-      excludeFilter: (nodePath: string) => nodePath == ".",
-      itemType: "directory",
-      rootPath: ".",
       message: "Enter folder path for the input:",
-      default: "components/",
-      suggestOnly: false,
-      depthLimit: 5,
+      validate: (input) => {
+        if (input.trim() === "") return "Folder name cannot be empty";
+        if (!lstatSync(input)) return "Input folder doesn't exist";
+        if (!isDirectory(input)) return "Input folder is not a directory";
+        return true;
+      },
     },
   ]);
 
@@ -280,7 +275,11 @@ async function convertGLTF() {
       );
       const inputPath = path.resolve(options.inputDir, file);
 
-      await exec(`gltf-pipeline -i "${inputPath}" -o "${outputPath}" -b `);
+      await exec(
+        `gltf-pipeline -i "${inputPath}" -o "${outputPath}" ${
+          options.glb ? "-b" : ""
+        } `
+      );
     }
 
     spinner.stop();
@@ -306,7 +305,9 @@ async function convertFBX() {
       );
       const inputPath = path.resolve(options.inputDir, file);
       await exec(
-        `FBX2glTF-darwin-x64 -i "${inputPath}" -o "${outputPath}" --pbr-metallic-roughness --binary`
+        `FBX2glTF-darwin-x64 -i "${inputPath}" -o "${outputPath}" --pbr-metallic-roughness ${
+          options.glb ? "--binary" : ""
+        }`
       );
     }
 
@@ -341,7 +342,11 @@ async function convertOBJ() {
       );
       const inputPath = path.resolve(options.inputDir, file);
 
-      await exec(`obj2gltf -b -i "${inputPath}" -o "${outputPath}"`);
+      await exec(
+        `obj2gltf ${
+          options.glb ? "-b" : ""
+        } -i "${inputPath}" -o "${outputPath}"`
+      );
     }
 
     spinner.stop();
