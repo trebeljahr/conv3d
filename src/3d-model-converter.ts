@@ -26,6 +26,17 @@ program
 
 let options = program.opts();
 
+type InputFormats = keyof typeof converters;
+
+const converters = {
+  GLTF: convertSingleGltf,
+  FBX: convertSingleFbx,
+  OBJ: convertSingleObj,
+};
+
+const inputDir = () => `${options.inputDir.replace(home, "~")}`;
+const outputDir = () => `${options.outputDir.replace(home, "~")}`;
+
 export const isDirectory = (strPath: string) =>
   lstatSync(strPath) ? lstatSync(strPath).isDirectory() : false;
 
@@ -39,9 +50,77 @@ program
   );
 
 program
-  .command("convert")
+  .command("convert-single")
+  .option("-i, --inputPath <path>", "Add the input path to the model")
   .description("Convert a single 3D model from directory")
-  .action(async () => {});
+  .action(async (subOptions) => {
+    try {
+      console.info("🚀 Starting conversion process...");
+
+      if (!subOptions.inputPath) {
+        console.error(red("🚨 Please specify an input path"));
+        exit(1);
+      }
+
+      subOptions.inputPath = path.resolve(subOptions.inputPath);
+
+      if (isDirectory(subOptions.inputPath)) {
+        console.error(red("🚨 Input path should point to a file."));
+        exit(1);
+      }
+
+      subOptions.tsx =
+        options.tsx === undefined ? await promptForTsxOutput() : options.tsx;
+
+      const extension = path.extname(subOptions.inputPath);
+      const inferredModelType = extension.toUpperCase().replace(".", "");
+
+      if (!Object.keys(converters).includes(inferredModelType)) {
+        console.error(red("🚨 Invalid input file type: ", inferredModelType));
+        console.error("ℹ️ Please provide a .fbx, .obj, or .gltf file");
+        exit(1);
+      }
+
+      subOptions.modelType = inferredModelType;
+
+      const inputDir = path.resolve(path.dirname(subOptions.inputPath));
+      const outputDir = path.resolve(inputDir, "out");
+
+      subOptions.inputDir = inputDir;
+      subOptions.outputDir = outputDir;
+
+      options = { ...options, ...subOptions };
+
+      await setupOutputDirs();
+      const outputPath = path.resolve(
+        options.outputDir,
+        "glb",
+        path.basename(subOptions.inputPath).replace(extension, ".glb")
+      );
+
+      const cleanup = await setupCleanup();
+      if (inferredModelType === "GLTF") {
+        await convertSingleGltf(subOptions.inputPath, outputPath);
+      }
+
+      if (inferredModelType === "FBX") {
+        await convertSingleFbx(subOptions.inputPath, outputPath);
+      }
+      if (inferredModelType === "OBJ") {
+        await convertSingleObj(subOptions.inputPath, outputPath);
+      }
+
+      if (subOptions.tsx) await generateTSX();
+      else console.info("ℹ️ Didn't add .tsx file");
+
+      await cleanup();
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : error;
+      console.error(red("🚨 Conversion process failed!"));
+      console.error(red("🚨 " + errorMsg));
+      exit(1);
+    }
+  });
 
 program
   .command("convert-bulk")
@@ -239,7 +318,7 @@ async function setupOutputDirs() {
       await mkdir(optPath, { recursive: true });
     }
 
-    console.info(green("✓  Output directories created"));
+    console.info(green("✓ Output directories created"));
   } catch (error) {
     console.error(red("🚨 Error creating directories:"), error);
     throw error;
@@ -269,17 +348,6 @@ async function generateTSX() {
     throw error;
   }
 }
-
-type InputFormats = keyof typeof converters;
-
-const converters = {
-  GLTF: convertSingleGltf,
-  FBX: convertSingleFbx,
-  OBJ: convertSingleObj,
-};
-
-const inputDir = () => `${options.inputDir.replace(home, "~")}`;
-const outputDir = () => `${options.outputDir.replace(home, "~")}`;
 
 async function collectFiles(
   files: string[],
@@ -348,9 +416,7 @@ async function setupCleanup() {
 
     for (const result of improvedGlbFiles) {
       const oldPath = path.resolve(tsxPath, result);
-      const newPath = path
-        .resolve(improvedGlbPath, result)
-        .replace("-transformed.glb", ".glb");
+      const newPath = path.resolve(improvedGlbPath, result);
       await rename(oldPath, newPath);
     }
   };
