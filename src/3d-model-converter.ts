@@ -84,7 +84,7 @@ program
 
       console.log(
         green(
-          `✅ Successfully converted ${
+          `✓  Successfully converted ${
             options.modelType
           } models from "${options.inputDir.replace(home, "~")}"`
         ),
@@ -96,12 +96,21 @@ program
   });
 
 async function promptForModelType() {
+  const files = await readdir(options.inputDir);
+  const numGLTF = files.filter((file) => file.endsWith(".gltf")).length;
+  const numFBX = files.filter((file) => file.endsWith(".fbx")).length;
+  const numOBJ = files.filter((file) => file.endsWith(".obj")).length;
+
   const { modelType } = await prompt([
     {
       type: "list",
       name: "modelType",
       message: "Select the type of 3D models to convert:",
-      choices: ["GLTF", "FBX", "OBJ"],
+      choices: [
+        { name: `GLTF (${numGLTF} available)`, value: "GLTF" },
+        { name: `FBX (${numFBX} available)`, value: "FBX" },
+        { name: `OBJ (${numOBJ} available)`, value: "OBJ" },
+      ],
     },
   ]);
   return modelType;
@@ -182,21 +191,27 @@ async function setupOutputDirs() {
     const allFiles = await readdir(options.inputDir);
     const extension = "." + options.modelType.toLowerCase();
     const files = allFiles.filter((file) => file.endsWith(extension));
-    console.log(`ℹ️ Found ${files.length} ${extension} models to convert`);
-    console.log(`ℹ️ from input dir: ${options.inputDir.replace(home, "~")}`);
+    console.log(
+      `ℹ️ Found ${
+        files.length
+      } ${extension} models to convert from input dir: ${options.inputDir.replace(
+        home,
+        "~"
+      )}`
+    );
 
     if (!files.length) {
       console.log(red("Aborting, because there are no models to convert!"));
       exit(0);
     }
 
-    console.log("Will write results to:");
+    console.log("ℹ️ Will write results to:");
     options.tsx &&
-      console.log(`\nFor .tsx files: ${tsxPath.replace(home, "~")}`);
+      console.log(`ℹ️ For .tsx files: ${tsxPath.replace(home, "~")}`);
     options.glb &&
-      console.log(`\nFor .glb files: ${glbPath.replace(home, "~")}`);
+      console.log(`ℹ️ For .glb files: ${glbPath.replace(home, "~")}`);
     options.gltf &&
-      console.log(`\nFor .gltf files: ${gltfPath.replace(home, "~")}`);
+      console.log(`ℹ️ For .gltf files: ${gltfPath.replace(home, "~")}`);
 
     const { confirmed } = await prompt([
       {
@@ -215,7 +230,7 @@ async function setupOutputDirs() {
     if (options.tsx) await mkdir(tsxPath, { recursive: true });
     if (options.glb) await mkdir(glbPath, { recursive: true });
 
-    console.log(green("✅ Output directories created"));
+    console.log(green("✓  Output directories created"));
   } catch (error) {
     console.error(red("Error creating directories:"), error);
     throw error;
@@ -254,7 +269,7 @@ async function generateTSXforGLB() {
     }
 
     spinner.stop();
-    console.log(green("✅ TSX components generated"));
+    console.log(green("✓  TSX components generated"));
   } catch (error) {
     spinner.fail("Failed to generate TSX components");
     console.error(red("Error generating TSX:"), error);
@@ -283,7 +298,7 @@ async function convertGLTF() {
     }
 
     spinner.stop();
-    console.log(green("✅ GLTF conversion completed"));
+    console.log(green("✓  GLTF conversion completed"));
   } catch (error) {
     spinner.fail("GLTF conversion failed");
     console.error(red("Error converting GLTF:"), error);
@@ -296,6 +311,13 @@ async function convertFBX() {
   try {
     const files = await readdir(options.inputDir);
     const fbxFiles = files.filter((file) => file.endsWith(".fbx"));
+
+    const pathsBefore = await readdir(options.inputDir);
+    const fbmFoldersBefore = pathsBefore.filter(
+      (file) =>
+        file.endsWith(".fbm") &&
+        isDirectory(path.resolve(options.inputDir, file))
+    );
 
     for (const file of fbxFiles) {
       const outputPath = path.resolve(
@@ -312,7 +334,12 @@ async function convertFBX() {
     }
 
     const paths = await readdir(options.inputDir);
-    const fbmFolders = paths.filter((path) => path.endsWith(".fbm"));
+    const fbmFolders = paths.filter(
+      (file) =>
+        file.endsWith(".fbm") &&
+        isDirectory(path.resolve(options.inputDir, file)) &&
+        !fbmFoldersBefore.includes(file)
+    );
     for (const folder of fbmFolders) {
       const folderPath = path.resolve(options.inputDir, folder);
       console.log("Deleting folder", folderPath);
@@ -320,7 +347,7 @@ async function convertFBX() {
     }
 
     spinner.stop();
-    console.log(green("✅ FBX conversion completed"));
+    console.log(green("✓  FBX conversion completed"));
   } catch (error) {
     spinner.fail("FBX conversion failed");
     console.error(red("Error converting FBX:"), error);
@@ -350,7 +377,7 @@ async function convertOBJ() {
     }
 
     spinner.stop();
-    console.log(green("✅ OBJ conversion completed"));
+    console.log(green("✓  OBJ conversion completed"));
   } catch (error) {
     spinner.fail("OBJ conversion failed");
     console.error(red("Error converting OBJ:"), error);
