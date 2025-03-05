@@ -5,17 +5,14 @@ import { textSync } from "figlet";
 import { exec as execSync } from "child_process";
 import { promisify } from "util";
 import { mkdir, copyFile, readdir } from "fs/promises";
-import path from "path";
 import ora from "ora";
+import { lstatSync } from "fs";
+import path from "path";
+import { exit } from "process";
 
 const exec = promisify(execSync);
 
-const homePath = process.env.HOME || "~";
-
-let GLB_PATH = "";
-let TSX_PATH = "";
-
-console.log(cyan(textSync("3D Model Converter", { horizontalLayout: "full" })));
+console.log(cyan(textSync("Convert 3D", { horizontalLayout: "full" })));
 
 const program = new Command();
 
@@ -25,35 +22,46 @@ program
     "An interactive CLI tool for converting 3D models to glTF/GLB and generating React components"
   );
 
-program
-  .command("config")
-  .description("Configure output paths")
-  .action(async () => {
-    const answers = await prompt([
+program.option("-i, --inputDir <path>", "Add the input directory");
+program.option("-o, --outputDir <path>", "Add the output directory");
+program.option("-m, --modelType <string>", "Add the type of model.");
+program.option("--no-tsx", "Don't create tsx files");
+program.option("--no-glb", "Don't create glb files");
+
+const options = program.opts();
+
+export const isDirectory = (strPath: string) =>
+  lstatSync(strPath) ? lstatSync(strPath).isDirectory() : false;
+
+async function setupOutputDirs() {
+  try {
+    const tsxPath = path.resolve(options.outputDir, "tsx");
+    const glbPath = path.resolve(options.outputDir, "glb");
+
+    const { confirmed } = await prompt([
       {
-        type: "input",
-        name: "glbPath",
-        message: "Enter the GLB output path:",
-        default: GLB_PATH,
-      },
-      {
-        type: "input",
-        name: "tsxPath",
-        message: "Enter the TSX output path:",
-        default: TSX_PATH,
+        type: "confirm",
+        name: "confirmed",
+        message:
+          "Looking good?" +
+          "\nInput Dir: " +
+          options.inputDir +
+          "\nOutput Dir TSX: " +
+          tsxPath +
+          "\nOutput Dir GLB: " +
+          glbPath,
       },
     ]);
 
-    GLB_PATH = answers.glbPath;
-    TSX_PATH = answers.tsxPath;
+    if (!confirmed) {
+      exit(0);
+    }
 
-    console.log(green("Configuration updated successfully!"));
-  });
+    await mkdir(options.outputDir, { recursive: true });
 
-async function setupDirs() {
-  try {
-    await mkdir("out/glb", { recursive: true });
-    await mkdir("out/tsx", { recursive: true });
+    if (options.tsx) await mkdir(tsxPath, { recursive: true });
+    if (options.glb) await mkdir(glbPath, { recursive: true });
+
     console.log(green("✓ Output directories created"));
   } catch (error) {
     console.error(red("Error creating directories:"), error);
@@ -64,18 +72,17 @@ async function setupDirs() {
 async function generateTSXforGLTF() {
   const spinner = ora("Generating TSX components...").start();
   try {
-    const files = await readdir("out/glb");
+    const files = await readdir(options.outputDir);
     const glbFiles = files.filter((file) => file.endsWith(".glb"));
 
     for (const file of glbFiles) {
-      await exec(`gltfjsx "out/glb/${file}" -t`);
-    }
-
-    const tsxFiles = (await readdir(".")).filter((file) =>
-      file.endsWith(".tsx")
-    );
-    for (const file of tsxFiles) {
-      await exec(`mv "${file}" out/tsx/`);
+      const outputPath = path.resolve(
+        options.outputDir,
+        "tsx",
+        file.replace(".glb", ".tsx")
+      );
+      console.log(`gltfjsx ${file} ${outputPath} -t`);
+      // await exec(`gltfjsx ${file} ${outputPath} -t`);
     }
 
     spinner.succeed("TSX components generated successfully");
@@ -86,48 +93,22 @@ async function generateTSXforGLTF() {
   }
 }
 
-async function copyInto(folderName: string) {
-  const spinner = ora("Copying files to destination...").start();
-  try {
-    await mkdir(`${GLB_PATH}/${folderName}`, { recursive: true });
-    await mkdir(`${TSX_PATH}/${folderName}`, { recursive: true });
-
-    const tsxFiles = await readdir("out/tsx");
-    for (const file of tsxFiles) {
-      await copyFile(`out/tsx/${file}`, `${TSX_PATH}/${folderName}/${file}`);
-    }
-
-    const glbFiles = await readdir("out/glb");
-    for (const file of glbFiles) {
-      await copyFile(`out/glb/${file}`, `${GLB_PATH}/${folderName}/${file}`);
-    }
-
-    spinner.succeed("Files copied successfully");
-  } catch (error) {
-    spinner.fail("Failed to copy files");
-    console.error(red("Error copying files:"), error);
-    throw error;
-  }
-}
-
-async function convertGLTF() {
+async function convertGLTFtoGLB() {
   const spinner = ora("Converting GLTF files to GLB...").start();
   try {
-    await setupDirs();
-
-    const files = await readdir(".");
+    const files = await readdir(options.inputDir);
     const gltfFiles = files.filter((file) => file.endsWith(".gltf"));
 
     for (const file of gltfFiles) {
-      await exec(
-        `gltf-pipeline -i "${file}" -b -o "out/glb/${file.replace(
-          ".gltf",
-          ".glb"
-        )}"`
+      const outputPath = path.resolve(
+        options.outputDir,
+        file.replace(".gltf", ".glb")
       );
+      const inputPath = path.resolve(options.inputDir, file);
+
+      await exec(`gltf-pipeline -i "${inputPath}" -b -o "${outputPath}"`);
     }
 
-    await generateTSXforGLTF();
     spinner.succeed("GLTF conversion completed");
   } catch (error) {
     spinner.fail("GLTF conversion failed");
@@ -136,24 +117,21 @@ async function convertGLTF() {
   }
 }
 
-async function convertFBX() {
+async function convertFBXtoGLB() {
   const spinner = ora("Converting FBX files to GLB...").start();
   try {
-    await setupDirs();
-
-    const files = await readdir(".");
+    const files = await readdir(options.inputDir);
     const fbxFiles = files.filter((file) => file.endsWith(".fbx"));
 
     for (const file of fbxFiles) {
-      await exec(
-        `FBX2glTF-darwin-x64 -b -i "${file}" -o "out/glb/${file.replace(
-          ".fbx",
-          ""
-        )}"`
+      const outputPath = path.resolve(
+        options.outputDir,
+        file.replace(".fbx", ".glb")
       );
+      const inputPath = path.resolve(options.inputDir, file);
+      await exec(`FBX2glTF -b -i "${inputPath}" -o ${outputPath}`);
     }
 
-    await generateTSXforGLTF();
     spinner.succeed("FBX conversion completed");
   } catch (error) {
     spinner.fail("FBX conversion failed");
@@ -162,21 +140,23 @@ async function convertFBX() {
   }
 }
 
-async function convertOBJ() {
+async function convertOBJtoGLB() {
   const spinner = ora("Converting OBJ files to GLB...").start();
   try {
-    await setupDirs();
-
-    const files = await readdir(".");
+    const files = await readdir(options.inputDir);
     const objFiles = files.filter((file) => file.endsWith(".obj"));
 
     for (const file of objFiles) {
-      await exec(
-        `obj2gltf -b -i "${file}" -o "out/glb/${file.replace(".obj", ".glb")}"`
+      const outputPath = path.resolve(
+        options.outputDir,
+        "glb",
+        file.replace(".obj", ".glb")
       );
+      const inputPath = path.resolve(options.inputDir, file);
+
+      await exec(`obj2gltf -b -i "${inputPath}" -o "${outputPath}"`);
     }
 
-    await generateTSXforGLTF();
     spinner.succeed("OBJ conversion completed");
   } catch (error) {
     spinner.fail("OBJ conversion failed");
@@ -186,45 +166,35 @@ async function convertOBJ() {
 }
 
 program
-  .command("convert")
-  .description("Convert 3D models and set up components")
+  .command("bulk-convert")
+  .description("Convert all 3D models from directory in one go.")
   .action(async () => {
     try {
-      const { modelType } = await prompt([
-        {
-          type: "list",
-          name: "modelType",
-          message: "Select the type of 3D models to convert:",
-          choices: ["GLTF", "FBX", "OBJ"],
-        },
-      ]);
+      options.inputDir = options.inputDir || (await promptForInputFolder());
+      options.outputDir =
+        options.outputDir ||
+        path.resolve(options.inputDir, "out") ||
+        (await promptForOutputFolder());
 
-      const { folderName } = await prompt([
-        {
-          type: "input",
-          name: "folderName",
-          message: "Enter folder name for the output:",
-          validate: (input) =>
-            input.trim() !== "" ? true : "Folder name cannot be empty",
-        },
-      ]);
+      await setupOutputDirs();
 
-      switch (modelType) {
+      options.modelType = options.modelType || (await promptForModelType());
+
+      switch (options.modelType) {
         case "GLTF":
-          await convertGLTF();
+          await convertGLTFtoGLB();
           break;
         case "FBX":
-          await convertFBX();
+          await convertFBXtoGLB();
           break;
         case "OBJ":
-          await convertOBJ();
+          await convertOBJtoGLB();
           break;
       }
 
-      await copyInto(folderName);
       console.log(
         green(
-          `✓ Successfully converted and set up ${modelType} models in folder "${folderName}"`
+          `✓ Successfully converted and set up ${options.modelType} models from folder "${options.inputDir}" to ${options.outputDir}`
         )
       );
     } catch (error) {
@@ -232,19 +202,51 @@ program
     }
   });
 
-program
-  .command("clean")
-  .description("Clean temporary output directories")
-  .action(async () => {
-    const spinner = ora("Cleaning output directories...").start();
-    try {
-      await exec("rm -rf out/");
-      spinner.succeed("Output directories cleaned");
-    } catch (error) {
-      spinner.fail("Failed to clean directories");
-      console.error(red("Error cleaning directories:"), error);
-    }
-  });
+async function promptForModelType() {
+  const { modelType } = await prompt([
+    {
+      type: "list",
+      name: "modelType",
+      message: "Select the type of 3D models to convert:",
+      choices: ["GLTF", "FBX", "OBJ"],
+    },
+  ]);
+  return modelType;
+}
+
+async function promptForInputFolder() {
+  const { inputFolder } = await prompt([
+    {
+      type: "input",
+      name: "inputFolder",
+      message: "Enter folder path for the input:",
+      validate: (input) => {
+        if (input.trim() === "") return "Folder name cannot be empty";
+        if (!lstatSync(input)) return "Input folder doesn't exist";
+        if (!isDirectory(input)) return "Input folder is not a directory";
+        return true;
+      },
+    },
+  ]);
+
+  return inputFolder;
+}
+
+async function promptForOutputFolder() {
+  const { outputFolder } = await prompt([
+    {
+      type: "input",
+      name: "outputFolder",
+      message: "Enter folder path for the output:",
+      validate: (input) => {
+        if (input.trim() === "") return "Folder name cannot be empty";
+        return true;
+      },
+    },
+  ]);
+
+  return outputFolder;
+}
 
 program.parse(process.argv);
 
