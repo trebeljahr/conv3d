@@ -1,4 +1,4 @@
-import { cyan, green, red } from "chalk";
+import { cyan, green, red, yellow } from "chalk";
 import { exec as execSync } from "child_process";
 import { Command } from "commander";
 import { textSync } from "figlet";
@@ -24,22 +24,32 @@ program
     "An interactive CLI tool for converting 3D models to glTF/GLB and generating React components"
   );
 
-program.option("-i, --inputDir <path>", "Add the input directory");
-program.option("-o, --outputDir <path>", "Add the output directory");
-program.option("-m, --modelType <string>", "Add the type of model.");
-program.option("--tsx", "Create .tsx files");
-program.option("--no-tsx", "Don't create .tsx files");
-
 const options = program.opts();
 
 export const isDirectory = (strPath: string) =>
   lstatSync(strPath) ? lstatSync(strPath).isDirectory() : false;
 
 program
-  .command("bulk-convert")
-  .description(
-    "Convert all 3D models from directory in one go to .glb format, you can also auto-generate .tsx files"
+  .command("convert")
+  .description("Convert a single 3D model from directory")
+  .action(async () => {});
+
+program
+  .command("convert-bulk")
+  .option("-i, --inputDir DIR", "Add the input directory")
+  .option(
+    "-r, --recursive",
+    "Find models in directory and subdirectories recursively"
   )
+  .option("-o, --outputDir DIR", "Specify the output directory")
+  .option(
+    "-m, --modelType <string>",
+    "Specify the type of model you want to convert"
+  )
+  .option("--tsx", "Create .tsx files")
+  .option("--no-tsx", "Don't create .tsx files")
+  // .option("--no-optimize", "Don't create optimized output GLB files")
+  .description("Convert all 3D models from a directory")
   .action(async () => {
     try {
       options.inputDir = path.resolve(
@@ -50,51 +60,65 @@ program
         path.resolve(options.inputDir, "out") ||
         (await promptForOutputFolder());
 
+      const filesGLTF = await collectFiles({ modelType: "GLTF" });
+      const filesFBX = await collectFiles({ modelType: "FBX" });
+      const filesOBJ = await collectFiles({ modelType: "OBJ" });
+
+      const numGLTF = filesGLTF.length;
+      const numFBX = filesFBX.length;
+      const numOBJ = filesOBJ.length;
+
+      const numAll = numGLTF + numFBX + numOBJ;
+
       options.modelType =
         options.modelType?.toUpperCase().replace(".", "") ||
-        (await promptForModelType());
-      options.tsx = options.tsx || (await promptForTsxOutput());
+        (await promptForModelType({ numGLTF, numFBX, numOBJ, numAll }));
+      console.log({ tsx: options.tsx });
+      options.tsx =
+        options.tsx === undefined ? await promptForTsxOutput() : options.tsx;
+
+      if (!Object.keys(converters).includes(options.modelType)) {
+        console.error(red("🚨 Invalid model type: ", options.modelType));
+        exit(1);
+      }
 
       await setupOutputDirs();
 
-      if (options.modelType === "GLTF" && options.gltf) {
-        console.error(red(".gltf models cannot be converted to .gltf"));
-        exit(1);
-      }
-
-      if (!Object.keys(converters).includes(options.modelType)) {
-        console.error(red("Invalid model type: ", options.modelType));
-        exit(1);
-      }
-
       const cleanup = await setupCleanup();
-      await convertModels();
+
+      if (options.modelType === "ALL") {
+        await convertModels({ modelType: "GLTF" });
+        await convertModels({ modelType: "FBX" });
+        await convertModels({ modelType: "OBJ" });
+      } else {
+        await convertModels({ modelType: options.modelType });
+      }
+
       await cleanup();
 
       if (options.tsx) await generateTSX();
       else console.log("ℹ️ Didn't add .tsx files");
 
       console.log(
-        green(
-          `✓  Successfully converted ${
-            options.modelType
-          } models from "${options.inputDir.replace(home, "~")}"`
-        )
+        green(`✓  Successfully converted ${numAll} models from "${inputDir()}"`)
       );
-      console.log(
-        `ℹ️ Output saved to "${options.outputDir.replace(home, "~")}"`
-      );
+      console.log(`ℹ️ Output saved to "${outputDir()}"`);
     } catch (error) {
-      console.error(red("Conversion process failed:"), error);
+      console.error(red("🚨 Conversion process failed:"), error);
     }
   });
 
-async function promptForModelType() {
-  const files = await readdir(options.inputDir);
-  const numGLTF = files.filter((file) => file.endsWith(".gltf")).length;
-  const numFBX = files.filter((file) => file.endsWith(".fbx")).length;
-  const numOBJ = files.filter((file) => file.endsWith(".obj")).length;
-
+async function promptForModelType({
+  numGLTF,
+  numFBX,
+  numOBJ,
+  numAll,
+}: {
+  numGLTF: number;
+  numFBX: number;
+  numOBJ: number;
+  numAll: number;
+}) {
   const { modelType } = await prompt([
     {
       type: "list",
@@ -104,6 +128,7 @@ async function promptForModelType() {
         { name: `GLTF (${numGLTF} available)`, value: "GLTF" },
         { name: `FBX (${numFBX} available)`, value: "FBX" },
         { name: `OBJ (${numOBJ} available)`, value: "OBJ" },
+        { name: `ALL (${numAll} available)`, value: "ALL" },
       ],
     },
   ]);
@@ -166,23 +191,6 @@ async function setupOutputDirs() {
     const tsxPath = path.resolve(options.outputDir, "tsx");
     const glbPath = path.resolve(options.outputDir, "glb");
 
-    const allFiles = await readdir(options.inputDir);
-    const extension = "." + options.modelType.toLowerCase();
-    const files = allFiles.filter((file) => file.endsWith(extension));
-    console.log(
-      `ℹ️ Found ${
-        files.length
-      } ${extension} models to convert from input dir: ${options.inputDir.replace(
-        home,
-        "~"
-      )}`
-    );
-
-    if (!files.length) {
-      console.log(red("Aborting, because there are no models to convert!"));
-      exit(0);
-    }
-
     console.log("ℹ️ Will write results to:");
     options.tsx &&
       console.log(`ℹ️ For .tsx files: ${tsxPath.replace(home, "~")}`);
@@ -207,7 +215,7 @@ async function setupOutputDirs() {
 
     console.log(green("✓  Output directories created"));
   } catch (error) {
-    console.error(red("Error creating directories:"), error);
+    console.error(red("🚨 Error creating directories:"), error);
     throw error;
   }
 }
@@ -224,9 +232,7 @@ async function generateTSX() {
     for (const file of glbFiles) {
       const outputPath = path.resolve(tsxPath, file.replace(".glb", ".tsx"));
       const inputPath = path.resolve(glbPath, file);
-      await exec(
-        `gltfjsx "${inputPath}" -o "${outputPath}" --types --transform`
-      );
+      await convertSingleGlb(inputPath, outputPath);
     }
 
     const results = await readdir(tsxPath);
@@ -247,7 +253,7 @@ async function generateTSX() {
     console.log(green("✓  TSX components generated"));
   } catch (error) {
     spinner.fail("Failed to generate TSX components");
-    console.error(red("Error generating TSX:"), error);
+    console.error(red("🚨 Error generating TSX:"), error);
     throw error;
   }
 }
@@ -260,25 +266,45 @@ const converters = {
   OBJ: convertSingleObj,
 };
 
-async function convertModels() {
-  const modelType: InputFormats = options.modelType;
+const inputDir = () => `${options.inputDir.replace(home, "~")}`;
+const outputDir = () => `${options.outputDir.replace(home, "~")}`;
 
+async function collectFiles({ modelType }: { modelType: InputFormats }) {
   const inputEnding = "." + modelType.toLowerCase();
+  const files = await readdir(options.inputDir, {
+    recursive: options.recursive,
+  });
+  const modelFiles = files.filter((file) => file.endsWith(inputEnding));
+
+  return modelFiles;
+}
+
+async function convertModels({ modelType }: { modelType: InputFormats }) {
   const spinner = ora(`Converting ${modelType} files to "GLB"...`).start();
 
   try {
-    const files = await readdir(options.inputDir);
-    const gltfFiles = files.filter((file) => file.endsWith(inputEnding));
+    const modelFiles = await collectFiles({ modelType });
 
-    for (const file of gltfFiles) {
-      await supplyPathTo(converters[modelType], file);
+    console.log(
+      `ℹ️ Found ${modelFiles.length} ${modelType} models to convert from input dir: }`
+    );
+
+    if (!modelFiles.length) {
+      console.error(
+        yellow(`⚠️ No ${modelType} type models found in the input directory`)
+      );
+      return;
+    }
+
+    for (const file of modelFiles) {
+      await supplyPathsTo(converters[modelType], file);
     }
 
     spinner.stop();
-    console.log(green(`✓  ${modelType} conversion completed`));
+    console.log(green(`✓ ${modelType} conversion completed`));
   } catch (error) {
     spinner.fail(`${modelType} conversion failed`);
-    console.error(red("Error converting GLTF:"), error);
+    console.error(red("🚨 Error converting GLTF:"), error);
     throw error;
   }
 }
@@ -304,7 +330,7 @@ async function setupCleanup() {
   };
 }
 
-async function supplyPathTo(
+async function supplyPathsTo(
   convertFn: (i: string, o: string) => Promise<void>,
   file: string
 ) {
@@ -331,4 +357,8 @@ async function convertSingleFbx(inputPath: string, outputPath: string) {
 
 async function convertSingleGltf(inputPath: string, outputPath: string) {
   await exec(`gltf-pipeline -b -i "${inputPath}" -o "${outputPath}"`);
+}
+
+async function convertSingleGlb(inputPath: string, outputPath: string) {
+  await exec(`gltfjsx "${inputPath}" -o "${outputPath}" --types --transform`);
 }
