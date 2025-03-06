@@ -18,7 +18,7 @@
     "postinstall": "patch-package",
     "conv3d": "npm run build && node ./dist/conv3d.js",
     "install-local": "npm run build && npm install -g .",
-    "pub": "npm run build && npm publish --access public"
+    "pub": "npm version minor && npm run build && npm publish --access public"
   },
   "keywords": [
     "3d",
