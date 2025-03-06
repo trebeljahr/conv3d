@@ -8,13 +8,6 @@ An interactive command-line tool for converting 3D models (GLTF, FBX, OBJ) to GL
 - Bulk Mode for converting multiple 3D models at once
 - Supports GLTF, FBX, and OBJ file formats
 - Generates React/TSX components using gltfjsx
-- Can copy the generated files to your project paths
-
-## Prerequisites
-
-You need to have the following tools installed for this to work correctly:
-
-
 
 ## Installation
 

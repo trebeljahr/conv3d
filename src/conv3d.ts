@@ -24,7 +24,7 @@ const asciiBanner = textSync(text, {
 fromString(asciiBanner);
 
 process.on("SIGINT", () => {
-  console.log(red("\n🚨 Received SIGINT. Exiting program..."));
+  console.error(red("\n🚨 Received SIGINT. Exiting program..."));
   process.exit(0);
 });
 

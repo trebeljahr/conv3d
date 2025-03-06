@@ -89,12 +89,6 @@ program
         exit(1);
       }
 
-      // const all = [...filesGLTF, ...filesFBX, ...filesOBJ];
-      // const getFolders = (files: string[]) =>
-      //   files.map((file) => path.dirname(file));
-      // const uniqueFolders = [...new Set(getFolders(all))];
-      // console.debug(uniqueFolders);
-
       const options: OptionsBulkCommand = { ...globalOptions, ...subOptions };
 
       const shouldConvert = (modelType: string) =>
@@ -122,7 +116,7 @@ program
       }
 
       if (options.tsx) {
-        console.log("ℹ️ Generating .tsx files...");
+        console.info("ℹ️ Generating .tsx files...");
         await convertModels(
           "GLB",
           allConverted,

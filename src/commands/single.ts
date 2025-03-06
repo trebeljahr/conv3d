@@ -85,7 +85,7 @@ program
       }
 
       if (options.tsx) {
-        console.log("ℹ️ Generating .tsx files...");
+        console.info("ℹ️ Generating .tsx files...");
         await convertModels("GLB", [outputPath], inputDir, outputDir);
       } else console.info("ℹ️ Skipped adding .tsx files, like instructed 🫡");
     } catch (error) {
