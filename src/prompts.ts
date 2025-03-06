@@ -1,5 +1,6 @@
 import { yellow } from "chalk";
 import { prompt } from "inquirer";
+import { exit } from "process";
 
 export async function promptForModelType({
   numGLTF,
@@ -14,10 +15,10 @@ export async function promptForModelType({
 }) {
   if (numAll === 0) {
     console.error(yellow(`⚠️ No suitable models found in the input directory`));
-    return;
+    exit(1);
   }
 
-  const { modelType } = await prompt([
+  const { modelType } = await prompt<{ modelType: string }>([
     {
       type: "list",
       name: "modelType",
@@ -30,6 +31,7 @@ export async function promptForModelType({
       ].filter(({ name }) => !name.includes("(0 ")),
     },
   ]);
+
   return modelType;
 }
 

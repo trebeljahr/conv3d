@@ -46,13 +46,16 @@ export async function setupCleanup(options: Record<string, any>) {
   };
 }
 
-export async function setupOutputDirs(options: Record<string, any>) {
+export async function setupOutputDirs(
+  options: Record<string, any>,
+  numFilesToWrite: number
+) {
   try {
     const tsxPath = path.resolve(options.outputDir, "tsx");
     const glbPath = path.resolve(options.outputDir, "glb");
     const optPath = path.resolve(options.outputDir, "glb-for-web");
 
-    console.info("ℹ️ Will write results to:");
+    console.info(`ℹ️ Expect to write ${numFilesToWrite} results to:`);
     if (options.glb) {
       console.info(`ℹ️ For .glb files: ${glbPath.replace(home, "~")}`);
     }

@@ -1,5 +1,6 @@
-import { green, red } from "chalk";
+import { green, red, yellow } from "chalk";
 import { exec as execSync } from "child_process";
+import { readdir } from "fs/promises";
 import ora from "ora";
 import path from "path";
 import { promisify } from "util";
@@ -15,36 +16,42 @@ export const converters = {
 };
 
 export async function convertModels(
-  modelType: InputFormats,
+  format: InputFormats,
   modelFiles: string[],
   options: Record<string, any>
 ) {
   if (modelFiles.length === 0) {
-    return;
+    console.info(yellow(`⚠️ No ${format} models found in the input directory`));
+    return { numConverted: 0, errors: [] };
   }
 
   console.info(
-    `ℹ️ Found ${modelFiles.length} ${modelType} models to convert from input dir: }`
+    `ℹ️ Found ${modelFiles.length} ${format} models to convert from input dir: }`
   );
 
-  const spinner = ora(`Converting ${modelType} files to "GLB"...`).start();
+  const spinner = ora(`Converting ${format} files to "GLB"...`).start();
 
+  let index = 0;
+  const errors = [];
   try {
     for (const file of modelFiles) {
-      await supplyPathsTo(converters[modelType], file, options);
-      spinner.text = `Converting ${modelType} files to "GLB"... (${
-        modelFiles.indexOf(file) + 1
-      }/${modelFiles.length})`;
+      await supplyPathsTo(converters[format], file, options);
+
+      spinner.text = `Converting ${format} files to "GLB"... (${++index}/${
+        modelFiles.length
+      })`;
     }
 
     spinner.stop();
-    options.convertedNum += modelFiles.length;
-    console.info(green(`✓ ${modelType} conversion completed`));
+    console.info(green(`✓ ${format} conversion completed`));
   } catch (error) {
-    spinner.fail(`${modelType} conversion failed`);
-    console.error(red(`🚨 Error converting ${modelType}...`));
-    throw error;
+    errors.push(error);
+    spinner.fail(`${format} conversion failed`);
+    console.error(red(`🚨 Error converting ${modelFiles[index]} of ${format}`));
+    console.info("ℹ️ Continuing with the rest of the models...");
   }
+
+  return { numConverted: index, errors };
 }
 
 async function supplyPathsTo(
@@ -72,6 +79,33 @@ export async function collectFiles(
   const inputEnding = "." + modelType.toLowerCase();
   const modelFiles = files.filter((file) => file.endsWith(inputEnding));
   return modelFiles;
+}
+
+export async function generateTSX(
+  providedGlbPath: string,
+  providedTsxPath: string
+) {
+  const spinner = ora("Generating TSX components...").start();
+  try {
+    const glbPath = providedGlbPath;
+    const tsxPath = providedTsxPath;
+
+    const files = await readdir(glbPath);
+    const glbFiles = files.filter((file) => file.endsWith(".glb"));
+
+    for (const file of glbFiles) {
+      const outputPath = path.resolve(tsxPath, file.replace(".glb", ".tsx"));
+      const inputPath = path.resolve(glbPath, file);
+      await convertSingleGlb(inputPath, outputPath);
+    }
+
+    spinner.stop();
+    console.info(green("✓ TSX components generated"));
+  } catch (error) {
+    spinner.fail("Failed to generate TSX components");
+    console.error(red("🚨 Error generating TSX:"), error);
+    throw error;
+  }
 }
 
 export async function convertSingleObj(inputPath: string, outputPath: string) {
