@@ -9,7 +9,11 @@ import {
   InputFormats,
 } from "../converters.js";
 import { GlobalOptions, globalOptions, program } from "../program.js";
-import { promptForModelType, promptForTsxOutput } from "../prompts.js";
+import {
+  promptForModelType,
+  promptForOptimizedGlbOutput as promptForOptimizedGlbOutput,
+  promptForTsxOutput,
+} from "../prompts.js";
 import { home, isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
 
 const { green, red } = chalk;
@@ -80,6 +84,11 @@ program
         globalOptions.tsx === undefined
           ? await promptForTsxOutput()
           : globalOptions.tsx;
+
+      globalOptions.optimize =
+        globalOptions.optimize === undefined
+          ? await promptForOptimizedGlbOutput()
+          : globalOptions.optimize;
 
       if (
         !Object.keys(converters).includes(subOptions.modelType) &&

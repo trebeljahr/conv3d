@@ -48,3 +48,26 @@ export async function promptForTsxOutput() {
   ]);
   return tsx;
 }
+
+export async function promptForOptimizedGlbOutput() {
+  const { optimize } = await prompt([
+    {
+      type: "confirm",
+      name: "optimize",
+      message: "Optimize output GLB files for web? (recommended)",
+    },
+  ]);
+
+  return optimize;
+}
+
+export async function askForFileOverwrite(filePath: string) {
+  const { overwrite } = await prompt([
+    {
+      type: "confirm",
+      name: "overwrite",
+      message: "Overwrite the file?" + " " + filePath,
+    },
+  ]);
+  return overwrite;
+}

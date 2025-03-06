@@ -39,7 +39,7 @@
     "figlet": "^1.5.2",
     "gltf-pipeline": "^4.1.0",
     "gltfjsx": "^6.5.3",
-    "inquirer": "^12.4.2",
+    "inquirer": "^8.2.5",
     "lolcatjs": "^2.4.3",
     "obj2gltf": "^3.1.6",
     "ora": "^8.2.0",

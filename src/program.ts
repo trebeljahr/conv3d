@@ -26,7 +26,12 @@ program
   .description(description)
   .option("--tsx", "Create .tsx files. Per default it will ask for user input.")
   .option("--no-tsx", "Don't create .tsx files")
-  .option("--no-optimize", "Don't create optimized output GLB files")
+  .option(
+    "--optimize",
+    "Create optimized .glb files. Per default it will ask for user input."
+  )
+  .option("--no-optimize", "Don't create optimized output .glb files")
+  .option("--forceOverwrite", "Overwrite existing files without asking")
   .usage("[command] [options]");
 
 let globalOptions: GlobalOptions = program.opts();
@@ -34,6 +39,7 @@ let globalOptions: GlobalOptions = program.opts();
 export type GlobalOptions = {
   tsx: boolean | undefined;
   optimize: boolean;
+  forceOverwrite: boolean;
 };
 
 export { program, globalOptions };

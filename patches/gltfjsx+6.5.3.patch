@@ -1,8 +1,8 @@
 diff --git a/node_modules/gltfjsx/src/gltfjsx.js b/node_modules/gltfjsx/src/gltfjsx.js
-index ee8b974..dd33245 100755
+index ee8b974..c71b43e 100755
 --- a/node_modules/gltfjsx/src/gltfjsx.js
 +++ b/node_modules/gltfjsx/src/gltfjsx.js
-@@ -67,12 +67,14 @@ export default function (file, output, options) {
+@@ -67,12 +67,13 @@ export default function (file, output, options) {
          '',
          async (gltf) => {
            const output = await parse(gltf, { fileName: filePath, size, ...options })
@@ -15,13 +15,12 @@ index ee8b974..dd33245 100755
          },
 -        (reason) => console.log(reason)
 +        (reason) => {
-+          console.log(reason)
 +        }
        )
      }
  
 diff --git a/node_modules/gltfjsx/src/utils/parser.js b/node_modules/gltfjsx/src/utils/parser.js
-index 4fc66f3..3258599 100644
+index 4fc66f3..d00c0fb 100644
 --- a/node_modules/gltfjsx/src/utils/parser.js
 +++ b/node_modules/gltfjsx/src/utils/parser.js
 @@ -450,11 +450,8 @@ function parse(gltf, { fileName = 'model', ...options } = {}) {
@@ -38,3 +37,11 @@ index 4fc66f3..3258599 100644
    const hasPrimitives = scene.includes('<primitive')
    const result = `${options.types ? `\nimport * as THREE from 'three'` : ''}
          import React from 'react'${hasPrimitives ? '\nimport { useGraph } from "@react-three/fiber"' : ''}
+@@ -522,7 +519,6 @@ ${parseExtras(gltf.parser.json.asset && gltf.parser.json.asset.extras)}*/`
+ 
+ useGLTF.preload('${url}')`
+ 
+-  if (!options.console) console.log(header)
+   const output = header + '\n' + result
+   const formatted = prettier.format(output, {
+     semi: false,

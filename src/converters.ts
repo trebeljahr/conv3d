@@ -8,6 +8,8 @@ import ora from "ora";
 import path from "path";
 import { globalOptions } from "./program.js";
 import { isDirectory } from "./utils.js";
+import { lstat, lstatSync } from "fs";
+import { askForFileOverwrite } from "./prompts.js";
 
 const { green, red, yellow } = chalk;
 const { gltfToGlb } = gltfPipeline;
@@ -61,11 +63,28 @@ export async function convertModels(
   for (const filePath of filesToConvert) {
     const oldExtension = path.extname(filePath);
     const file = path.basename(filePath);
-    const outputPath = path.resolve(
-      outputDir,
-      newExtension,
-      file.replace(oldExtension, "." + newExtension)
-    );
+    const newFile = file.replace(oldExtension, "." + newExtension);
+
+    const outputPath = path.resolve(outputDir, newExtension, newFile);
+
+    const fileAlreadyExists = lstatSync(outputPath).isFile();
+
+    if (fileAlreadyExists && !globalOptions.forceOverwrite) {
+      spinner.stopAndPersist({ symbol: "ℹ️" });
+      console.info(
+        yellow(`⚠️ ${newFile} already exists in the output directory`)
+      );
+      const overwrite = await askForFileOverwrite(outputPath);
+      if (!overwrite) {
+        console.info(yellow(`⚠️ Skipping ${newFile}`));
+        index += 1;
+
+        spinner.start();
+
+        continue;
+      }
+      spinner.start();
+    }
 
     const inputPath = path.resolve(inputDir, filePath);
 
