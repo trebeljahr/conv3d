@@ -1,11 +1,11 @@
 import { green, red, yellow } from "chalk";
 import { exec as execSync } from "child_process";
-import { readdir } from "fs/promises";
+import { readdir, rm } from "fs/promises";
 import ora from "ora";
 import path from "path";
 import { exit } from "process";
 import { promisify } from "util";
-import { handleSigint } from "./utils";
+import { handleSigint, isDirectory } from "./utils";
 import { globalOptions } from "./program";
 
 const exec = promisify(execSync);
@@ -36,7 +36,9 @@ export async function convertModels(
   outputDir: string
 ) {
   if (filesToConvert.length === 0) {
-    console.info(yellow(`⚠️ No ${format} models found in the input directory`));
+    console.info(
+      yellow(`⚠️ No ${format} models found in the input directory, skipping...`)
+    );
     return { converted: [], errors: [] };
   }
 
@@ -53,6 +55,7 @@ export async function convertModels(
   const errors = [];
   try {
     const converter = converters[format];
+    const total = filesToConvert.length;
 
     for (const filePath of filesToConvert) {
       const oldExtension = path.extname(filePath);
@@ -65,12 +68,12 @@ export async function convertModels(
 
       const inputPath = path.resolve(inputDir, filePath);
 
-      console.debug({ inputPath, outputPath });
-
       await converter(inputPath, outputPath);
-      converted[index++] = outputPath;
+      converted.push(outputPath);
+      const now = converted.length;
+      spinner.text = `Converting ${format} files to ${newFormat}... (${now}/${total}) ${file}`;
 
-      spinner.text = `Converting ${format} files to ${newFormat}... (${index}/${filesToConvert.length})`;
+      index += 1;
     }
 
     spinner.stop();
@@ -101,7 +104,31 @@ export async function convertSingleObj(inputPath: string, outputPath: string) {
 }
 
 export async function convertSingleFbx(inputPath: string, outputPath: string) {
-  await exec(`FBX2glTF-darwin-x64 -b -i "${inputPath}" -o "${outputPath}"`);
+  const inputDir = path.dirname(inputPath);
+  const pathsBefore = await readdir(inputDir);
+  const fbmFoldersBefore = pathsBefore.filter(
+    (file) => file.endsWith(".fbm") && isDirectory(path.resolve(inputDir, file))
+  );
+
+  console.debug({ fbmFoldersBefore });
+
+  await exec(
+    `FBX2glTF-darwin-x64 -b -i "${inputPath}" -o "${outputPath}" --khr-materials-unlit`
+  );
+
+  const paths = await readdir(inputDir);
+  const newFbmFolders = paths.filter(
+    (file) =>
+      file.endsWith(".fbm") &&
+      isDirectory(path.resolve(inputDir, file)) &&
+      !fbmFoldersBefore.includes(file)
+  );
+  console.debug({ newFbmFolders });
+
+  for (const folder of newFbmFolders) {
+    const folderPath = path.resolve(inputDir, folder);
+    await rm(folderPath, { recursive: true, force: true });
+  }
 }
 
 export async function convertSingleGltf(inputPath: string, outputPath: string) {

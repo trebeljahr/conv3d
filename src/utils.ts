@@ -12,39 +12,18 @@ export const home = homedir();
 export const isDirectory = (strPath: string) =>
   lstatSync(strPath) ? lstatSync(strPath).isDirectory() : false;
 
-export async function setupCleanup(options: Record<string, any>) {
-  const pathsBefore = await readdir(options.inputDir);
-  const fbmFoldersBefore = pathsBefore.filter(
-    (file) =>
-      file.endsWith(".fbm") && isDirectory(path.resolve(options.inputDir, file))
-  );
-  return async () => {
-    const paths = await readdir(options.inputDir);
-    const fbmFolders = paths.filter(
-      (file) =>
-        file.endsWith(".fbm") &&
-        isDirectory(path.resolve(options.inputDir, file)) &&
-        !fbmFoldersBefore.includes(file)
-    );
-    for (const folder of fbmFolders) {
-      const folderPath = path.resolve(options.inputDir, folder);
-      await rm(folderPath, { recursive: true, force: true });
-    }
+export async function moveImprovedGlbFiles(options: Record<string, any>) {
+  const tsxPath = path.resolve(options.outputDir, "tsx");
+  const improvedGlbPath = path.resolve(options.outputDir, "glb-for-web");
 
-    const tsxPath = path.resolve(options.outputDir, "tsx");
-    const improvedGlbPath = path.resolve(options.outputDir, "glb-for-web");
+  const results = await readdir(tsxPath);
+  const improvedGlbFiles = results.filter((result) => result.endsWith(".glb"));
 
-    const results = await readdir(tsxPath);
-    const improvedGlbFiles = results.filter((result) =>
-      result.endsWith(".glb")
-    );
-
-    for (const result of improvedGlbFiles) {
-      const oldPath = path.resolve(tsxPath, result);
-      const newPath = path.resolve(improvedGlbPath, result);
-      await rename(oldPath, newPath);
-    }
-  };
+  for (const result of improvedGlbFiles) {
+    const oldPath = path.resolve(tsxPath, result);
+    const newPath = path.resolve(improvedGlbPath, result);
+    await rename(oldPath, newPath);
+  }
 }
 
 export async function setupOutputDirs(

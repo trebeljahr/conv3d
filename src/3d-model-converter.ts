@@ -18,7 +18,7 @@ import {
   handleSigint,
   home,
   isDirectory,
-  setupCleanup,
+  moveImprovedGlbFiles,
   setupOutputDirs,
 } from "./utils";
 
@@ -85,11 +85,9 @@ program
         path.basename(options.inputPath).replace(extension, ".glb")
       );
 
-      const cleanup = await setupCleanup(options);
       if (inferredModelType === "GLTF") {
         await convertSingleGltf(options.inputPath, outputPath);
       }
-
       if (inferredModelType === "FBX") {
         await convertSingleFbx(options.inputPath, outputPath);
       }
@@ -101,7 +99,7 @@ program
         await convertModels("GLB", [outputPath], inputDir, outputDir);
       else console.info("ℹ️ Didn't add .tsx file");
 
-      await cleanup();
+      await moveImprovedGlbFiles(options);
     } catch (error) {
       handleSigint(error);
 
@@ -205,8 +203,6 @@ program
 
       await setupOutputDirs(options, numExpected);
 
-      const cleanup = await setupCleanup(options);
-
       const allConverted = [];
       for (const [key, { files }] of formats) {
         if (shouldConvert(key)) {
@@ -229,7 +225,7 @@ program
         );
       else console.info("ℹ️ Didn't add .tsx files");
 
-      await cleanup();
+      await moveImprovedGlbFiles(options);
 
       const inputDir = `${options.inputDir.replace(home, "~")}`;
       const outputDir = `${options.outputDir.replace(home, "~")}`;
@@ -304,7 +300,6 @@ program
       const options = { ...globalOptions, ...subOptions, tsx: true };
 
       await setupOutputDirs(options, glbFiles.length);
-      const cleanup = await setupCleanup(options);
 
       await convertModels(
         "GLB",
@@ -312,7 +307,7 @@ program
         subOptions.inputDir,
         subOptions.outputDir
       );
-      await cleanup();
+      await moveImprovedGlbFiles(options);
     } catch (error) {
       handleSigint(error);
 
