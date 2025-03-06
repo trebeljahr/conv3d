@@ -43,20 +43,38 @@ It is heavily reliant on a few others to make the command prompt beautiful and n
 npm install -g conv3d
 ```
 
-## Example Usage:
+
+## Interactive Conversion Process
+
+The convert command will try it's best to guide you through the following steps:
+
+1. Selecting the type of 3D models to convert (GLTF, FBX, or OBJ, or ALL) (unless you did so in the command line already).
+2. Show you which output it is going to create
+3. Ask you for a confirmation to proceed
+4. Create the necessary output directories
+5. Convert the 3D model files to GLB format
+6. Generate React components with gltfjsx (if you specified that)
+7. Optimize the GLB files for web use (if you specified that)
 
 
+## Example Usages:
 
-The script tells you where it will write information to and ask you if you want to proceed. It won't overwrite any files, instead asking you to specify what to do with them. 
+The script tells you where it will write information to and ask you if you want to proceed. It won't overwrite any files, instead asking you to specify what to do with them, unless you give the overwrite flag. 
 
-There are 3 modes for the CLI: bulk, single, and tsx-gen. 
+There are 3 modes for the CLI: bulk, single, and tsx-gen. Every command has a --help option to learn more!
 
-### Single Mode
 
-You can show help for single mode like this:
+You can show help for single mode like this for example.
 ```
 conv3d single --help
 ```
+
+You can also get an overview of the options like this:
+```
+conv3d --help
+```
+
+### Single Mode Examples
 
 With generating tsx file generation:
 ```
@@ -70,40 +88,27 @@ conv3d single -i ./path/to/3d-model.obj --no-tsx
 
 If you don't specify a flag for tsx output the program will ask you. 
 
-### Bulk
+### Bulk Mode Examples
 
-You can show help for bulk mode like this: 
+Minimum. It will ask you for the rest. 
+```
+conv3d bulk -i ./path/to/3d-models-folder/ 
+```
+
+Recursively convert all FBX models in a directory, with optimized GLB files and TSX generation:
 
 ```
-conv3d bulk --help
-```
-
-Recursively convert all FBX models in a directory:
-
-```
-conv3d bulk -i models/fbx/mixamo/characters/ --recursive -m FBX 
+conv3d bulk -i models/fbx/mixamo/characters/ --recursive -m FBX --tsx --optimize
 ```
 
 ### TSX Generation
 
-You can show help for tsx-gen mode like this: 
+Minimum. It will ask you for the rest. 
 ```
-conv3d tsx-gen --help
-```
-
-```
-conv3d tsx-gen -i ./path/to/3d-models-folder/ --recursive
+conv3d tsx-gen -i ./path/to/3d-models-folder/ 
 ```
 
-## Interactive Conversion Process
-
-The convert command will try it's best to guide you through the following steps:
-
-1. Selecting the type of 3D models to convert (GLTF, FBX, or OBJ, or ALL) (unless you did so in the command line already).
-2. The tool will then:
-   - Show you which output it is going to create
-   - Ask you for a confirmation to proceed
-   - Create the necessary output directories
-   - Convert the 3D model files to GLB format
-   - Generate React components with gltfjsx (if you specified that)
-   - Optimize the GLB files for web use (if you specified that)
+Recursive example, with overwriting existing files without asking
+```
+conv3d tsx-gen -i ./path/to/3d-models-folder/ --recursive --forceOverwrite
+```
