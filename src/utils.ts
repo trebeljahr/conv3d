@@ -55,26 +55,9 @@ export async function setupOutputDirs(
 
     console.info(green("✓ Output directories created"));
   } catch (error) {
-    handleSigint(error);
-
     console.error(red("🚨 Error creating directories:"), error);
     throw error;
   }
 }
 
 export const outDirPrefix = "_convert-3d-for-web";
-
-export const handleSigint = (error: unknown, spinner?: ora.Ora) => {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "signal" in error &&
-    error.signal === "SIGINT"
-  ) {
-    spinner?.stopAndPersist({
-      symbol: "⏸️",
-    });
-    console.error(red(`🚨 Cancelled, shutting down...`));
-    exit(0);
-  }
-};

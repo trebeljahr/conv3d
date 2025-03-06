@@ -14,17 +14,16 @@ import {
 } from "./converters";
 import { GlobalOptions, globalOptions, program } from "./program";
 import { promptForModelType, promptForTsxOutput } from "./prompts";
-import {
-  handleSigint,
-  home,
-  isDirectory,
-  outDirPrefix,
-  setupOutputDirs,
-} from "./utils";
+import { home, isDirectory, outDirPrefix, setupOutputDirs } from "./utils";
 
 console.info(
   cyan(textSync("Convert 3D for WEB", { horizontalLayout: "full" }))
 );
+
+process.on("SIGINT", () => {
+  console.log(red("\n🚨 Received SIGINT. Exiting program..."));
+  process.exit(0);
+});
 
 type SubOptionsConvertSingle = {
   inputPath: string;
@@ -99,8 +98,6 @@ program
         await convertModels("GLB", [outputPath], inputDir, outputDir);
       else console.info("ℹ️ Didn't add .tsx file");
     } catch (error) {
-      handleSigint(error);
-
       const errorMsg = error instanceof Error ? error.message : error;
       console.error(red("🚨 Conversion process failed!"));
       console.error(red("🚨 " + errorMsg));
@@ -234,8 +231,6 @@ program
       );
       console.info(`ℹ️ Output saved to "${outputDir}"`);
     } catch (error) {
-      handleSigint(error);
-
       const errorMsg = error instanceof Error ? error.message : error;
       console.error(red("🚨 Conversion process failed!"));
       console.error(red("🚨 " + errorMsg));
@@ -306,8 +301,6 @@ program
         subOptions.outputDir
       );
     } catch (error) {
-      handleSigint(error);
-
       const errorMsg = error instanceof Error ? error.message : error;
       console.error(red("🚨 TSX generation failed!"));
       console.error(red("🚨 " + errorMsg));

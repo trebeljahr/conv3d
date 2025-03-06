@@ -4,7 +4,7 @@ import { readdir, rename, rm } from "fs/promises";
 import ora from "ora";
 import path from "path";
 import { promisify } from "util";
-import { handleSigint, isDirectory } from "./utils";
+import { isDirectory } from "./utils";
 
 const exec = promisify(execSync);
 
@@ -66,8 +66,6 @@ export async function convertModels(
     try {
       await converter(inputPath, outputPath);
     } catch (error) {
-      handleSigint(error, spinner);
-
       errors.push(error);
       spinner.fail(`${format} conversion failed`);
       console.error(red(`🚨 Error converting ${filesToConvert[index]}`));
