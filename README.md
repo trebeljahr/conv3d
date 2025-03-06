@@ -1,4 +1,6 @@
 
+![banner image](image.png)
+
 # 3D Model Converter
 
 An interactive command-line tool for converting 3D models (GLTF, FBX, OBJ) to GLB format and generating React components for use with react-three-fiber.
@@ -17,10 +19,6 @@ npm install -g conv3d
 ```
 
 ## Example Usage:
-
-
-
-
 
 ```
                                      .d8888b.  8888888b.
@@ -51,6 +49,7 @@ Commands:
   tsx-gen [options]  Generate .tsx files for 3D models and optimize .glb for web
   help [command]     display help for command
 ```
+
 ### Single
 
 with tsx files:
