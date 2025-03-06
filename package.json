@@ -15,6 +15,7 @@
   "homepage": "https://github.com/trebeljahr/conv3d#readme",
   "scripts": {
     "build": "tsc",
+    "postinstall": "patch-package",
     "conv3d": "npm run build && node ./dist/conv3d.js",
     "install-local": "npm run build && npm install -g .",
     "pub": "npm run build && npm publish --access public"
@@ -42,6 +43,7 @@
     "lolcatjs": "^2.4.3",
     "obj2gltf": "^3.1.6",
     "ora": "^8.2.0",
+    "patch-package": "^8.0.0",
     "read-package-up": "^11.0.0"
   },
   "devDependencies": {

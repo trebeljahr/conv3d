@@ -2,8 +2,6 @@
 import chalk from "chalk";
 import figlet from "figlet";
 import { fromString } from "lolcatjs";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
 import { program } from "./program.js";
 
 import "./commands/bulk.js";

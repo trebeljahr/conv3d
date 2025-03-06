@@ -170,7 +170,7 @@ export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
   try {
     await gltfjsx(inputPath, outputPath, {
       transform: globalOptions.optimize,
-      header: "",
+      debug: false,
       types: true,
     });
   } catch (error) {
