@@ -1,6 +1,6 @@
 import { green, red } from "chalk";
 import { lstatSync } from "fs";
-import { mkdir, readdir, rename, rm } from "fs/promises";
+import { mkdir } from "fs/promises";
 import { prompt } from "inquirer";
 import ora from "ora";
 import { homedir } from "os";
@@ -61,6 +61,8 @@ export async function setupOutputDirs(
     throw error;
   }
 }
+
+export const outDirPrefix = "_convert-3d-for-web";
 
 export const handleSigint = (error: unknown, spinner?: ora.Ora) => {
   if (

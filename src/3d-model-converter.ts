@@ -14,7 +14,13 @@ import {
 } from "./converters";
 import { GlobalOptions, globalOptions, program } from "./program";
 import { promptForModelType, promptForTsxOutput } from "./prompts";
-import { handleSigint, home, isDirectory, setupOutputDirs } from "./utils";
+import {
+  handleSigint,
+  home,
+  isDirectory,
+  outDirPrefix,
+  setupOutputDirs,
+} from "./utils";
 
 console.info(
   cyan(textSync("Convert 3D for WEB", { horizontalLayout: "full" }))
@@ -64,7 +70,7 @@ program
       subOptions.modelType = inferredModelType;
 
       const inputDir = path.resolve(path.dirname(subOptions.inputPath));
-      const outputDir = path.resolve(inputDir, "_out");
+      const outputDir = path.resolve(inputDir, outDirPrefix);
 
       subOptions.inputDir = inputDir;
       subOptions.outputDir = outputDir;
@@ -141,7 +147,7 @@ program
       }
 
       subOptions.outputDir =
-        subOptions.outputDir || path.resolve(subOptions.inputDir, "_out");
+        subOptions.outputDir || path.resolve(subOptions.inputDir, outDirPrefix);
 
       const files = await readdir(subOptions.inputDir, {
         recursive: subOptions.recursive,
@@ -277,14 +283,16 @@ program
       const files = await readdir(subOptions.inputDir, {
         recursive: subOptions.recursive,
       });
-      const glbFiles = files.filter((file) => file.endsWith(".glb"));
+      const glbFiles = files.filter(
+        (file) => file.endsWith(".glb") && !file.includes(outDirPrefix)
+      );
 
       if (glbFiles.length === 0) {
         console.error(red(`🚨 No .glb models found in the input directory`));
         exit(1);
       }
 
-      subOptions.outputDir = path.resolve(subOptions.inputDir, "_out");
+      subOptions.outputDir = path.resolve(subOptions.inputDir, outDirPrefix);
       subOptions.onlyTsx = true;
 
       const options = { ...globalOptions, ...subOptions, tsx: true };
