@@ -1,4 +1,4 @@
-import { red } from "chalk";
+import chalk from "chalk";
 import path from "path";
 import { exit } from "process";
 import {
@@ -7,10 +7,12 @@ import {
   convertSingleFbx,
   convertSingleGltf,
   convertSingleObj,
-} from "../converters";
-import { globalOptions, program } from "../program";
-import { promptForTsxOutput } from "../prompts";
-import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils";
+} from "../converters.js";
+import { globalOptions, program } from "../program.js";
+import { promptForTsxOutput } from "../prompts.js";
+import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
+
+const { red } = chalk;
 
 type SubOptionsConvertSingle = {
   inputPath: string;

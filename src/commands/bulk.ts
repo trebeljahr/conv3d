@@ -1,4 +1,4 @@
-import { green, red } from "chalk";
+import chalk from "chalk";
 import { readdir } from "fs/promises";
 import path from "path";
 import { exit } from "process";
@@ -7,10 +7,12 @@ import {
   converters,
   convertModels,
   InputFormats,
-} from "../converters";
-import { GlobalOptions, globalOptions, program } from "../program";
-import { promptForModelType, promptForTsxOutput } from "../prompts";
-import { home, isDirectory, outDirPrefix, setupOutputDirs } from "../utils";
+} from "../converters.js";
+import { GlobalOptions, globalOptions, program } from "../program.js";
+import { promptForModelType, promptForTsxOutput } from "../prompts.js";
+import { home, isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
+
+const { green, red } = chalk;
 
 type SubOptionsBulkCommand = {
   inputDir: string;

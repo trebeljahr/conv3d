@@ -1,13 +1,16 @@
-import { green, red, yellow } from "chalk";
-import { readdir, readFile, rename, rm, writeFile } from "fs/promises";
-import ora from "ora";
-import path from "path";
-import { isDirectory } from "./utils";
-import { globalOptions } from "./program";
+import chalk from "chalk";
 import convertFbxToGlb from "fbx2gltf";
-import { gltfToGlb } from "gltf-pipeline";
+import { readdir, readFile, rename, rm, writeFile } from "fs/promises";
+import gltfPipeline from "gltf-pipeline";
 import gltfjsx from "gltfjsx/src/gltfjsx.js";
 import obj2gltf from "obj2gltf";
+import ora from "ora";
+import path from "path";
+import { globalOptions } from "./program.js";
+import { isDirectory } from "./utils.js";
+
+const { green, red, yellow } = chalk;
+const { gltfToGlb } = gltfPipeline;
 
 export type InputFormats = keyof typeof converters;
 

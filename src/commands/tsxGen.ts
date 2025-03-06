@@ -1,10 +1,12 @@
-import { red } from "chalk";
+import chalk from "chalk";
 import { readdir } from "fs/promises";
 import path from "path";
 import { exit } from "process";
-import { convertModels } from "../converters";
-import { globalOptions, program } from "../program";
-import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils";
+import { convertModels } from "../converters.js";
+import { globalOptions, program } from "../program.js";
+import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
+
+const { red } = chalk;
 
 type SubOptionsTsxGenCommand = {
   inputDir: string;

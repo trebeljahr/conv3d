@@ -1,11 +1,13 @@
-import { green, red } from "chalk";
+import chalk from "chalk";
 import { lstatSync } from "fs";
 import { mkdir } from "fs/promises";
-import { prompt } from "inquirer";
-import ora from "ora";
+import inquirer from "inquirer";
 import { homedir } from "os";
 import path from "path";
 import { exit } from "process";
+
+const { prompt } = inquirer;
+const { green, red } = chalk;
 
 export const home = homedir();
 

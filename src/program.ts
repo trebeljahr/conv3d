@@ -1,15 +1,24 @@
 import { Command } from "commander";
 import { readFileSync } from "fs";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { readPackageUpSync } from "read-package-up";
 
 const program = new Command();
 
-//Reach the package.json file
-export function getPackageJson() {
-  const path = `${process.cwd()}/package.json`;
-  const packageData = JSON.parse(readFileSync(path, "utf8"));
-  return packageData;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const packageData = readPackageUpSync({ cwd: __dirname, normalize: false });
+if (!packageData) {
+  throw new Error("No package.json found");
 }
-const { name, version, description } = getPackageJson();
+
+const { name, version, description } = packageData.packageJson;
+
+if (!name || !version || !description) {
+  throw new Error("Missing name, version or description in package.json");
+}
 
 program
   .name(name)

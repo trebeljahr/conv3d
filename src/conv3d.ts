@@ -1,12 +1,17 @@
 #!/usr/bin/env node
-import { red } from "chalk";
-import { textSync } from "figlet";
+import chalk from "chalk";
+import figlet from "figlet";
 import { fromString } from "lolcatjs";
-import { program } from "./program";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { program } from "./program.js";
 
-import "./commands/single";
-import "./commands/bulk";
-import "./commands/tsxGen";
+import "./commands/bulk.js";
+import "./commands/single.js";
+import "./commands/tsxGen.js";
+
+const { textSync } = figlet;
+const { red } = chalk;
 
 const text = "conv3D";
 const asciiBanner = textSync(text, {

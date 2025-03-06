@@ -14,7 +14,9 @@
   },
   "homepage": "https://github.com/trebeljahr/conv3d#readme",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "conv3d": "npm run build && node ./dist/conv3d.js",
+    "install-local": "npm run build && npm install -g ."
   },
   "keywords": [
     "3d",
@@ -27,23 +29,25 @@
   ],
   "author": "Rico Trebeljahr",
   "license": "MIT",
+  "type": "module",
   "dependencies": {
-    "chalk": "^4.1.2",
-    "commander": "^9.4.0",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
     "fbx2gltf": "^0.9.7-p1",
     "figlet": "^1.5.2",
     "gltf-pipeline": "^4.1.0",
     "gltfjsx": "^6.5.3",
-    "inquirer": "^8.2.4",
+    "inquirer": "^12.4.2",
     "lolcatjs": "^2.4.3",
     "obj2gltf": "^3.1.6",
-    "ora": "^5.4.1"
+    "ora": "^8.2.0",
+    "read-package-up": "^11.0.0"
   },
   "devDependencies": {
     "@types/figlet": "^1.5.5",
     "@types/inquirer": "^8.2.5",
     "@types/lolcatjs": "^2.4.1",
     "@types/node": "^18.11.9",
-    "typescript": "^4.8.4"
+    "typescript": "^5.8.2"
   }
 }

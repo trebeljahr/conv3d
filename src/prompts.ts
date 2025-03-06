@@ -1,6 +1,9 @@
-import { yellow } from "chalk";
-import { prompt } from "inquirer";
+import chalk from "chalk";
+import inquirer from "inquirer";
 import { exit } from "process";
+
+const { prompt } = inquirer;
+const { yellow } = chalk;
 
 export async function promptForModelType({
   numGLTF,
