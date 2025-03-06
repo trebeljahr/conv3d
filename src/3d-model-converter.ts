@@ -15,10 +15,17 @@ import {
 import { GlobalOptions, globalOptions, program } from "./program";
 import { promptForModelType, promptForTsxOutput } from "./prompts";
 import { home, isDirectory, outDirPrefix, setupOutputDirs } from "./utils";
+import { fromString } from "lolcatjs";
 
-console.info(
-  cyan(textSync("Convert 3D for WEB", { horizontalLayout: "full" }))
-);
+const text = "conv3D";
+const asciiBanner = textSync(text, {
+  horizontalLayout: "full",
+  font: "Colossal",
+  width: process.stdout.columns,
+  whitespaceBreak: true,
+});
+
+fromString(asciiBanner);
 
 process.on("SIGINT", () => {
   console.log(red("\n🚨 Received SIGINT. Exiting program..."));

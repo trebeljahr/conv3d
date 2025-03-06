@@ -67,7 +67,6 @@ export async function convertModels(
       await converter(inputPath, outputPath);
     } catch (error) {
       errors.push(error);
-      spinner.fail(`${format} conversion failed`);
       console.error(red(`🚨 Error converting ${filesToConvert[index]}`));
       console.info("ℹ️ Continuing with the rest of the models...");
     }

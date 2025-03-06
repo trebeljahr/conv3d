@@ -1,15 +1,22 @@
 {
-  "name": "3d-model-converter",
+  "name": "conv3d",
   "version": "1.0.0",
-  "description": "An interactive CLI tool for converting 3D models and generating React components",
-  "main": "dist/index.js",
+  "description": "An interactive CLI tool for converting 3D models to GLB format and outputting React components to use with r3f. Supports FBX, OBJ, and glTF input formats.",
+  "main": "dist/3d-model-converter.js",
   "bin": {
-    "3d-converter": "./dist/index.js"
+    "conv3d": "./dist/3d-model-converter.js"
   },
+  "module": "dist/3d-model-converter.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pmndrs/gltfjsx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pmndrs/gltfjsx/issues"
+  },
+  "homepage": "https://github.com/pmndrs/gltfjsx#readme",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "build": "tsc"
   },
   "keywords": [
     "3d",
@@ -20,7 +27,7 @@
     "react-three-fiber",
     "cli"
   ],
-  "author": "",
+  "author": "Rico Trebeljahr",
   "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.2",
@@ -30,14 +37,15 @@
     "gltf-pipeline": "^4.1.0",
     "gltfjsx": "^6.5.3",
     "inquirer": "^8.2.4",
+    "lolcatjs": "^2.4.3",
     "obj2gltf": "^3.1.6",
     "ora": "^5.4.1"
   },
   "devDependencies": {
     "@types/figlet": "^1.5.5",
     "@types/inquirer": "^8.2.5",
+    "@types/lolcatjs": "^2.4.1",
     "@types/node": "^18.11.9",
-    "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
   }
 }
