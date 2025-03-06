@@ -1,18 +1,29 @@
 import chalk from "chalk";
-import { lstatSync } from "fs";
-import { mkdir } from "fs/promises";
+import { mkdir, lstat } from "fs/promises";
 import inquirer from "inquirer";
 import { homedir } from "os";
 import path from "path";
 import { exit } from "process";
+import { access, constants } from "fs/promises";
+
+export async function checkFileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath, constants.F_OK);
+    return true; // File exists
+  } catch {
+    return false; // File doesn't exist or can't be accessed
+  }
+}
 
 const { prompt } = inquirer;
 const { green, red } = chalk;
 
 export const home = homedir();
 
-export const isDirectory = (strPath: string) =>
-  lstatSync(strPath) ? lstatSync(strPath).isDirectory() : false;
+export const isDirectory = async (strPath: string) =>
+  (await checkFileExists(strPath))
+    ? (await lstat(strPath)).isDirectory()
+    : false;
 
 export async function setupOutputDirs(
   options: Record<string, any>,

@@ -7,9 +7,8 @@ import obj2gltf from "obj2gltf";
 import ora from "ora";
 import path from "path";
 import { globalOptions } from "./program.js";
-import { isDirectory } from "./utils.js";
-import { lstat, lstatSync } from "fs";
 import { askForFileOverwrite } from "./prompts.js";
+import { checkFileExists, isDirectory } from "./utils.js";
 
 const { green, red, yellow } = chalk;
 const { gltfToGlb } = gltfPipeline;
@@ -67,7 +66,7 @@ export async function convertModels(
 
     const outputPath = path.resolve(outputDir, newExtension, newFile);
 
-    const fileAlreadyExists = lstatSync(outputPath).isFile();
+    const fileAlreadyExists = await checkFileExists(outputPath);
 
     if (fileAlreadyExists && !globalOptions.forceOverwrite) {
       spinner.stopAndPersist({ symbol: "ℹ️" });
@@ -131,17 +130,12 @@ export async function convertSingleObj(inputPath: string, outputPath: string) {
 export async function convertSingleFbx(inputPath: string, outputPath: string) {
   const inputDir = path.dirname(inputPath);
   const pathsBefore = await readdir(inputDir);
-  const fbmFoldersBefore = pathsBefore.filter(
-    (file) => file.endsWith(".fbm") && isDirectory(path.resolve(inputDir, file))
-  );
+  const fbmFoldersBefore = pathsBefore.filter((file) => file.endsWith(".fbm"));
 
   const cleanup = async () => {
     const paths = await readdir(inputDir);
     const newFbmFolders = paths.filter(
-      (file) =>
-        file.endsWith(".fbm") &&
-        isDirectory(path.resolve(inputDir, file)) &&
-        !fbmFoldersBefore.includes(file)
+      (file) => file.endsWith(".fbm") && !fbmFoldersBefore.includes(file)
     );
 
     for (const folder of newFbmFolders) {
