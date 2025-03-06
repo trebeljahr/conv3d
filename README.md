@@ -43,7 +43,6 @@ It is heavily reliant on a few others to make the command prompt beautiful and n
 npm install -g conv3d
 ```
 
-
 ## Interactive Conversion Process
 
 The convert command will try it's best to guide you through the following steps:
@@ -57,7 +56,37 @@ The convert command will try it's best to guide you through the following steps:
 7. Optimize the GLB files for web use (if you specified that)
 
 
-## Example Usages:
+## Example Usage
+
+```
+                                     .d8888b.  8888888b.
+                                    d88P  Y88b 888  "Y88b
+                                         .d88P 888    888
+ .d8888b  .d88b.  88888b.  888  888     8888"  888    888
+d88P"    d88""88b 888 "88b 888  888      "Y8b. 888    888
+888      888  888 888  888 Y88  88P 888    888 888    888
+Y88b.    Y88..88P 888  888  Y8bd8P  Y88b  d88P 888  .d88P
+ "Y8888P  "Y88P"  888  888   Y88P    "Y8888P"  8888888P"
+
+Usage: conv3d [command] [options]
+
+An interactive CLI tool for converting 3D models to GLB format and outputting React components to use with r3f. Supports FBX, OBJ, and glTF input formats.
+
+Options:
+  -V, --version      output the version number
+  --tsx              Create .tsx files. Per default it will ask for user input.
+  --no-tsx           Don't create .tsx files
+  --optimize         Create optimized .glb files. Per default it will ask for user input.
+  --no-optimize      Don't create optimized output .glb files
+  --forceOverwrite   Overwrite existing files without asking
+  -h, --help         display help for command
+
+Commands:
+  bulk [options]     Convert all 3D models from a directory
+  single [options]   Convert a single 3D model from directory
+  tsx-gen [options]  Generate .tsx files for 3D models and optimize .glb for web
+  help [command]     display help for command
+```
 
 The script tells you where it will write information to and ask you if you want to proceed. It won't overwrite any files, instead asking you to specify what to do with them, unless you give the overwrite flag. 
 
