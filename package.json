@@ -2,11 +2,9 @@
   "name": "conv3d",
   "version": "1.0.0",
   "description": "An interactive CLI tool for converting 3D models to GLB format and outputting React components to use with r3f. Supports FBX, OBJ, and glTF input formats.",
-  "main": "dist/3d-model-converter.js",
   "bin": {
-    "conv3d": "./dist/3d-model-converter.js"
+    "conv3d": "./dist/conv3d.js"
   },
-  "module": "dist/3d-model-converter.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trebeljahr/conv3d.git"

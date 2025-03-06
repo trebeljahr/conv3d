@@ -5,6 +5,7 @@ import ora from "ora";
 import path from "path";
 import { promisify } from "util";
 import { isDirectory } from "./utils";
+import { globalOptions } from "./program";
 
 const exec = promisify(execSync);
 
@@ -151,7 +152,11 @@ export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
   };
 
   try {
-    await exec(`gltfjsx "${inputPath}" -o "${outputPath}" --types --transform`);
+    await exec(
+      `gltfjsx "${inputPath}" -o "${outputPath}" --types ${
+        globalOptions.optimize ? "--transform" : ""
+      }`
+    );
   } catch (error) {
     await cleanup();
     throw error;
