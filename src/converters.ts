@@ -40,7 +40,9 @@ export async function convertModels(
   }
 
   console.info(
-    `ℹ️ Found ${filesToConvert.length} ${format} models to convert from input dir: ${inputDir}`
+    `ℹ️ Found ${filesToConvert.length} ${format} model${
+      filesToConvert.length > 1 ? "s" : ""
+    } to convert from input dir: ${inputDir}`
   );
 
   const newFormat = getNew(format);
@@ -66,21 +68,25 @@ export async function convertModels(
 
     try {
       await converter(inputPath, outputPath);
+
+      converted.push(outputPath);
+      const now = converted.length;
+
+      spinner.text = `Converting ${format} files to ${newFormat}... (${now}/${total}) ${file}`;
+
+      index += 1;
     } catch (error) {
       errors.push(error);
-      console.error(red(`🚨 Error converting ${filesToConvert[index]}`));
+
+      const errorMessage = error instanceof Error ? error.message : error;
+      console.error(red(`\n🚨 Error converting ${filesToConvert[index]}`));
+      console.error(red(errorMessage));
       console.info("ℹ️ Continuing with the rest of the models...");
     }
-
-    converted.push(outputPath);
-    const now = converted.length;
-    spinner.text = `Converting ${format} files to ${newFormat}... (${now}/${total}) ${file}`;
-
-    index += 1;
   }
 
-  spinner.stop();
-  console.info(green(`✓ ${format} conversion completed`));
+  spinner.stopAndPersist({ symbol: "🌻" });
+  console.info(green(`✨ ${format} conversion completed`));
 
   return { converted, errors };
 }
@@ -138,7 +144,8 @@ export async function convertSingleGltf(inputPath: string, outputPath: string) {
 
 export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
   const cleanup = async () => {
-    const inputDir = path.dirname(inputPath);
+    if (!globalOptions.optimize) return;
+
     const outputDir = path.dirname(outputPath);
 
     const outputDirImprovedGLB = path.resolve(outputDir, "..", "glb-for-web");

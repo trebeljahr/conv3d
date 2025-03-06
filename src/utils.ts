@@ -21,16 +21,28 @@ export async function setupOutputDirs(
     const glbPath = path.resolve(options.outputDir, "glb");
     const optPath = path.resolve(options.outputDir, "glb-for-web");
 
-    console.info(`ℹ️ Expect to write ${numFilesToWrite} results to:`);
     if (!options.onlyTsx) {
-      console.info(`ℹ️ For .glb files: ${glbPath.replace(home, "~")}`);
+      console.info(
+        `ℹ️ Will write ${numFilesToWrite} .glb file${
+          numFilesToWrite > 1 ? "s" : ""
+        } to ${glbPath.replace(home, "~")}`
+      );
     }
 
     if (options.tsx) {
-      console.info(`ℹ️ For .tsx files: ${tsxPath.replace(home, "~")}`);
       console.info(
-        `ℹ️ For optimized .glb files: ${optPath.replace(home, "~")}`
+        `ℹ️ Will write ${numFilesToWrite} .tsx file${
+          numFilesToWrite > 1 ? "s" : ""
+        } to ${tsxPath.replace(home, "~")}`
       );
+      if (options.optimize) {
+        console.info(
+          `ℹ️ Will write ${numFilesToWrite} .glb file${
+            numFilesToWrite > 1 ? "s" : ""
+          } to ${optPath.replace(home, "~")}`
+        );
+        console.info(`ℹ️ These will be optimized and much smaller!`);
+      }
     }
 
     const { confirmed } = await prompt([
@@ -53,7 +65,7 @@ export async function setupOutputDirs(
       await mkdir(optPath, { recursive: true });
     }
 
-    console.info(green("✓ Output directories created"));
+    console.info(green("✅ Output directories created"));
   } catch (error) {
     console.error(red("🚨 Error creating directories:"), error);
     throw error;

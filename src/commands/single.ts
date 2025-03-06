@@ -71,6 +71,7 @@ program
         path.basename(options.inputPath).replace(extension, ".glb")
       );
 
+      console.info("ℹ️ Generating .glb files...");
       if (inferredModelType === "GLTF") {
         await convertSingleGltf(options.inputPath, outputPath);
       }
@@ -81,9 +82,10 @@ program
         await convertSingleObj(options.inputPath, outputPath);
       }
 
-      if (options.tsx)
+      if (options.tsx) {
+        console.log("ℹ️ Generating .tsx files...");
         await convertModels("GLB", [outputPath], inputDir, outputDir);
-      else console.info("ℹ️ Didn't add .tsx file");
+      } else console.info("ℹ️ Skipped adding .tsx files, like instructed 🫡");
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : error;
       console.error(red("🚨 Conversion process failed!"));

@@ -106,6 +106,7 @@ program
       await setupOutputDirs(options, numExpected);
 
       const allConverted = [];
+      console.info("ℹ️ Generating .glb files...");
       for (const [key, { files }] of formats) {
         if (shouldConvert(key)) {
           const { converted } = await convertModels(
@@ -118,14 +119,15 @@ program
         }
       }
 
-      if (options.tsx)
+      if (options.tsx) {
+        console.log("ℹ️ Generating .tsx files...");
         await convertModels(
           "GLB",
           allConverted,
           options.inputDir,
           options.outputDir
         );
-      else console.info("ℹ️ Didn't add .tsx files");
+      } else console.info("ℹ️ Skipped adding .tsx files, like instructed 🫡");
 
       const inputDir = `${options.inputDir.replace(home, "~")}`;
       const outputDir = `${options.outputDir.replace(home, "~")}`;
@@ -133,7 +135,7 @@ program
       const numTotal = allConverted.length;
       console.info(
         green(
-          `✓ Successfully converted ${numTotal}/${numExpected} models from "${inputDir}"`
+          `✅ Successfully converted ${numTotal}/${numExpected} models from "${inputDir}"`
         )
       );
       console.info(`ℹ️ Output saved to "${outputDir}"`);
