@@ -3,7 +3,6 @@ import { exec as execSync } from "child_process";
 import { readdir, rename, rm } from "fs/promises";
 import ora from "ora";
 import path from "path";
-import { exit } from "process";
 import { promisify } from "util";
 import { handleSigint, isDirectory } from "./utils";
 
@@ -23,9 +22,7 @@ const getNew = (format: InputFormats) => {
   if (format === "FBX") return "GLB";
   if (format === "OBJ") return "GLB";
   if (format === "GLB") return "TSX";
-
-  console.error("🚨 Invalid format");
-  exit(1);
+  return "GLB";
 };
 
 export async function convertModels(
@@ -52,39 +49,40 @@ export async function convertModels(
   let index = 0;
   const converted = [];
   const errors = [];
-  try {
-    const converter = converters[format];
-    const total = filesToConvert.length;
+  const converter = converters[format];
+  const total = filesToConvert.length;
 
-    for (const filePath of filesToConvert) {
-      const oldExtension = path.extname(filePath);
-      const file = path.basename(filePath);
-      const outputPath = path.resolve(
-        outputDir,
-        newExtension,
-        file.replace(oldExtension, "." + newExtension)
-      );
+  for (const filePath of filesToConvert) {
+    const oldExtension = path.extname(filePath);
+    const file = path.basename(filePath);
+    const outputPath = path.resolve(
+      outputDir,
+      newExtension,
+      file.replace(oldExtension, "." + newExtension)
+    );
 
-      const inputPath = path.resolve(inputDir, filePath);
+    const inputPath = path.resolve(inputDir, filePath);
 
+    try {
       await converter(inputPath, outputPath);
-      converted.push(outputPath);
-      const now = converted.length;
-      spinner.text = `Converting ${format} files to ${newFormat}... (${now}/${total}) ${file}`;
+    } catch (error) {
+      handleSigint(error, spinner);
 
-      index += 1;
+      errors.push(error);
+      spinner.fail(`${format} conversion failed`);
+      console.error(red(`🚨 Error converting ${filesToConvert[index]}`));
+      console.info("ℹ️ Continuing with the rest of the models...");
     }
 
-    spinner.stop();
-    console.info(green(`✓ ${format} conversion completed`));
-  } catch (error) {
-    handleSigint(error, spinner);
+    converted.push(outputPath);
+    const now = converted.length;
+    spinner.text = `Converting ${format} files to ${newFormat}... (${now}/${total}) ${file}`;
 
-    errors.push(error);
-    spinner.fail(`${format} conversion failed`);
-    console.error(red(`🚨 Error converting ${filesToConvert[index]}`));
-    console.info("ℹ️ Continuing with the rest of the models...");
+    index += 1;
   }
+
+  spinner.stop();
+  console.info(green(`✓ ${format} conversion completed`));
 
   return { converted, errors };
 }
