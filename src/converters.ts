@@ -3,7 +3,10 @@ import { exec as execSync } from "child_process";
 import { readdir } from "fs/promises";
 import ora from "ora";
 import path from "path";
+import { exit } from "process";
 import { promisify } from "util";
+import { handleSigint } from "./utils";
+import { globalOptions } from "./program";
 
 const exec = promisify(execSync);
 
@@ -13,63 +16,75 @@ export const converters = {
   GLTF: convertSingleGltf,
   FBX: convertSingleFbx,
   OBJ: convertSingleObj,
+  GLB: prepareGlbForWeb,
+};
+
+const getNew = (format: InputFormats) => {
+  if (format === "GLTF") return "GLB";
+  if (format === "FBX") return "GLB";
+  if (format === "OBJ") return "GLB";
+  if (format === "GLB") return "TSX";
+
+  console.error("🚨 Invalid format");
+  exit(1);
 };
 
 export async function convertModels(
   format: InputFormats,
-  modelFiles: string[],
-  options: Record<string, any>
+  filesToConvert: string[],
+  inputDir: string,
+  outputDir: string
 ) {
-  if (modelFiles.length === 0) {
+  if (filesToConvert.length === 0) {
     console.info(yellow(`⚠️ No ${format} models found in the input directory`));
-    return { numConverted: 0, errors: [] };
+    return { converted: [], errors: [] };
   }
 
   console.info(
-    `ℹ️ Found ${modelFiles.length} ${format} models to convert from input dir: }`
+    `ℹ️ Found ${filesToConvert.length} ${format} models to convert from input dir: }`
   );
 
-  const spinner = ora(`Converting ${format} files to "GLB"...`).start();
+  const newFormat = getNew(format);
+  const newExtension = newFormat.toLowerCase();
+  const spinner = ora(`Converting ${format} files to ${newFormat}...`).start();
 
   let index = 0;
+  const converted = [];
   const errors = [];
   try {
-    for (const file of modelFiles) {
-      await supplyPathsTo(converters[format], file, options);
+    const converter = converters[format];
 
-      spinner.text = `Converting ${format} files to "GLB"... (${++index}/${
-        modelFiles.length
-      })`;
+    for (const filePath of filesToConvert) {
+      const oldExtension = path.extname(filePath);
+      const file = path.basename(filePath);
+      const outputPath = path.resolve(
+        outputDir,
+        newExtension,
+        file.replace(oldExtension, "." + newExtension)
+      );
+
+      const inputPath = path.resolve(inputDir, filePath);
+
+      console.debug({ inputPath, outputPath });
+
+      await converter(inputPath, outputPath);
+      converted[index++] = outputPath;
+
+      spinner.text = `Converting ${format} files to ${newFormat}... (${index}/${filesToConvert.length})`;
     }
 
     spinner.stop();
     console.info(green(`✓ ${format} conversion completed`));
   } catch (error) {
+    handleSigint(error, spinner);
+
     errors.push(error);
     spinner.fail(`${format} conversion failed`);
-    console.error(red(`🚨 Error converting ${modelFiles[index]} of ${format}`));
+    console.error(red(`🚨 Error converting ${filesToConvert[index]}`));
     console.info("ℹ️ Continuing with the rest of the models...");
   }
 
-  return { numConverted: index, errors };
-}
-
-async function supplyPathsTo(
-  convertFn: (i: string, o: string) => Promise<void>,
-  filePath: string,
-  options: Record<string, any>
-) {
-  const newExtension = "glb";
-  const oldExtension = path.extname(filePath);
-  const file = path.basename(filePath);
-  const outputPath = path.resolve(
-    options.outputDir,
-    newExtension,
-    file.replace(oldExtension, "." + newExtension)
-  );
-  const inputPath = path.resolve(options.inputDir, filePath);
-
-  await convertFn(inputPath, outputPath);
+  return { converted, errors };
 }
 
 export async function collectFiles(
@@ -81,47 +96,18 @@ export async function collectFiles(
   return modelFiles;
 }
 
-export async function generateTSX(
-  providedGlbPath: string,
-  providedTsxPath: string
-) {
-  const spinner = ora("Generating TSX components...").start();
-  try {
-    const glbPath = providedGlbPath;
-    const tsxPath = providedTsxPath;
-
-    const files = await readdir(glbPath);
-    const glbFiles = files.filter((file) => file.endsWith(".glb"));
-
-    for (const file of glbFiles) {
-      const outputPath = path.resolve(tsxPath, file.replace(".glb", ".tsx"));
-      const inputPath = path.resolve(glbPath, file);
-      await convertSingleGlb(inputPath, outputPath);
-    }
-
-    spinner.stop();
-    console.info(green("✓ TSX components generated"));
-  } catch (error) {
-    spinner.fail("Failed to generate TSX components");
-    console.error(red("🚨 Error generating TSX:"), error);
-    throw error;
-  }
-}
-
 export async function convertSingleObj(inputPath: string, outputPath: string) {
   await exec(`obj2gltf -b -i "${inputPath}" -o "${outputPath}"`);
 }
 
 export async function convertSingleFbx(inputPath: string, outputPath: string) {
-  await exec(
-    `FBX2glTF-darwin-x64 -b -i "${inputPath}" -o "${outputPath}" --pbr-metallic-roughness`
-  );
+  await exec(`FBX2glTF-darwin-x64 -b -i "${inputPath}" -o "${outputPath}"`);
 }
 
 export async function convertSingleGltf(inputPath: string, outputPath: string) {
   await exec(`gltf-pipeline -b -i "${inputPath}" -o "${outputPath}"`);
 }
 
-export async function convertSingleGlb(inputPath: string, outputPath: string) {
+export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
   await exec(`gltfjsx "${inputPath}" -o "${outputPath}" --types --transform`);
 }

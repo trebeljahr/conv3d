@@ -2,6 +2,7 @@ import { green, red } from "chalk";
 import { lstatSync } from "fs";
 import { mkdir, readdir, rename, rm } from "fs/promises";
 import { prompt } from "inquirer";
+import ora from "ora";
 import { homedir } from "os";
 import path from "path";
 import { exit } from "process";
@@ -56,7 +57,7 @@ export async function setupOutputDirs(
     const optPath = path.resolve(options.outputDir, "glb-for-web");
 
     console.info(`ℹ️ Expect to write ${numFilesToWrite} results to:`);
-    if (options.glb) {
+    if (!options.onlyTsx) {
       console.info(`ℹ️ For .glb files: ${glbPath.replace(home, "~")}`);
     }
 
@@ -89,7 +90,24 @@ export async function setupOutputDirs(
 
     console.info(green("✓ Output directories created"));
   } catch (error) {
+    handleSigint(error);
+
     console.error(red("🚨 Error creating directories:"), error);
     throw error;
   }
 }
+
+export const handleSigint = (error: unknown, spinner?: ora.Ora) => {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "signal" in error &&
+    error.signal === "SIGINT"
+  ) {
+    spinner?.stopAndPersist({
+      symbol: "⏸️",
+    });
+    console.error(red(`🚨 Cancelled, shutting down...`));
+    exit(0);
+  }
+};

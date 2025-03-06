@@ -10,22 +10,34 @@ import {
   convertSingleFbx,
   convertSingleGltf,
   convertSingleObj,
-  generateTSX,
   InputFormats,
 } from "./converters";
 import { GlobalOptions, globalOptions, program } from "./program";
 import { promptForModelType, promptForTsxOutput } from "./prompts";
-import { home, isDirectory, setupCleanup, setupOutputDirs } from "./utils";
+import {
+  handleSigint,
+  home,
+  isDirectory,
+  setupCleanup,
+  setupOutputDirs,
+} from "./utils";
 
 console.info(
   cyan(textSync("Convert 3D for WEB", { horizontalLayout: "full" }))
 );
 
+type SubOptionsConvertSingle = {
+  inputPath: string;
+  modelType: string;
+  inputDir: string;
+  outputDir: string;
+};
+
 program
   .command("convert-single")
   .option("-i, --inputPath <path>", "Add the input path to the model")
   .description("Convert a single 3D model from directory")
-  .action(async (subOptions) => {
+  .action(async (subOptions: SubOptionsConvertSingle) => {
     try {
       console.info("🚀 Starting conversion process...");
 
@@ -41,7 +53,7 @@ program
         exit(1);
       }
 
-      subOptions.tsx =
+      globalOptions.tsx =
         globalOptions.tsx === undefined
           ? await promptForTsxOutput()
           : globalOptions.tsx;
@@ -58,7 +70,7 @@ program
       subOptions.modelType = inferredModelType;
 
       const inputDir = path.resolve(path.dirname(subOptions.inputPath));
-      const outputDir = path.resolve(inputDir, "out");
+      const outputDir = path.resolve(inputDir, "_out");
 
       subOptions.inputDir = inputDir;
       subOptions.outputDir = outputDir;
@@ -85,14 +97,14 @@ program
         await convertSingleObj(options.inputPath, outputPath);
       }
 
-      const glbPath = path.resolve(options.outputDir, "glb");
-      const tsxPath = path.resolve(options.outputDir, "tsx");
-
-      if (options.tsx) await generateTSX(glbPath, tsxPath);
+      if (options.tsx)
+        await convertModels("GLB", [outputPath], inputDir, outputDir);
       else console.info("ℹ️ Didn't add .tsx file");
 
       await cleanup();
     } catch (error) {
+      handleSigint(error);
+
       const errorMsg = error instanceof Error ? error.message : error;
       console.error(red("🚨 Conversion process failed!"));
       console.error(red("🚨 " + errorMsg));
@@ -139,7 +151,7 @@ program
       }
 
       subOptions.outputDir =
-        subOptions.outputDir || path.resolve(subOptions.inputDir, "out");
+        subOptions.outputDir || path.resolve(subOptions.inputDir, "_out");
 
       const files = await readdir(subOptions.inputDir, {
         recursive: subOptions.recursive,
@@ -195,23 +207,26 @@ program
 
       const cleanup = await setupCleanup(options);
 
-      let numTotal = 0;
-
-      formats.forEach(async ([key, { files }]) => {
+      const allConverted = [];
+      for (const [key, { files }] of formats) {
         if (shouldConvert(key)) {
-          const { numConverted } = await convertModels(
+          const { converted } = await convertModels(
             key as InputFormats,
             files,
-            options
+            options.inputDir,
+            options.outputDir
           );
-          numTotal += numConverted;
+          allConverted.push(...converted);
         }
-      });
+      }
 
-      const glbPath = path.resolve(options.outputDir, "glb");
-      const tsxPath = path.resolve(options.outputDir, "tsx");
-
-      if (options.tsx) await generateTSX(glbPath, tsxPath);
+      if (options.tsx)
+        await convertModels(
+          "GLB",
+          allConverted,
+          options.inputDir,
+          options.outputDir
+        );
       else console.info("ℹ️ Didn't add .tsx files");
 
       await cleanup();
@@ -219,6 +234,7 @@ program
       const inputDir = `${options.inputDir.replace(home, "~")}`;
       const outputDir = `${options.outputDir.replace(home, "~")}`;
 
+      const numTotal = allConverted.length;
       console.info(
         green(
           `✓ Successfully converted ${numTotal}/${numExpected} models from "${inputDir}"`
@@ -226,12 +242,21 @@ program
       );
       console.info(`ℹ️ Output saved to "${outputDir}"`);
     } catch (error) {
+      handleSigint(error);
+
       const errorMsg = error instanceof Error ? error.message : error;
       console.error(red("🚨 Conversion process failed!"));
       console.error(red("🚨 " + errorMsg));
       exit(1);
     }
   });
+
+type SubOptionsTsxGenCommand = {
+  inputDir: string;
+  outputDir: string;
+  recursive: boolean | undefined;
+  onlyTsx: boolean;
+};
 
 program
   .command("tsx-gen")
@@ -243,12 +268,16 @@ program
     "-r, --recursive",
     "Find models in directory and subdirectories recursively"
   )
-  .action(async (subOptions) => {
+  .action(async (subOptions: SubOptionsTsxGenCommand) => {
     try {
       console.info("🚀 Starting TSX generation process...");
 
       if (!subOptions.inputDir) {
-        console.error(red("🚨 Please specify an input directory"));
+        console.error(
+          red(
+            `🚨 Please specify an input directory with -i "yourInputDirectory"`
+          )
+        );
         exit(1);
       }
 
@@ -269,15 +298,24 @@ program
         exit(1);
       }
 
-      subOptions.outputDir = path.resolve(subOptions.inputDir, "out");
+      subOptions.outputDir = path.resolve(subOptions.inputDir, "_out");
+      subOptions.onlyTsx = true;
 
-      const options = { ...globalOptions, ...subOptions };
+      const options = { ...globalOptions, ...subOptions, tsx: true };
 
       await setupOutputDirs(options, glbFiles.length);
       const cleanup = await setupCleanup(options);
-      await generateTSX(subOptions.inputDir, subOptions.outputDir);
+
+      await convertModels(
+        "GLB",
+        glbFiles,
+        subOptions.inputDir,
+        subOptions.outputDir
+      );
       await cleanup();
     } catch (error) {
+      handleSigint(error);
+
       const errorMsg = error instanceof Error ? error.message : error;
       console.error(red("🚨 TSX generation failed!"));
       console.error(red("🚨 " + errorMsg));
