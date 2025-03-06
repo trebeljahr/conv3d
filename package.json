@@ -9,12 +9,12 @@
   "module": "dist/3d-model-converter.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pmndrs/gltfjsx.git"
+    "url": "git+https://github.com/trebeljahr/conv3d.git"
   },
   "bugs": {
-    "url": "https://github.com/pmndrs/gltfjsx/issues"
+    "url": "https://github.com/trebeljahr/conv3d/issues"
   },
-  "homepage": "https://github.com/pmndrs/gltfjsx#readme",
+  "homepage": "https://github.com/trebeljahr/conv3d#readme",
   "scripts": {
     "build": "tsc"
   },
