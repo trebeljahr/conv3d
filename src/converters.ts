@@ -1,13 +1,13 @@
 import { green, red, yellow } from "chalk";
-import { exec as execSync } from "child_process";
-import { readdir, rename, rm } from "fs/promises";
+import { readdir, readFile, rename, rm, writeFile } from "fs/promises";
 import ora from "ora";
 import path from "path";
-import { promisify } from "util";
 import { isDirectory } from "./utils";
 import { globalOptions } from "./program";
-
-const exec = promisify(execSync);
+import convertFbxToGlb from "fbx2gltf";
+import { gltfToGlb } from "gltf-pipeline";
+import gltfjsx from "gltfjsx/src/gltfjsx.js";
+import obj2gltf from "obj2gltf";
 
 export type InputFormats = keyof typeof converters;
 
@@ -101,7 +101,9 @@ export async function collectFiles(
 }
 
 export async function convertSingleObj(inputPath: string, outputPath: string) {
-  await exec(`obj2gltf -b -i "${inputPath}" -o "${outputPath}"`);
+  const gltf = await obj2gltf(inputPath);
+  const data = Buffer.from(JSON.stringify(gltf));
+  await writeFile(outputPath, data);
 }
 
 export async function convertSingleFbx(inputPath: string, outputPath: string) {
@@ -127,9 +129,10 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
   };
 
   try {
-    await exec(
-      `FBX2glTF-darwin-x64 -b -i "${inputPath}" -o "${outputPath}" --khr-materials-unlit`
-    );
+    await convertFbxToGlb(inputPath, outputPath, [
+      "--binary",
+      "--pbr-metallic-roughness",
+    ]);
   } catch (error) {
     await cleanup();
     throw error;
@@ -139,7 +142,10 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
 }
 
 export async function convertSingleGltf(inputPath: string, outputPath: string) {
-  await exec(`gltf-pipeline -b -i "${inputPath}" -o "${outputPath}"`);
+  const gltf = JSON.parse(await readFile(inputPath, "utf8"));
+  const options = { resourceDirectory: "./input/" };
+  const results = await gltfToGlb(gltf, options);
+  await writeFile(outputPath, results.glb);
 }
 
 export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
@@ -159,11 +165,11 @@ export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
   };
 
   try {
-    await exec(
-      `gltfjsx "${inputPath}" -o "${outputPath}" --types ${
-        globalOptions.optimize ? "--transform" : ""
-      }`
-    );
+    await gltfjsx(inputPath, outputPath, {
+      transform: globalOptions.optimize,
+      header: "",
+      types: true,
+    });
   } catch (error) {
     await cleanup();
     throw error;

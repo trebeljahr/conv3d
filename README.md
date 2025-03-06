@@ -4,21 +4,17 @@ An interactive command-line tool for converting 3D models (GLTF, FBX, OBJ) to GL
 
 ## Features
 
-- Interactive CLI with intuitive prompts
-- Converts GLTF, FBX, and OBJ files to GLB format
-- Automatically generates React components using gltfjsx
-- Organizes output files into your React project structure
-- Configurable output paths
-- Progress indicators with detailed logging
+- Interactive CLI, shows you what it creates and asks for confirmation
+- Bulk Mode for converting multiple 3D models at once
+- Supports GLTF, FBX, and OBJ file formats
+- Generates React/TSX components using gltfjsx
+- Can copy the generated files to your project paths
 
 ## Prerequisites
 
 You need to have the following tools installed for this to work correctly:
 
-- gltfjsx (`npm install -g gltfjsx`)
-- gltf-pipeline (`npm install -g gltf-pipeline`)
-- obj2gltf (`npm install -g obj2gltf`) 
-- FBX2glTF (`npm install -g fbx2gltf`)
+
 
 ## Installation
 
