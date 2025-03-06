@@ -1,12 +1,11 @@
 import { green, red, yellow } from "chalk";
 import { exec as execSync } from "child_process";
-import { readdir, rm } from "fs/promises";
+import { readdir, rename, rm } from "fs/promises";
 import ora from "ora";
 import path from "path";
 import { exit } from "process";
 import { promisify } from "util";
 import { handleSigint, isDirectory } from "./utils";
-import { globalOptions } from "./program";
 
 const exec = promisify(execSync);
 
@@ -43,7 +42,7 @@ export async function convertModels(
   }
 
   console.info(
-    `ℹ️ Found ${filesToConvert.length} ${format} models to convert from input dir: }`
+    `ℹ️ Found ${filesToConvert.length} ${format} models to convert from input dir: ${inputDir}`
   );
 
   const newFormat = getNew(format);
@@ -110,24 +109,30 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
     (file) => file.endsWith(".fbm") && isDirectory(path.resolve(inputDir, file))
   );
 
-  console.debug({ fbmFoldersBefore });
+  const cleanup = async () => {
+    const paths = await readdir(inputDir);
+    const newFbmFolders = paths.filter(
+      (file) =>
+        file.endsWith(".fbm") &&
+        isDirectory(path.resolve(inputDir, file)) &&
+        !fbmFoldersBefore.includes(file)
+    );
 
-  await exec(
-    `FBX2glTF-darwin-x64 -b -i "${inputPath}" -o "${outputPath}" --khr-materials-unlit`
-  );
+    for (const folder of newFbmFolders) {
+      const folderPath = path.resolve(inputDir, folder);
+      await rm(folderPath, { recursive: true, force: true });
+    }
+  };
 
-  const paths = await readdir(inputDir);
-  const newFbmFolders = paths.filter(
-    (file) =>
-      file.endsWith(".fbm") &&
-      isDirectory(path.resolve(inputDir, file)) &&
-      !fbmFoldersBefore.includes(file)
-  );
-  console.debug({ newFbmFolders });
-
-  for (const folder of newFbmFolders) {
-    const folderPath = path.resolve(inputDir, folder);
-    await rm(folderPath, { recursive: true, force: true });
+  try {
+    await exec(
+      `FBX2glTF-darwin-x64 -b -i "${inputPath}" -o "${outputPath}" --khr-materials-unlit`
+    );
+  } catch (error) {
+    await cleanup();
+    throw error;
+  } finally {
+    await cleanup();
   }
 }
 
@@ -136,5 +141,26 @@ export async function convertSingleGltf(inputPath: string, outputPath: string) {
 }
 
 export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
-  await exec(`gltfjsx "${inputPath}" -o "${outputPath}" --types --transform`);
+  const cleanup = async () => {
+    const inputDir = path.dirname(inputPath);
+    const outputDir = path.dirname(outputPath);
+
+    const outputDirImprovedGLB = path.resolve(outputDir, "..", "glb-for-web");
+    const improvedGlbFilePath = outputPath.replace(".tsx", "-transformed.glb");
+
+    const newImprovedGlbFilePath = path.resolve(
+      outputDirImprovedGLB,
+      path.basename(improvedGlbFilePath)
+    );
+    await rename(improvedGlbFilePath, newImprovedGlbFilePath);
+  };
+
+  try {
+    await exec(`gltfjsx "${inputPath}" -o "${outputPath}" --types --transform`);
+  } catch (error) {
+    await cleanup();
+    throw error;
+  } finally {
+    await cleanup();
+  }
 }

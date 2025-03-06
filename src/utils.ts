@@ -12,20 +12,6 @@ export const home = homedir();
 export const isDirectory = (strPath: string) =>
   lstatSync(strPath) ? lstatSync(strPath).isDirectory() : false;
 
-export async function moveImprovedGlbFiles(options: Record<string, any>) {
-  const tsxPath = path.resolve(options.outputDir, "tsx");
-  const improvedGlbPath = path.resolve(options.outputDir, "glb-for-web");
-
-  const results = await readdir(tsxPath);
-  const improvedGlbFiles = results.filter((result) => result.endsWith(".glb"));
-
-  for (const result of improvedGlbFiles) {
-    const oldPath = path.resolve(tsxPath, result);
-    const newPath = path.resolve(improvedGlbPath, result);
-    await rename(oldPath, newPath);
-  }
-}
-
 export async function setupOutputDirs(
   options: Record<string, any>,
   numFilesToWrite: number

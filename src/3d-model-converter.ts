@@ -14,13 +14,7 @@ import {
 } from "./converters";
 import { GlobalOptions, globalOptions, program } from "./program";
 import { promptForModelType, promptForTsxOutput } from "./prompts";
-import {
-  handleSigint,
-  home,
-  isDirectory,
-  moveImprovedGlbFiles,
-  setupOutputDirs,
-} from "./utils";
+import { handleSigint, home, isDirectory, setupOutputDirs } from "./utils";
 
 console.info(
   cyan(textSync("Convert 3D for WEB", { horizontalLayout: "full" }))
@@ -98,8 +92,6 @@ program
       if (options.tsx)
         await convertModels("GLB", [outputPath], inputDir, outputDir);
       else console.info("ℹ️ Didn't add .tsx file");
-
-      await moveImprovedGlbFiles(options);
     } catch (error) {
       handleSigint(error);
 
@@ -225,8 +217,6 @@ program
         );
       else console.info("ℹ️ Didn't add .tsx files");
 
-      await moveImprovedGlbFiles(options);
-
       const inputDir = `${options.inputDir.replace(home, "~")}`;
       const outputDir = `${options.outputDir.replace(home, "~")}`;
 
@@ -307,7 +297,6 @@ program
         subOptions.inputDir,
         subOptions.outputDir
       );
-      await moveImprovedGlbFiles(options);
     } catch (error) {
       handleSigint(error);
 
