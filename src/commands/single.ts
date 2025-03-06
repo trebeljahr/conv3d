@@ -34,7 +34,7 @@ program
 
       subOptions.inputPath = path.resolve(subOptions.inputPath);
 
-      if (isDirectory(subOptions.inputPath)) {
+      if (await isDirectory(subOptions.inputPath)) {
         console.error(red("🚨 Input path should point to a file."));
         exit(1);
       }
