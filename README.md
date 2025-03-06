@@ -1,9 +1,34 @@
 
 ![banner image for conv3d](https://raw.githubusercontent.com/trebeljahr/conv3d/refs/heads/main/image.png)
 
-# 3D Model Converter
+# conv3d
 
 An interactive command-line tool for converting 3D models (GLTF, FBX, OBJ) to GLB format and generating React components for use with react-three-fiber.
+
+You have a bunch of models lying around that are not in the right format for your project? You want to use them in a React project with react-three-fiber? 
+
+This is the tool for you!
+
+## Acknowledgements 
+
+This tool uses a bunch of other libraries to do its heavy lifting and just provides a wrapper around using them in a more convenient manner.
+
+For converting OBJ to GLB:
+- [obj2gltf](https://www.npmjs.com/package/obj2gltf)
+For converting GLTF to GLB:
+- [gltf-pipeline](https://www.npmjs.com/package/gltf-pipeline)
+For converting FBX to GLTF:
+- [fbx2gltf](https://www.npmjs.com/package/fbx2gltf)
+For generating React components from GLTF and optimizing GLB files for the web: 
+- [gltfjsx](https://www.npmjs.com/package/gltfjsx)
+
+It is heavily reliant on a few others to make the command prompt beautiful and nice to interact with as well:
+- [commander](https://www.npmjs.com/package/commander)
+- [inquirer](https://www.npmjs.com/package/inquirer)
+- [chalk](https://www.npmjs.com/package/chalk)
+- [ora](https://www.npmjs.com/package/ora)
+- [figlet](https://www.npmjs.com/package/figlet)
+- [lolcatjs](https://www.npmjs.com/package/lolcatjs)
 
 ## Features
 
@@ -20,24 +45,7 @@ npm install -g conv3d
 
 ## Example Usage:
 
-```
-Usage: conv3d [command] [options]
 
-An interactive CLI tool for converting 3D models to GLB format and outputting React components to use with r3f. Supports FBX, OBJ, and glTF input formats.
-
-Options:
-  -V, --version      output the version number
-  --tsx              Create .tsx files. Per default it will ask for user input.
-  --no-tsx           Don't create .tsx files
-  --no-optimize      Don't create optimized output GLB files
-  -h, --help         display help for command
-
-Commands:
-  bulk [options]     Convert all 3D models from a directory
-  single [options]   Convert a single 3D model from directory
-  tsx-gen [options]  Generate .tsx files for 3D models and optimize .glb for web
-  help [command]     display help for command
-```
 
 The script tells you where it will write information to and ask you if you want to proceed. It won't overwrite any files, instead asking you to specify what to do with them. 
 
@@ -45,16 +53,9 @@ There are 3 modes for the CLI: bulk, single, and tsx-gen.
 
 ### Single Mode
 
+You can show help for single mode like this:
 ```
 conv3d single --help
-
-Usage: conv3d single [options]
-
-Convert a single 3D model from directory
-
-Options:
-  -i, --inputPath <path>  Add the input path to the model
-  -h, --help              display help for command
 ```
 
 With generating tsx file generation:
@@ -71,19 +72,10 @@ If you don't specify a flag for tsx output the program will ask you.
 
 ### Bulk
 
+You can show help for bulk mode like this: 
+
 ```
 conv3d bulk --help
-
-Usage: conv3d bulk [options]
-
-Convert all 3D models from a directory
-
-Options:
-  -i, --inputDir <path>     Add the input directory
-  -o, --outputDir <path>    Specify the output directory
-  -m, --modelType <string>  Specify the type of model you want to convert, options: -m GLTF, -m FBX, -m OBJ, -m ALL
-  -r, --recursive           Find models in directory and subdirectories recursively
-  -h, --help                display help for command
 ```
 
 Recursively convert all FBX models in a directory:
@@ -94,21 +86,11 @@ conv3d bulk -i models/fbx/mixamo/characters/ --recursive -m FBX
 
 ### TSX Generation
 
+You can show help for tsx-gen mode like this: 
 ```
 conv3d tsx-gen --help
-
-Usage: conv3d tsx-gen [options]
-
-Generate .tsx files for 3D models and optimize .glb for web
-
-Options:
-  -i, --inputDir <path>  Add the input directory for the files that need to be converted
-  -r, --recursive        Find models in directory and subdirectories recursively
-  -h, --help             display help for command
 ```
 
-
-For example, recursive. 
 ```
 conv3d tsx-gen -i ./path/to/3d-models-folder/ --recursive
 ```
