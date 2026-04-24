@@ -1,0 +1,67 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "pnpm build",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "conv3d",
+      "type": "shell",
+      "command": "pnpm conv3d",
+      "problemMatcher": []
+    },
+    {
+      "label": "install-local",
+      "type": "shell",
+      "command": "pnpm install-local",
+      "problemMatcher": []
+    },
+    {
+      "label": "pub",
+      "type": "shell",
+      "command": "pnpm pub",
+      "problemMatcher": []
+    },
+    {
+      "label": "release",
+      "type": "shell",
+      "command": "pnpm release",
+      "problemMatcher": []
+    },
+    {
+      "label": "release:patch",
+      "type": "shell",
+      "command": "pnpm release:patch",
+      "problemMatcher": []
+    },
+    {
+      "label": "release:minor",
+      "type": "shell",
+      "command": "pnpm release:minor",
+      "problemMatcher": []
+    },
+    {
+      "label": "release:major",
+      "type": "shell",
+      "command": "pnpm release:major",
+      "problemMatcher": []
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "pnpm test",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    }
+  ]
+}
