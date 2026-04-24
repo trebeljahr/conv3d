@@ -18,7 +18,14 @@
     "postinstall": "patch-package",
     "conv3d": "npm run build && node ./dist/conv3d.js",
     "install-local": "npm run build && npm install -g .",
-    "pub": "npm version patch && npm run build && npm publish --access public"
+    "pub": "npm version patch && npm run build && npm publish --access public",
+    "release": "npm run release:patch",
+    "release:patch": "npm version patch -m \"chore: release v%s\" && npm run _release:finish",
+    "release:minor": "npm version minor -m \"chore: release v%s\" && npm run _release:finish",
+    "release:major": "npm version major -m \"chore: release v%s\" && npm run _release:finish",
+    "_release:finish": "npm run build && npm test && npm publish --access public && git push --follow-tags && npm install -g .",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "test": "npm run build && node --test \"tests/**/*.test.mjs\""
   },
   "keywords": [
     "3d",
@@ -34,23 +41,26 @@
   "type": "module",
   "dependencies": {
     "chalk": "^5.4.1",
-    "commander": "^13.1.0",
+    "commander": "^14.0.3",
+    "fast-glob": "^3.3.3",
     "fbx2gltf": "^0.9.7-p1",
-    "figlet": "^1.5.2",
     "gltf-pipeline": "^4.1.0",
     "gltfjsx": "^6.5.3",
-    "inquirer": "^8.2.5",
-    "lolcatjs": "^2.4.3",
+    "inquirer": "^13.4.2",
     "obj2gltf": "^3.1.6",
-    "ora": "^8.2.0",
+    "ora": "^9.4.0",
     "patch-package": "^8.0.0",
-    "read-package-up": "^11.0.0"
+    "read-package-up": "^12.0.0"
+  },
+  "optionalDependencies": {
+    "figlet": "^1.5.2",
+    "lolcatjs": "^2.4.3"
   },
   "devDependencies": {
     "@types/figlet": "^1.5.5",
-    "@types/inquirer": "^8.2.5",
+    "@types/inquirer": "^9.0.9",
     "@types/lolcatjs": "^2.4.1",
-    "@types/node": "^18.11.9",
-    "typescript": "^5.8.2"
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
   }
 }

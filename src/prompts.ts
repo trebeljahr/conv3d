@@ -1,9 +1,16 @@
 import chalk from "chalk";
 import inquirer from "inquirer";
 import { exit } from "process";
+import { err } from "./log.js";
+import { isNonInteractive } from "./program.js";
 
 const { prompt } = inquirer;
-const { yellow } = chalk;
+const { red } = chalk;
+
+function bailNonInteractive(what: string, hint: string): never {
+  err(red(`🚨 Non-interactive mode: ${what} is required but was not provided.\n` + `ℹ️ ${hint}`));
+  exit(1);
+}
 
 export async function promptForModelType({
   numGLTF,
@@ -15,10 +22,12 @@ export async function promptForModelType({
   numFBX: number;
   numOBJ: number;
   numAll: number;
-}) {
-  if (numAll === 0) {
-    console.error(yellow(`⚠️ No suitable models found in the input directory`));
-    exit(1);
+}): Promise<string> {
+  if (isNonInteractive()) {
+    bailNonInteractive(
+      "--modelType / -m",
+      "Pass -m GLTF | FBX | OBJ | ALL to select which formats to convert.",
+    );
   }
 
   const { modelType } = await prompt<{ modelType: string }>([
@@ -39,6 +48,7 @@ export async function promptForModelType({
 }
 
 export async function promptForTsxOutput() {
+  if (isNonInteractive()) return true;
   const { tsx } = await prompt([
     {
       type: "confirm",
@@ -50,6 +60,7 @@ export async function promptForTsxOutput() {
 }
 
 export async function promptForOptimizedGlbOutput() {
+  if (isNonInteractive()) return true;
   const { optimize } = await prompt([
     {
       type: "confirm",
@@ -62,6 +73,7 @@ export async function promptForOptimizedGlbOutput() {
 }
 
 export async function askForFileOverwrite(filePath: string) {
+  if (isNonInteractive()) return false;
   const { overwrite } = await prompt([
     {
       type: "confirm",

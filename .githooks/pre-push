@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# conv3d pre-push hook: typecheck + run tests before letting a push out.
+# Skip with: git push --no-verify
+set -euo pipefail
+
+echo "▶ conv3d pre-push: npm test"
+npm test

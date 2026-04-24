@@ -1,33 +1,56 @@
 #!/usr/bin/env node
 import chalk from "chalk";
-import figlet from "figlet";
-import { fromString } from "lolcatjs";
-import { program } from "./program.js";
+import { preprocessArgv, program } from "./program.js";
 
 import "./commands/bulk.js";
 import "./commands/single.js";
 import "./commands/tsxGen.js";
+import "./commands/doctor.js";
 
-const { textSync } = figlet;
-const { red } = chalk;
+const { red, yellow } = chalk;
 
-const text = "conv3D";
-const asciiBanner = textSync(text, {
-  horizontalLayout: "full",
-  font: "Colossal",
-  width: process.stdout.columns,
-  whitespaceBreak: true,
-});
+const { argv: normalizedArgv, deprecatedForceOverwrite } = preprocessArgv(process.argv);
 
-fromString(asciiBanner);
+function shouldShowBanner(args: string[]): boolean {
+  if (!process.stdout.isTTY) return false;
+  if (args.length === 0) return true;
+  const suppressFlags = ["-h", "--help", "-V", "--version", "--json", "-q", "--quiet"];
+  if (args.some((a) => suppressFlags.includes(a))) return false;
+  return true;
+}
+
+async function maybeShowBanner(args: string[]) {
+  if (!shouldShowBanner(args)) return;
+  // figlet and lolcatjs are optionalDependencies. If they failed to install
+  // on this platform, just skip the banner silently.
+  try {
+    const [{ default: figlet }, lol] = await Promise.all([import("figlet"), import("lolcatjs")]);
+    const asciiBanner = figlet.textSync("conv3D", {
+      horizontalLayout: "full",
+      font: "Colossal",
+      width: process.stdout.columns,
+      whitespaceBreak: true,
+    });
+    lol.fromString(asciiBanner);
+  } catch {
+    // banner deps unavailable — no-op
+  }
+}
+
+await maybeShowBanner(normalizedArgv.slice(2));
+
+if (deprecatedForceOverwrite) {
+  // TODO(v2): remove the --forceOverwrite alias.
+  console.error(yellow("⚠️ --forceOverwrite is deprecated; use --force-overwrite (or -f) instead."));
+}
 
 process.on("SIGINT", () => {
   console.error(red("\n🚨 Received SIGINT. Exiting program..."));
   process.exit(0);
 });
 
-program.parse(process.argv);
+program.parse(normalizedArgv);
 
-if (!process.argv.slice(2).length) {
+if (!normalizedArgv.slice(2).length) {
   program.outputHelp();
 }

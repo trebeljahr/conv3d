@@ -1,17 +1,19 @@
-import chalk from "chalk";
-import { mkdir, lstat } from "fs/promises";
-import inquirer from "inquirer";
 import { homedir } from "os";
-import path from "path";
+import chalk from "chalk";
+import { lstat, mkdir } from "fs/promises";
+import { constants, access } from "fs/promises";
+import inquirer from "inquirer";
 import { exit } from "process";
-import { access, constants } from "fs/promises";
+import { err, info } from "./log.js";
+import type { OutputDirs } from "./outputDirs.js";
+import { isDryRun, isNonInteractive } from "./program.js";
 
 export async function checkFileExists(filePath: string): Promise<boolean> {
   try {
     await access(filePath, constants.F_OK);
-    return true; // File exists
+    return true;
   } catch {
-    return false; // File doesn't exist or can't be accessed
+    return false;
   }
 }
 
@@ -21,66 +23,79 @@ const { green, red } = chalk;
 export const home = homedir();
 
 export const isDirectory = async (strPath: string) =>
-  (await checkFileExists(strPath))
-    ? (await lstat(strPath)).isDirectory()
-    : false;
+  (await checkFileExists(strPath)) ? (await lstat(strPath)).isDirectory() : false;
+
+export type SetupOptions = {
+  tsx?: boolean;
+  optimize?: boolean;
+  onlyTsx?: boolean;
+};
 
 export async function setupOutputDirs(
-  options: Record<string, any>,
-  numFilesToWrite: number
+  dirs: OutputDirs,
+  options: SetupOptions,
+  numFilesToWrite: number,
 ) {
   try {
-    const tsxPath = path.resolve(options.outputDir, "tsx");
-    const glbPath = path.resolve(options.outputDir, "glb");
-    const optPath = path.resolve(options.outputDir, "glb-for-web");
+    const pluralize = (n: number, w: string) => (n === 1 ? w : `${w}s`);
+    const runsGltfjsx = !!options.tsx || !!options.optimize;
 
     if (!options.onlyTsx) {
-      console.info(
-        `ℹ️ Will write ${numFilesToWrite} .glb file${
-          numFilesToWrite > 1 ? "s" : ""
-        } to ${glbPath.replace(home, "~")}`
+      info(
+        `ℹ️ Will write ${numFilesToWrite} ${pluralize(
+          numFilesToWrite,
+          ".glb file",
+        )} to ${dirs.glb.replace(home, "~")}`,
       );
     }
 
     if (options.tsx) {
-      console.info(
-        `ℹ️ Will write ${numFilesToWrite} .tsx file${
-          numFilesToWrite > 1 ? "s" : ""
-        } to ${tsxPath.replace(home, "~")}`
+      info(
+        `ℹ️ Will write ${numFilesToWrite} ${pluralize(
+          numFilesToWrite,
+          ".tsx file",
+        )} to ${dirs.tsx.replace(home, "~")}`,
       );
-      if (options.optimize) {
-        console.info(
-          `ℹ️ Will write ${numFilesToWrite} .glb file${
-            numFilesToWrite > 1 ? "s" : ""
-          } to ${optPath.replace(home, "~")}`
-        );
-        console.info(`ℹ️ These will be optimized and much smaller!`);
-      }
     }
 
-    const { confirmed } = await prompt([
-      {
-        type: "confirm",
-        name: "confirmed",
-        message: "Looking good?",
-      },
-    ]);
-
-    if (!confirmed) {
-      exit(0);
+    if (options.optimize) {
+      info(
+        `ℹ️ Will write ${numFilesToWrite} optimized ${pluralize(
+          numFilesToWrite,
+          ".glb file",
+        )} to ${dirs.optimized.replace(home, "~")}`,
+      );
+      info(`ℹ️ These will be optimized and much smaller!`);
     }
 
-    await mkdir(options.outputDir, { recursive: true });
-    await mkdir(glbPath, { recursive: true });
-
-    if (options.tsx) {
-      await mkdir(tsxPath, { recursive: true });
-      await mkdir(optPath, { recursive: true });
+    if (!isNonInteractive() && !isDryRun()) {
+      const { confirmed } = await prompt([
+        {
+          type: "confirm",
+          name: "confirmed",
+          message: "Looking good?",
+        },
+      ]);
+      if (!confirmed) exit(0);
     }
 
-    console.info(green("✅ Output directories created"));
+    if (isDryRun()) return;
+
+    await mkdir(dirs.base, { recursive: true });
+    if (!options.onlyTsx) {
+      await mkdir(dirs.glb, { recursive: true });
+    }
+    if (runsGltfjsx) {
+      // tsx dir is always needed as scratch for gltfjsx; cleaned up if !tsx.
+      await mkdir(dirs.tsx, { recursive: true });
+    }
+    if (options.optimize) {
+      await mkdir(dirs.optimized, { recursive: true });
+    }
+
+    info(green("✅ Output directories created"));
   } catch (error) {
-    console.error(red("🚨 Error creating directories:"), error);
+    err(red("🚨 Error creating directories:"), error);
     throw error;
   }
 }

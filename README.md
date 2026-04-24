@@ -1,13 +1,13 @@
-
 ![banner image for conv3d](https://raw.githubusercontent.com/trebeljahr/conv3d/refs/heads/main/image.png)
 
 # conv3d
 
-An interactive command-line tool for converting 3D models (GLTF, FBX, OBJ) to GLB format and generating React components for use with react-three-fiber.
+A command-line tool for converting 3D models (GLTF, FBX, OBJ) into GLB and generating matching React Three Fiber components — so you can drop them into a react-three-fiber / three.js project without a round-trip through Blender.
 
-You have a bunch of models lying around that are not in the right format for your project? You want to use them in a React project with react-three-fiber or for three.js and need those GLBs, but not want to go into Blender for every single one of them?
-
-Then this is the tool for you!
+- **Inputs:** `.fbx`, `.obj`, `.gltf` — directories, single files, or glob patterns
+- **Outputs:** `.glb` (always), `.tsx` components (optional), web-optimized `.glb` (optional)
+- **Works interactively** (prompts guide you) **or fully non-interactively** (`--yes`, `--json`, `--dry-run` — ideal for scripts, CI, and AI coding agents)
+- **Parallel conversion** with a sensible default, tunable via `--concurrency`
 
 ## Installation
 
@@ -15,120 +15,242 @@ Then this is the tool for you!
 npm install -g conv3d
 ```
 
-## Usage
+## Quick start
 
-```
-conv3d --help
-```
+```bash
+# One file, interactive
+conv3d single ./character.fbx
 
-```
-                                     .d8888b.  8888888b.
-                                    d88P  Y88b 888  "Y88b
-                                         .d88P 888    888
- .d8888b  .d88b.  88888b.  888  888     8888"  888    888
-d88P"    d88""88b 888 "88b 888  888      "Y8b. 888    888
-888      888  888 888  888 Y88  88P 888    888 888    888
-Y88b.    Y88..88P 888  888  Y8bd8P  Y88b  d88P 888  .d88P
- "Y8888P  "Y88P"  888  888   Y88P    "Y8888P"  8888888P"
+# A folder of FBX files, fully non-interactive
+conv3d bulk ./models --recursive -m FBX --tsx --optimize --yes
 
-Usage: conv3d [command] [options]
+# Glob pattern — grab every FBX under ./assets
+conv3d bulk "./assets/**/*.fbx" -o ./public/models --tsx --optimize --yes
 
-An interactive CLI tool for converting 3D models to GLB format and outputting React components to use with r3f. Supports FBX, OBJ, and glTF input formats.
-
-Options:
-  -V, --version      output the version number
-  --tsx              Create .tsx files. Per default it will ask for user input.
-  --no-tsx           Don't create .tsx files
-  --optimize         Create optimized .glb files. Per default it will ask for user input.
-  --no-optimize      Don't create optimized output .glb files
-  --forceOverwrite   Overwrite existing files without asking
-  -h, --help         display help for command
-
-Commands:
-  bulk [options]     Convert all 3D models from a directory
-  single [options]   Convert a single 3D model from directory
-  tsx-gen [options]  Generate .tsx files for 3D models and optimize .glb for web
-  help [command]     display help for command
+# Preview the plan without touching disk, machine-readable
+conv3d bulk ./models -m ALL --tsx --optimize --dry-run --json
 ```
 
-## Features
+## Commands
 
-- Interactive CLI, shows you what it creates and asks for confirmation
-- Bulk Mode for converting multiple 3D models at once
-- Supports GLTF, FBX, and OBJ file formats
-- Generates React/TSX components using gltfjsx
+| Command   | What it does                                                       |
+| --------- | ------------------------------------------------------------------ |
+| `single`  | Convert a single `.fbx` / `.obj` / `.gltf` file to `.glb`          |
+| `bulk`    | Convert every supported model in a directory or matching a glob    |
+| `tsx-gen` | Run gltfjsx on existing `.glb` files to generate `.tsx` components |
+| `doctor`  | Print environment + dependency diagnostics                         |
 
-The CLI will try it's best to guide you through it's steps:
+Each command (except `doctor`) accepts its input either **positionally** or via `-i`:
 
-1. Selecting the type of 3D models to convert (GLTF, FBX, or OBJ, or ALL) (unless you did so in the command line already).
-2. Show you which output it is going to create
-3. Ask you for confirmation to proceed
-4. Create the necessary output directories
-5. Convert the 3D model files to GLB format
-6. Generate React components with gltfjsx (if you specified that)
-7. Optimize the GLB files for web use (if you specified that)
-
-## Single Mode Examples
-
-Minimum:
-```
-conv3d single -i ./path/to/3d-model.fbx
+```bash
+conv3d single ./model.fbx
+conv3d single -i ./model.fbx             # equivalent
+conv3d bulk   ./models
+conv3d bulk   "./assets/**/*.fbx"        # glob
 ```
 
-With generating tsx file generation:
-```
-conv3d single -i ./path/to/3d-model.fbx --tsx
-```
+Run `conv3d <command> --help` for full options and examples.
 
-Without generating TSX files: 
-```
-conv3d single -i ./path/to/3d-model.obj --no-tsx
-```
+## Output layout
 
-If you don't specify a flag for tsx output the program will ask you. 
+By default, every command writes into `<inputDir>/_convert-3d-for-web/`:
 
-### Bulk Mode Examples
-
-Minimum: 
 ```
-conv3d bulk -i ./path/to/3d-models-folder/ 
+_convert-3d-for-web/
+├── glb/          # converted .glb files
+├── tsx/          # React Three Fiber components (when --tsx)
+└── glb-for-web/  # web-optimized .glb (when --optimize)
 ```
 
-Recursively convert all FBX models in a directory, with optimized GLB files and TSX generation.
+Override with `-o <outputDir>`. For a flat structure, use `--flat` (every output goes directly into `outputDir`), or override each subdir individually with `--glb-dir`, `--tsx-dir`, `--optimized-dir`.
+
+## Global options
+
+| Flag                              | Meaning                                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------- |
+| `--tsx` / `--no-tsx`              | Opt in / out of `.tsx` generation (otherwise you'll be prompted)                            |
+| `--optimize` / `--no-optimize`    | Opt in / out of web-optimized `.glb` (otherwise you'll be prompted)                         |
+| `--overwrite <skip\|replace\|ask>`| What to do when an output file already exists                                               |
+| `-f, --force-overwrite`           | Shortcut for `--overwrite=replace`                                                          |
+| `-y, --yes` / `--non-interactive` | Skip every prompt — required for scripts, CI, and agents                                    |
+| `--dry-run`                       | Print the plan without creating or modifying anything                                       |
+| `--json`                          | Emit a single JSON result object on **stdout**. Implies `--quiet`. Errors stay on stderr.   |
+| `-q, --quiet`                     | Suppress progress output on stdout                                                          |
+| `-c, --concurrency <n>`           | Convert N files in parallel (default: `min(cpus, 4)`, or 1 in interactive ask-mode)         |
+| `--flat`                          | Write every output file directly into `outputDir` (no subdirectories)                       |
+| `--glb-dir <path>`                | Override where converted `.glb` files go                                                    |
+| `--tsx-dir <path>`                | Override where `.tsx` files go                                                              |
+| `--optimized-dir <path>`          | Override where optimized `.glb` files go                                                    |
+| `-V, --version`                   | Print the version                                                                           |
+| `-h, --help`                      | Show help                                                                                   |
+
+> **Note:** `--forceOverwrite` still works but is deprecated — prefer `--force-overwrite`, `-f`, or `--overwrite=replace`.
+
+## Exit codes
+
+| Code | Meaning                                                                     |
+| ---- | --------------------------------------------------------------------------- |
+| `0`  | Success (including "no matching files found" — safe for agent globs)        |
+| `1`  | Fatal error (invalid args, missing input, etc.) — nothing was converted     |
+| `2`  | Completed, but one or more files failed to convert — see `errors[]` in JSON |
+
+## Command reference
+
+### `conv3d single [path]`
+
+Convert one file. Format is inferred from the extension.
+
+```bash
+conv3d single ./model.fbx                       # interactive
+conv3d single ./model.fbx --tsx --optimize -y   # no prompts
+conv3d single ./model.obj --no-tsx -y           # glb only
+conv3d single ./model.fbx --tsx --dry-run --json
 ```
-conv3d bulk -i models/fbx/mixamo/characters/ --recursive -m FBX --tsx --optimize
+
+### `conv3d bulk [input]`
+
+Convert every supported model in a directory, or every file matching a glob.
+
+```bash
+conv3d bulk ./models                                                # interactive
+conv3d bulk ./models -r -m FBX --tsx --optimize -y                  # no prompts
+conv3d bulk "./assets/**/*.fbx" -o ./public/models -y               # glob
+conv3d bulk ./models --flat -o ./public/models --tsx -y             # flat output
+conv3d bulk ./models -m ALL --tsx --optimize --dry-run --json       # preview
 ```
 
-### TSX Generation
+| Flag                     | Description                                                              |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `[input]` (positional)   | Directory, file, or glob pattern (e.g. `./models/**/*.fbx`)              |
+| `-i, --inputDir <path>`  | Same as positional form                                                  |
+| `-o, --outputDir <path>` | Where to write outputs (default: `<inputDir>/_convert-3d-for-web`)       |
+| `-m, --modelType <type>` | `GLTF` \| `FBX` \| `OBJ` \| `ALL` (required when `-y` in directory mode) |
+| `-r, --recursive`        | Recurse into subdirectories (directory mode only; globs choose scope)    |
 
-Minimum:
+When the input is a glob, the file list comes from the matches (no `-r` needed) and `-m` defaults to `ALL`. When no matching models are found, `bulk` exits `0` with a warning.
+
+### `conv3d tsx-gen [dir]`
+
+Run gltfjsx over `.glb` files that are already converted.
+
+```bash
+conv3d tsx-gen ./models
+conv3d tsx-gen ./models -r --optimize -y
+conv3d tsx-gen ./models -r --force-overwrite -y
+conv3d tsx-gen ./models --dry-run --json
 ```
-conv3d tsx-gen -i ./path/to/3d-models-folder/ 
+
+### `conv3d doctor`
+
+Print the versions of `conv3d`, Node, the platform, and the bundled conversion libraries. Useful for bug reports and for agents verifying install health.
+
+```bash
+conv3d doctor
+conv3d doctor --json
 ```
 
-Recursive example, with overwriting existing files without asking
+## Using conv3d from a script or AI agent
+
+conv3d is designed to be safe to call from automations:
+
+1. **Always pass `-y`** (or `--non-interactive`) so no prompt ever blocks. Non-interactive mode is also inferred when stdin is not a TTY.
+2. **Explicitly pass `--tsx` / `--no-tsx` and `--optimize` / `--no-optimize`** — in non-interactive mode the defaults are `--tsx --optimize`, but being explicit is clearer.
+3. **For `bulk`, pass `-m`** in directory mode. In glob mode, `-m ALL` is the default.
+4. **Pass `--json`** to get a machine-readable result object on stdout.
+5. **Pass `--dry-run`** first to preview what would be written.
+6. **Check the exit code**: `0` = success, `1` = fatal, `2` = partial (some files failed).
+7. **Read the known output layout** — or pass `-o`, `--flat`, or the `--*-dir` flags for full control.
+
+### JSON output schema
+
+On success, stdout is a single JSON object:
+
+```jsonc
+{
+  "command": "bulk",                 // "single" | "bulk" | "tsx-gen" | "doctor"
+  "ok": true,                        // false when errors[] is non-empty
+  "inputDir": "/abs/path/models",    // absolute input (single uses "inputPath")
+  "outputDir": "/abs/path/models/_convert-3d-for-web",
+  "dryRun": false,
+  "modelType": "ALL",                // null / unset when n/a
+  "converted": [                     // .glb paths (or planned paths in --dry-run)
+    "/abs/.../glb/a.glb"
+  ],
+  "tsx": [                           // .tsx paths (empty if --no-tsx)
+    "/abs/.../tsx/a.tsx"
+  ],
+  "glbOptimized": [                  // web-optimized .glb paths (empty if --no-optimize)
+    "/abs/.../glb-for-web/a-transformed.glb"
+  ],
+  "skipped": [],                     // outputs skipped because they already existed
+  "errors": []                       // { file, message } entries for per-file failures
+}
 ```
-conv3d tsx-gen -i ./path/to/3d-models-folder/ --recursive --forceOverwrite
+
+On a fatal error the object is `{ "command": "...", "ok": false, "error": "..." }` and the process exits `1`. When per-file errors occurred the exit code is `2` and `errors[]` contains the details.
+
+`--optimize` works independently of `--tsx`: you can emit web-optimized `.glb` files without generating React components, generate components without optimizing, or both together.
+
+### Recipes
+
+```bash
+# Import FBX characters into a Next.js project, no subdirs
+conv3d bulk ./raw-assets/characters \
+  -o ./public/models --flat \
+  -m FBX -r --tsx --optimize -y
+
+# Every FBX under ./assets, no matter how nested
+conv3d bulk "./assets/**/*.fbx" -o ./public/models --tsx --optimize -y
+
+# Optimize only — produce web-ready .glb without generating React components
+conv3d bulk ./models -m ALL --no-tsx --optimize -y
+
+# Parse the result in an agent tool
+conv3d bulk ./models -m ALL --tsx -y --json | jq '.converted[]'
+
+# Sanity-check the environment
+conv3d doctor --json | jq '.dependencies[] | select(.installed == null)'
 ```
 
+### Notes for agents
 
-## Acknowledgements 
+- Progress on **stdout**; warnings and errors on **stderr**. In `--json` / `--quiet` mode, stdout is either empty or a single JSON object.
+- The ASCII banner is suppressed automatically when stdout is not a TTY, and when `--help` / `--version` / `--quiet` / `--json` is passed.
+- `figlet` and `lolcatjs` are optional dependencies — `npm install --omit=optional` still gives you a fully working CLI with no banner.
+- File-exists conflicts default to `skip` in non-interactive mode; pass `--overwrite=replace` (or `-f`) for idempotent reruns.
+- `--dry-run` never writes to disk (not even the output directories).
 
-This tool uses a bunch of other libraries to do its heavy lifting and just provides a wrapper around using them in a more convenient manner.
+## Development
 
-For converting OBJ to GLB:
-- [obj2gltf](https://www.npmjs.com/package/obj2gltf)
-For converting GLTF to GLB:
-- [gltf-pipeline](https://www.npmjs.com/package/gltf-pipeline)
-For converting FBX to GLTF:
-- [fbx2gltf](https://www.npmjs.com/package/fbx2gltf)
-For generating React components from GLTF and optimizing GLB files for the web: 
-- [gltfjsx](https://www.npmjs.com/package/gltfjsx)
+```bash
+npm install
+npm test              # build + run smoke tests against the compiled CLI
+npm run build         # just tsc
+```
 
-It is heavily reliant on a few others to make the command prompt beautiful and nice to interact with as well:
-- [commander](https://www.npmjs.com/package/commander)
-- [inquirer](https://www.npmjs.com/package/inquirer)
-- [chalk](https://www.npmjs.com/package/chalk)
-- [ora](https://www.npmjs.com/package/ora)
-- [figlet](https://www.npmjs.com/package/figlet)
-- [lolcatjs](https://www.npmjs.com/package/lolcatjs)
+A pre-push git hook (in `.githooks/pre-push`) runs `npm test` before every push. `npm install` wires the hook via `core.hooksPath`; skip it per-push with `git push --no-verify` if you really must.
+
+## Releasing
+
+```bash
+npm run release          # patch bump (default)
+npm run release:patch    # 1.0.5 → 1.0.6
+npm run release:minor    # 1.0.5 → 1.1.0
+npm run release:major    # 1.0.5 → 2.0.0
+```
+
+Each command: bumps the version (tagged commit), builds, runs tests, publishes to npm, pushes the tag to GitHub, and re-installs conv3d globally so your `PATH` matches what was just published.
+
+## What's under the hood
+
+- [obj2gltf](https://www.npmjs.com/package/obj2gltf) — OBJ → GLB
+- [gltf-pipeline](https://www.npmjs.com/package/gltf-pipeline) — GLTF → GLB
+- [fbx2gltf](https://www.npmjs.com/package/fbx2gltf) — FBX → GLTF
+- [gltfjsx](https://www.npmjs.com/package/gltfjsx) — `.glb` → React component + web optimization
+- [fast-glob](https://www.npmjs.com/package/fast-glob) — glob-pattern expansion
+
+CLI polish: [commander](https://www.npmjs.com/package/commander), [inquirer](https://www.npmjs.com/package/inquirer), [chalk](https://www.npmjs.com/package/chalk), [ora](https://www.npmjs.com/package/ora), [figlet](https://www.npmjs.com/package/figlet), [lolcatjs](https://www.npmjs.com/package/lolcatjs).
+
+## License
+
+MIT

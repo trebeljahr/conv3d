@@ -1,97 +1,159 @@
-import chalk from "chalk";
 import path from "path";
+import chalk from "chalk";
 import { exit } from "process";
 import {
-  converters,
   convertModels,
   convertSingleFbx,
   convertSingleGltf,
   convertSingleObj,
+  converters,
 } from "../converters.js";
-import { globalOptions, program } from "../program.js";
-import { promptForTsxOutput } from "../prompts.js";
+import { err, info, isJson } from "../log.js";
+import { resolveOutputDirs } from "../outputDirs.js";
+import { globalOptions, isDryRun, program } from "../program.js";
+import { promptForOptimizedGlbOutput, promptForTsxOutput } from "../prompts.js";
 import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
 
 const { red } = chalk;
 
 type SubOptionsConvertSingle = {
-  inputPath: string;
-  modelType: string;
-  inputDir: string;
-  outputDir: string;
+  inputPath?: string;
 };
 
 program
   .command("single")
-  .option("-i, --inputPath <path>", "Add the input path to the model")
-  .description("Convert a single 3D model from directory")
-  .action(async (subOptions: SubOptionsConvertSingle) => {
+  .summary("Convert a single 3D model file")
+  .description(
+    `Convert one .fbx / .obj / .gltf file to .glb.
+
+The format is inferred from the file extension. Output is written next to
+the source, under <sourceDir>/_convert-3d-for-web/:
+  glb/          the converted .glb
+  tsx/          React component (only when --tsx)
+  glb-for-web/  web-optimized .glb (only when --optimize)
+
+Use --flat or --glb-dir / --tsx-dir / --optimized-dir to change the layout.`,
+  )
+  .argument("[path]", "Path to the .fbx / .obj / .gltf file (alternative to -i)")
+  .option("-i, --inputPath <path>", "Path to the .fbx / .obj / .gltf file")
+  .addHelpText(
+    "after",
+    `
+Examples:
+  $ conv3d single ./model.fbx
+  $ conv3d single ./model.fbx --tsx --optimize -y
+  $ conv3d single ./model.obj --no-tsx -y
+  $ conv3d single ./model.fbx --tsx --dry-run --json`,
+  )
+  .action(async (positional: string | undefined, subOptions: SubOptionsConvertSingle) => {
     try {
-      if (!subOptions.inputPath) {
-        console.error(red("🚨 Please specify an input path"));
+      const inputPath = subOptions.inputPath ?? positional;
+      if (!inputPath) {
+        err(red("🚨 Please specify an input path (positionally or with -i)"));
         exit(1);
       }
 
-      subOptions.inputPath = path.resolve(subOptions.inputPath);
+      const resolvedInputPath = path.resolve(inputPath);
 
-      if (await isDirectory(subOptions.inputPath)) {
-        console.error(red("🚨 Input path should point to a file."));
+      if (await isDirectory(resolvedInputPath)) {
+        err(red("🚨 Input path should point to a file."));
         exit(1);
       }
 
-      console.info("🚀 Starting conversion process...");
+      info("🚀 Starting conversion process...");
 
       globalOptions.tsx =
-        globalOptions.tsx === undefined
-          ? await promptForTsxOutput()
-          : globalOptions.tsx;
+        globalOptions.tsx === undefined ? await promptForTsxOutput() : globalOptions.tsx;
 
-      const extension = path.extname(subOptions.inputPath);
+      globalOptions.optimize =
+        globalOptions.optimize === undefined
+          ? await promptForOptimizedGlbOutput()
+          : globalOptions.optimize;
+
+      const extension = path.extname(resolvedInputPath);
       const inferredModelType = extension.toUpperCase().replace(".", "");
 
       if (!Object.keys(converters).includes(inferredModelType)) {
-        console.error(red("🚨 Invalid input file type: ", inferredModelType));
-        console.error("ℹ️ Please provide a .fbx, .obj, or .gltf file");
+        err(red("🚨 Invalid input file type: " + inferredModelType));
+        err("ℹ️ Please provide a .fbx, .obj, or .gltf file");
         exit(1);
       }
 
-      subOptions.modelType = inferredModelType;
+      const inputDir = path.resolve(path.dirname(resolvedInputPath));
+      const outputDirBase = path.resolve(inputDir, outDirPrefix);
+      const dirs = resolveOutputDirs(outputDirBase);
 
-      const inputDir = path.resolve(path.dirname(subOptions.inputPath));
-      const outputDir = path.resolve(inputDir, outDirPrefix);
+      await setupOutputDirs(dirs, globalOptions, 1);
 
-      subOptions.inputDir = inputDir;
-      subOptions.outputDir = outputDir;
-
-      const options = { ...globalOptions, ...subOptions };
-
-      const numFilesToWrite = 1;
-      await setupOutputDirs(options, numFilesToWrite);
       const outputPath = path.resolve(
-        options.outputDir,
-        "glb",
-        path.basename(options.inputPath).replace(extension, ".glb")
+        dirs.glb,
+        path.basename(resolvedInputPath).replace(extension, ".glb"),
       );
 
-      console.info("ℹ️ Generating .glb files...");
-      if (inferredModelType === "GLTF") {
-        await convertSingleGltf(options.inputPath, outputPath);
-      }
-      if (inferredModelType === "FBX") {
-        await convertSingleFbx(options.inputPath, outputPath);
-      }
-      if (inferredModelType === "OBJ") {
-        await convertSingleObj(options.inputPath, outputPath);
+      const result = {
+        command: "single",
+        ok: true,
+        inputPath: resolvedInputPath,
+        outputDir: dirs.base,
+        dryRun: !!isDryRun(),
+        modelType: inferredModelType,
+        converted: [] as string[],
+        tsx: [] as string[],
+        glbOptimized: [] as string[],
+        skipped: [] as string[],
+        errors: [] as { file: string; message: string }[],
+      };
+
+      if (isDryRun()) {
+        info(`ℹ️ [dry-run] would write ${outputPath}`);
+        result.converted = [outputPath];
+      } else {
+        info("ℹ️ Generating .glb files...");
+        try {
+          if (inferredModelType === "GLTF") await convertSingleGltf(resolvedInputPath, outputPath);
+          if (inferredModelType === "FBX") await convertSingleFbx(resolvedInputPath, outputPath);
+          if (inferredModelType === "OBJ") await convertSingleObj(resolvedInputPath, outputPath);
+          result.converted = [outputPath];
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          result.errors.push({ file: resolvedInputPath, message });
+          throw error;
+        }
       }
 
-      if (options.tsx) {
-        console.info("ℹ️ Generating .tsx files...");
-        await convertModels("GLB", [outputPath], inputDir, outputDir);
-      } else console.info("ℹ️ Skipped adding .tsx files, like instructed 🫡");
+      if (globalOptions.tsx || globalOptions.optimize) {
+        const label =
+          globalOptions.tsx && globalOptions.optimize
+            ? ".tsx file and optimized .glb"
+            : globalOptions.tsx
+              ? ".tsx file"
+              : "optimized .glb";
+        info(`ℹ️ Generating ${label}...`);
+        const glbResult = await convertModels("GLB", result.converted, inputDir, dirs);
+        result.tsx = isDryRun() ? glbResult.planned : glbResult.converted;
+        result.glbOptimized = isDryRun() ? glbResult.plannedGlbOptimized : glbResult.glbOptimized;
+        result.skipped.push(...glbResult.skipped);
+        result.errors.push(...glbResult.errors);
+      } else {
+        info("ℹ️ Skipped .tsx and optimization steps, like instructed 🫡");
+      }
+
+      result.ok = result.errors.length === 0;
+
+      if (isJson()) {
+        process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+      }
+
+      if (result.errors.length > 0) exit(2);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : error;
-      console.error(red("🚨 Conversion process failed!"));
-      console.error(red("🚨 " + errorMsg));
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (isJson()) {
+        process.stdout.write(
+          JSON.stringify({ command: "single", ok: false, error: errorMsg }, null, 2) + "\n",
+        );
+      }
+      err(red("🚨 Conversion process failed!"));
+      err(red("🚨 " + errorMsg));
       exit(1);
     }
   });
