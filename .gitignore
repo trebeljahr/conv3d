@@ -3,3 +3,6 @@ node_modules
 .env
 dist
 tsconfig.tsbuildinfo
+# claude code
+.claude/settings.local.json
+.claude/worktrees/
