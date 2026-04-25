@@ -1,6 +1,7 @@
 {
   "name": "conv3d",
   "version": "1.0.5",
+  "packageManager": "pnpm@10.33.2",
   "description": "An interactive CLI tool for converting 3D models to GLB format and outputting React components to use with r3f. Supports FBX, OBJ, and glTF input formats.",
   "bin": {
     "conv3d": "./dist/conv3d.js"
@@ -24,8 +25,11 @@
     "release:minor": "npm version minor -m \"chore: release v%s\" && npm run _release:finish",
     "release:major": "npm version major -m \"chore: release v%s\" && npm run _release:finish",
     "_release:finish": "npm run build && npm test && npm publish --access public && git push --follow-tags && npm install -g .",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
-    "test": "npm run build && node --test \"tests/**/*.test.mjs\""
+    "prepare": "husky",
+    "test": "npm run build && node --test \"tests/**/*.test.mjs\"",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "check": "biome check --write ."
   },
   "keywords": [
     "3d",
@@ -61,6 +65,14 @@
     "@types/inquirer": "^9.0.9",
     "@types/lolcatjs": "^2.4.1",
     "@types/node": "^25.6.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "@biomejs/biome": "^1.9.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   }
 }

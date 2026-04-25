@@ -3,5 +3,5 @@
 # Skip with: git push --no-verify
 set -euo pipefail
 
-echo "▶ conv3d pre-push: npm test"
-npm test
+echo "▶ conv3d pre-push: pnpm test"
+pnpm test
