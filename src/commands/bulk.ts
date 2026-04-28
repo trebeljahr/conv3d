@@ -1,9 +1,9 @@
-import path from "path";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+import { exit } from "node:process";
 import chalk from "chalk";
 import fg from "fast-glob";
-import { readdir } from "fs/promises";
-import { exit } from "process";
-import { type InputFormats, collectFiles, convertModels, converters } from "../converters.js";
+import { collectFiles, converters, convertModels, type InputFormats } from "../converters.js";
 import { err, info, isJson, warn } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { type GlobalOptions, globalOptions, isDryRun, program } from "../program.js";
@@ -143,9 +143,9 @@ Examples:
       };
       const formats = Object.entries(formatMaps);
 
-      const numGLTF = formatMaps["GLTF"].files.length;
-      const numFBX = formatMaps["FBX"].files.length;
-      const numOBJ = formatMaps["OBJ"].files.length;
+      const numGLTF = formatMaps.GLTF.files.length;
+      const numFBX = formatMaps.FBX.files.length;
+      const numOBJ = formatMaps.OBJ.files.length;
       const numAll = numGLTF + numFBX + numOBJ;
 
       if (numAll === 0) {

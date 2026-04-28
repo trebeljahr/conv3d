@@ -1,6 +1,6 @@
+import { exit } from "node:process";
 import chalk from "chalk";
 import inquirer from "inquirer";
-import { exit } from "process";
 import { err } from "./log.js";
 import { isNonInteractive } from "./program.js";
 

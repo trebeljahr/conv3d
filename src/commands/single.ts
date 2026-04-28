@@ -1,12 +1,12 @@
-import path from "path";
+import path from "node:path";
+import { exit } from "node:process";
 import chalk from "chalk";
-import { exit } from "process";
 import {
+  converters,
   convertModels,
   convertSingleFbx,
   convertSingleGltf,
   convertSingleObj,
-  converters,
 } from "../converters.js";
 import { err, info, isJson } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";

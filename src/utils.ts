@@ -1,9 +1,8 @@
-import { homedir } from "os";
+import { access, constants, lstat, mkdir } from "node:fs/promises";
+import { homedir } from "node:os";
+import { exit } from "node:process";
 import chalk from "chalk";
-import { lstat, mkdir } from "fs/promises";
-import { constants, access } from "fs/promises";
 import inquirer from "inquirer";
-import { exit } from "process";
 import { err, info } from "./log.js";
 import type { OutputDirs } from "./outputDirs.js";
 import { isDryRun, isNonInteractive } from "./program.js";

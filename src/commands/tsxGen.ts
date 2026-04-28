@@ -1,7 +1,7 @@
-import path from "path";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+import { exit } from "node:process";
 import chalk from "chalk";
-import { readdir } from "fs/promises";
-import { exit } from "process";
 import { convertModels } from "../converters.js";
 import { err, info, isJson, warn } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";

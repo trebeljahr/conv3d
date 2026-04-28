@@ -1,7 +1,7 @@
-import path from "path";
+import { readdir, readFile, rename, rm, rmdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import chalk from "chalk";
 import convertFbxToGlb from "fbx2gltf";
-import { readFile, readdir, rename, rm, rmdir, writeFile } from "fs/promises";
 import gltfPipeline from "gltf-pipeline";
 import gltfjsx from "gltfjsx/src/gltfjsx.js";
 import obj2gltf from "obj2gltf";

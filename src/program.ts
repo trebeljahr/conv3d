@@ -1,6 +1,6 @@
-import { cpus } from "os";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
+import { cpus } from "node:os";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Command, Option } from "commander";
 import { readPackageUpSync } from "read-package-up";
 
@@ -178,4 +178,4 @@ export function resolveConcurrency(): number {
   return Math.min(available, 4);
 }
 
-export { program, globalOptions };
+export { globalOptions, program };
