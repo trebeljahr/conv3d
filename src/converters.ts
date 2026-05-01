@@ -298,7 +298,7 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
 
 export async function convertSingleGltf(inputPath: string, outputPath: string) {
   const gltf = JSON.parse(await readFile(inputPath, "utf8"));
-  const options = { resourceDirectory: "./input/" };
+  const options = { resourceDirectory: path.dirname(inputPath) };
   const results = await gltfToGlb(gltf, options);
   await writeFile(outputPath, results.glb);
 }
