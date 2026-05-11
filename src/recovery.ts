@@ -475,16 +475,63 @@ export async function seedMissingTextures(
   const embedded = new Map<string, number>();
   let attached = 0;
 
-  // First pass: per-material name match.
+  // First pass: per-material name match. Tries (in order):
+  //   1. exact:        material name == image stem
+  //   2. composite:    "<sourceStemPrefix>_<material>" (Tree_1.fbx + "Bark" -> Tree_Bark)
+  //   3. suffix-tier:  image stem startsWith material + "_<tag>" (Birch_Leaves -> Birch_Leaves_Green)
+  //   4. inverse:      image stem endsWith "_<material>"          (Bark        -> Tree_Bark)
+  // Tiebreaks alphabetically so the choice is deterministic across runs.
   const stillUnmatched: number[] = [];
+  const stemPrefix = sourceStem ? sourceStem.replace(/[_-]?\d+$/, "") : "";
   for (const idx of needsTexture) {
     const m = materials[idx]!;
     const name = m.name ?? "";
-    const hit = imageIndex.get(normalizeName(name));
+    const normMat = normalizeName(name);
+    if (!normMat) {
+      stillUnmatched.push(idx);
+      continue;
+    }
+
+    let hit: string | undefined = imageIndex.get(normMat);
+
+    if (!hit && stemPrefix && normMat) {
+      const composite = normalizeName(`${stemPrefix}_${name}`);
+      hit = imageIndex.get(composite);
+    }
+
+    if (!hit) {
+      const suffixHits: string[] = [];
+      for (const [k, v] of imageIndex) {
+        if (k.length > normMat.length && k.startsWith(normMat)) {
+          const tail = k.slice(normMat.length);
+          if (/^[a-z]+$/.test(tail)) suffixHits.push(v);
+        }
+      }
+      if (suffixHits.length > 0) {
+        suffixHits.sort();
+        hit = suffixHits[0];
+      }
+    }
+
+    if (!hit) {
+      const inverseHits: string[] = [];
+      for (const [k, v] of imageIndex) {
+        if (k.length > normMat.length && k.endsWith(normMat)) {
+          const head = k.slice(0, k.length - normMat.length);
+          if (/^[a-z]+$/.test(head)) inverseHits.push(v);
+        }
+      }
+      if (inverseHits.length > 0) {
+        inverseHits.sort();
+        hit = inverseHits[0];
+      }
+    }
+
     if (!hit) {
       stillUnmatched.push(idx);
       continue;
     }
+
     const texIdx = await embedAndAttach(
       gltf,
       hit,
