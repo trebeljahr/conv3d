@@ -77,6 +77,8 @@ Override with `-o <outputDir>`. For a flat structure, use `--flat` (every output
 | `--json`                          | Emit a single JSON result object on **stdout**. Implies `--quiet`. Errors stay on stderr.   |
 | `-q, --quiet`                     | Suppress progress output on stdout                                                          |
 | `-c, --concurrency <n>`           | Convert N files in parallel (default: `min(cpus, 4)`, or 1 in interactive ask-mode)         |
+| `--resolution <n>`                | Max texture resolution during `--optimize` (default `1024`; normals get `max(n, 2048)`)     |
+| `--keep-materials`                | Skip the palette step during `--optimize`, preserving original materials                    |
 | `--flat`                          | Write every output file directly into `outputDir` (no subdirectories)                       |
 | `--glb-dir <path>`                | Override where converted `.glb` files go                                                    |
 | `--tsx-dir <path>`                | Override where `.tsx` files go                                                              |
@@ -248,6 +250,12 @@ Each command: bumps the version (tagged commit), builds, runs tests, publishes t
 - [fbx2gltf](https://www.npmjs.com/package/fbx2gltf) — FBX → GLTF
 - [gltfjsx](https://www.npmjs.com/package/gltfjsx) — `.glb` → React component + web optimization
 - [fast-glob](https://www.npmjs.com/package/fast-glob) — glob-pattern expansion
+
+### FBX texture recovery
+
+Many freely-distributed packs (Kenney's KAYKIT, etc.) record texture paths in their `.fbx` files as absolute Windows paths like `C:\Files\Work\...\barbarian_texture.png` — and the FBX SDK doesn't fall back to looking for the basename next to the `.fbx`. The result: `fbx2gltf` silently bakes a 1×1 magenta placeholder into the GLB, which then survives (or gets pruned to a solid color) by the optimization step.
+
+After every FBX conversion, conv3d scans the output GLB for 1×1 placeholder PNGs. For each one it finds an image file in the FBX's directory that best matches the texture's slot (baseColor / normal / metallicRoughness / etc.) and replaces the placeholder bytes. You'll see a `✨ Recovered N external texture(s)` line per affected FBX.
 
 CLI polish: [commander](https://www.npmjs.com/package/commander), [inquirer](https://www.npmjs.com/package/inquirer), [chalk](https://www.npmjs.com/package/chalk), [ora](https://www.npmjs.com/package/ora), [figlet](https://www.npmjs.com/package/figlet), [lolcatjs](https://www.npmjs.com/package/lolcatjs).
 

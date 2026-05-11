@@ -107,6 +107,21 @@ Override with --flat or --glb-dir / --tsx-dir / --optimized-dir.`,
       return n;
     },
   )
+  .option(
+    "--resolution <n>",
+    "Max texture resolution for --optimize. Default is 1024 (normal maps get max(n, 2048)).",
+    (v) => {
+      const n = Number.parseInt(v, 10);
+      if (!Number.isFinite(n) || n < 1) {
+        throw new Error(`--resolution must be a positive integer (got "${v}")`);
+      }
+      return n;
+    },
+  )
+  .option(
+    "--keep-materials",
+    "Preserve original materials during --optimize. Skips the palette step that merges untextured materials into a tiny palette texture.",
+  )
   .usage("[command] [options]");
 
 program.addHelpText(
@@ -146,6 +161,8 @@ export type GlobalOptions = {
   tsxDir?: string;
   optimizedDir?: string;
   concurrency?: number;
+  resolution?: number;
+  keepMaterials?: boolean;
 };
 
 export function isNonInteractive(): boolean {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -207,6 +207,10 @@ test("single OBJ actually converts to .glb (live)", () => {
     const parsed = JSON.parse(r.stdout);
     assert.equal(parsed.errors.length, 0);
     assert.equal(parsed.converted.length, 1);
+    // The output must be a real binary GLB (magic = "glTF"), not glTF JSON
+    // dressed up with a .glb extension.
+    const head = readFileSync(parsed.converted[0]).subarray(0, 4).toString("ascii");
+    assert.equal(head, "glTF", `expected GLB magic, got ${JSON.stringify(head)}`);
   } finally {
     cleanup();
   }
