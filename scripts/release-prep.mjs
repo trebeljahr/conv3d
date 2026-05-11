@@ -58,7 +58,7 @@ if (status) {
 }
 
 if (process.env.RELEASE_SKIP_NPM_CHECK !== "1") {
-  const driftError = checkNpmDrift(repoRoot);
+  const driftError = checkNpmDrift();
   if (driftError) {
     console.error(`\n  ✗ release-prep: ${driftError}\n`);
     process.exit(1);
@@ -71,7 +71,7 @@ process.exit(0);
 /** Returns null on success, an error message string when the local
  *  package.json is at-or-behind what's published on npm. We only read
  *  the registry — never write — so it's safe to run blind. */
-function checkNpmDrift(repoRoot) {
+function checkNpmDrift() {
   const here = dirname(fileURLToPath(import.meta.url));
   const pkgPath = join(here, "..", "package.json");
   let pkg;

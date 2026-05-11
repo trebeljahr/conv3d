@@ -18,7 +18,13 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* react-remove-scroll (pulled in by fumadocs/radix dialogs) sets inline
+   margin-right + scroll-bar-size on body when a modal opens. We rely on
+   `scrollbar-gutter: stable` instead, so neutralize the lib's inline values.
+   !important is required to win against inline styles. */
 html > body[data-scroll-locked] {
+  /* biome-ignore lint/complexity/noImportantStyles: override inline style from react-remove-scroll */
   margin-right: 0px !important;
+  /* biome-ignore lint/complexity/noImportantStyles: override inline style from react-remove-scroll */
   --removed-body-scroll-bar-size: 0px !important;
 }

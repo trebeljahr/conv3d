@@ -43,7 +43,11 @@ function Hero() {
           </Link>
         </div>
 
-        <div className={styles.chart} aria-label="File size comparison: FBX vs optimized GLB">
+        <div
+          className={styles.chart}
+          role="img"
+          aria-label="File size comparison: FBX vs optimized GLB"
+        >
           <div className={styles.chartHead}>
             <div className={styles.chartHeadLeft}>
               <span className={styles.chartHeadKbd}>./asset-pack/</span>
@@ -179,7 +183,8 @@ function ComponentShowcase() {
           </div>
 
           <div className={styles.flowArrow} aria-hidden>
-            <svg viewBox="0 0 32 32" width="28" height="28">
+            <svg viewBox="0 0 32 32" width="28" height="28" role="presentation">
+              <title>Arrow</title>
               <path
                 d="M6 16 H24 M18 10 L24 16 L18 22"
                 stroke="currentColor"
