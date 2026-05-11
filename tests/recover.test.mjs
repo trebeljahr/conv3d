@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { recoverFbxTextures } = await import(path.resolve(__dirname, "..", "dist", "converters.js"));
+const { applyFoliageHints, applyMaterialColors, parseGlbMinimal, seedMissingTextures } =
+  await import(path.resolve(__dirname, "..", "dist", "recovery.js"));
 
 // 1×1 magenta PNG, base64-encoded — this is the exact byte sequence fbx2gltf
 // emits when it can't resolve an external texture.
@@ -152,6 +154,298 @@ test("recoverFbxTextures is a no-op when no placeholder is present", async () =>
     // File must be byte-identical (no spurious round-trip rewrite).
     const after = readFileSync(glbPath);
     assert.ok(before.equals(after), "GLB should be untouched when no placeholders");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Build a minimal GLB with `materials.length` named materials, each used by
+// one mesh primitive that has TEXCOORD_0 (so seedMissingTextures considers
+// them eligible). No images/textures present.
+function buildMaterialOnlyGlb(materialNames) {
+  const materials = materialNames.map((name) => ({
+    name,
+    pbrMetallicRoughness: { baseColorFactor: [0.8, 0.8, 0.8, 1.0] },
+  }));
+  // One bufferView for a tiny dummy TEXCOORD_0 + POSITION accessor each. We
+  // don't need real geometry — just the attribute key on the primitive.
+  const meshes = materials.map((_, i) => ({
+    primitives: [{ attributes: { POSITION: 0, TEXCOORD_0: 0 }, material: i }],
+  }));
+  const gltf = {
+    asset: { version: "2.0" },
+    materials,
+    meshes,
+    nodes: meshes.map((_, i) => ({ mesh: i })),
+    scenes: [{ nodes: meshes.map((_, i) => i) }],
+    scene: 0,
+  };
+  let jsonBuf = Buffer.from(JSON.stringify(gltf), "utf8");
+  const pad = (4 - (jsonBuf.length % 4)) % 4;
+  if (pad) jsonBuf = Buffer.concat([jsonBuf, Buffer.alloc(pad, 0x20)]);
+  const totalLength = 12 + 8 + jsonBuf.length;
+  const glb = Buffer.alloc(totalLength);
+  glb.writeUInt32LE(0x46546c67, 0);
+  glb.writeUInt32LE(2, 4);
+  glb.writeUInt32LE(totalLength, 8);
+  glb.writeUInt32LE(jsonBuf.length, 12);
+  glb.writeUInt32LE(0x4e4f534a, 16);
+  jsonBuf.copy(glb, 20);
+  return glb;
+}
+
+test("seedMissingTextures attaches sibling Textures/ images to materials by name", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-"));
+  try {
+    const glbPath = path.join(dir, "Banner.glb");
+    writeFileSync(glbPath, buildMaterialOnlyGlb(["Banner", "Wood", "DarkRock"]));
+
+    // Sibling Textures/ folder with two of the three names matching.
+    mkdirSync(path.join(dir, "Textures"));
+    writeFileSync(
+      path.join(dir, "Textures", "Banner.png"),
+      Buffer.from(REAL_PNG_B64, "base64"),
+    );
+    writeFileSync(
+      path.join(dir, "Textures", "wood.png"), // case-insensitive match
+      Buffer.from(REAL_PNG_B64, "base64"),
+    );
+
+    const attached = await seedMissingTextures(glbPath, dir);
+    assert.equal(attached, 2, "should seed two textures (Banner + Wood); DarkRock has no match");
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    const namesWithTexture = json.materials
+      .filter((m) => m.pbrMetallicRoughness?.baseColorTexture)
+      .map((m) => m.name)
+      .sort();
+    assert.deepEqual(namesWithTexture, ["Banner", "Wood"]);
+    assert.equal(json.images.length, 2);
+    // Buffer-byte length should be at least the size of two PNGs.
+    assert.ok(json.buffers[0].byteLength > 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("seedMissingTextures uses single-image fallback as a shared atlas", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-atlas-"));
+  try {
+    const glbPath = path.join(dir, "Burger.glb");
+    writeFileSync(glbPath, buildMaterialOnlyGlb(["Bun", "Patty", "Cheese"]));
+
+    // Sibling Textures/ folder with exactly one image — the shared atlas.
+    mkdirSync(path.join(dir, "Textures"));
+    writeFileSync(
+      path.join(dir, "Textures", "atlas.png"),
+      Buffer.from(REAL_PNG_B64, "base64"),
+    );
+
+    const attached = await seedMissingTextures(glbPath, dir);
+    assert.equal(attached, 3, "all three materials should get the lone atlas");
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    // All three materials point to the same texture (deduped).
+    const indices = json.materials.map((m) => m.pbrMetallicRoughness.baseColorTexture.index);
+    assert.equal(new Set(indices).size, 1, "should be deduped to one texture");
+    assert.equal(json.images.length, 1, "atlas embedded only once");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("seedMissingTextures is a no-op when material already has baseColorTexture", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-noop-"));
+  try {
+    // Build a GLB where the one material already has a baseColorTexture.
+    const gltf = {
+      asset: { version: "2.0" },
+      images: [{ name: "existing", uri: `data:image/png;base64,${REAL_PNG_B64}` }],
+      samplers: [{}],
+      textures: [{ sampler: 0, source: 0 }],
+      materials: [
+        {
+          name: "Banner",
+          pbrMetallicRoughness: {
+            baseColorTexture: { index: 0 },
+            baseColorFactor: [1, 1, 1, 1],
+          },
+        },
+      ],
+      meshes: [{ primitives: [{ attributes: { TEXCOORD_0: 0 }, material: 0 }] }],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+    };
+    let jsonBuf = Buffer.from(JSON.stringify(gltf), "utf8");
+    const pad = (4 - (jsonBuf.length % 4)) % 4;
+    if (pad) jsonBuf = Buffer.concat([jsonBuf, Buffer.alloc(pad, 0x20)]);
+    const total = 12 + 8 + jsonBuf.length;
+    const glb = Buffer.alloc(total);
+    glb.writeUInt32LE(0x46546c67, 0);
+    glb.writeUInt32LE(2, 4);
+    glb.writeUInt32LE(total, 8);
+    glb.writeUInt32LE(jsonBuf.length, 12);
+    glb.writeUInt32LE(0x4e4f534a, 16);
+    jsonBuf.copy(glb, 20);
+
+    const glbPath = path.join(dir, "Banner.glb");
+    writeFileSync(glbPath, glb);
+
+    mkdirSync(path.join(dir, "Textures"));
+    writeFileSync(
+      path.join(dir, "Textures", "Banner.png"),
+      Buffer.from(REAL_PNG_B64, "base64"),
+    );
+
+    const before = readFileSync(glbPath);
+    const attached = await seedMissingTextures(glbPath, dir);
+    assert.equal(attached, 0, "no seeding when material already has a texture");
+    const after = readFileSync(glbPath);
+    assert.ok(before.equals(after), "GLB should be byte-identical");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("applyFoliageHints sets MASK + doubleSided on foliage materials with textures", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-foliage-"));
+  try {
+    const glbPath = path.join(dir, "Tree.glb");
+    // Two materials: Leaves (foliage, has texture) + Bark (not foliage).
+    const gltf = {
+      asset: { version: "2.0" },
+      images: [{ name: "leaves", uri: `data:image/png;base64,${REAL_PNG_B64}` }],
+      samplers: [{}],
+      textures: [{ sampler: 0, source: 0 }],
+      materials: [
+        {
+          name: "Leaves",
+          pbrMetallicRoughness: { baseColorTexture: { index: 0 } },
+        },
+        {
+          name: "Bark",
+          pbrMetallicRoughness: { baseColorTexture: { index: 0 } },
+        },
+        {
+          // Foliage name but no texture — should NOT get hints (nothing to mask).
+          name: "BushOutline",
+          pbrMetallicRoughness: { baseColorFactor: [0.5, 0.5, 0.5, 1] },
+        },
+      ],
+      meshes: [
+        {
+          primitives: [
+            { attributes: { TEXCOORD_0: 0 }, material: 0 },
+            { attributes: { TEXCOORD_0: 0 }, material: 1 },
+            { attributes: { POSITION: 0 }, material: 2 },
+          ],
+        },
+      ],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+    };
+    let jsonBuf = Buffer.from(JSON.stringify(gltf), "utf8");
+    const pad = (4 - (jsonBuf.length % 4)) % 4;
+    if (pad) jsonBuf = Buffer.concat([jsonBuf, Buffer.alloc(pad, 0x20)]);
+    const total = 12 + 8 + jsonBuf.length;
+    const glb = Buffer.alloc(total);
+    glb.writeUInt32LE(0x46546c67, 0);
+    glb.writeUInt32LE(2, 4);
+    glb.writeUInt32LE(total, 8);
+    glb.writeUInt32LE(jsonBuf.length, 12);
+    glb.writeUInt32LE(0x4e4f534a, 16);
+    jsonBuf.copy(glb, 20);
+    writeFileSync(glbPath, glb);
+
+    const changed = await applyFoliageHints(glbPath);
+    assert.equal(changed, 1, "only Leaves should be patched");
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    const leaves = json.materials[0];
+    const bark = json.materials[1];
+    const bushOutline = json.materials[2];
+    assert.equal(leaves.alphaMode, "MASK");
+    assert.equal(leaves.alphaCutoff, 0.5);
+    assert.equal(leaves.doubleSided, true);
+    assert.equal(bark.alphaMode, undefined, "non-foliage material untouched");
+    assert.equal(bushOutline.alphaMode, undefined, "foliage without texture untouched");
+
+    // Idempotent: running again is a no-op.
+    const second = await applyFoliageHints(glbPath);
+    assert.equal(second, 0, "second run should be a no-op");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("applyMaterialColors replaces default-grey baseColorFactor from manifest", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-colors-"));
+  try {
+    const glbPath = path.join(dir, "Banner.glb");
+    writeFileSync(glbPath, buildMaterialOnlyGlb(["Banner", "Wood", "AlreadyColored"]));
+
+    // Pre-set a non-default color on AlreadyColored — manifest should not
+    // clobber it. Read, mutate, write back.
+    {
+      const { json } = parseGlbMinimal(readFileSync(glbPath));
+      json.materials[2].pbrMetallicRoughness.baseColorFactor = [0.1, 0.2, 0.3, 1.0];
+      let jsonBuf = Buffer.from(JSON.stringify(json), "utf8");
+      const pad = (4 - (jsonBuf.length % 4)) % 4;
+      if (pad) jsonBuf = Buffer.concat([jsonBuf, Buffer.alloc(pad, 0x20)]);
+      const total = 12 + 8 + jsonBuf.length;
+      const glb = Buffer.alloc(total);
+      glb.writeUInt32LE(0x46546c67, 0);
+      glb.writeUInt32LE(2, 4);
+      glb.writeUInt32LE(total, 8);
+      glb.writeUInt32LE(jsonBuf.length, 12);
+      glb.writeUInt32LE(0x4e4f534a, 16);
+      jsonBuf.copy(glb, 20);
+      writeFileSync(glbPath, glb);
+    }
+
+    const manifest = {
+      Banner: {
+        Banner: { color: [0.8, 0.0, 0.0, 1.0], source: "principled" },
+        Wood: { color: [0.4, 0.25, 0.1, 1.0], source: "principled" },
+        AlreadyColored: { color: [0.99, 0.99, 0.99, 1.0], source: "principled" },
+      },
+    };
+    const changed = await applyMaterialColors(glbPath, manifest);
+    assert.equal(changed, 2, "Banner + Wood patched; AlreadyColored skipped");
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    assert.deepEqual(json.materials[0].pbrMetallicRoughness.baseColorFactor, [0.8, 0.0, 0.0, 1.0]);
+    assert.deepEqual(json.materials[1].pbrMetallicRoughness.baseColorFactor, [0.4, 0.25, 0.1, 1.0]);
+    assert.deepEqual(
+      json.materials[2].pbrMetallicRoughness.baseColorFactor,
+      [0.1, 0.2, 0.3, 1.0],
+      "non-grey material preserved",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("applyMaterialColors accepts flat (no-stem) manifest shape", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-colors-flat-"));
+  try {
+    const glbPath = path.join(dir, "Anything.glb");
+    writeFileSync(glbPath, buildMaterialOnlyGlb(["RoofTile"]));
+
+    // Flat manifest: no per-stem nesting, just material -> color.
+    const manifest = {
+      RoofTile: { color: [0.65, 0.18, 0.12, 1.0] },
+    };
+    const changed = await applyMaterialColors(glbPath, manifest);
+    assert.equal(changed, 1);
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    assert.deepEqual(
+      json.materials[0].pbrMetallicRoughness.baseColorFactor,
+      [0.65, 0.18, 0.12, 1.0],
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

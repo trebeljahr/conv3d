@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { cpus } from "node:os";
-import { dirname } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command, Option } from "commander";
 import { readPackageUpSync } from "read-package-up";
@@ -122,6 +123,27 @@ Override with --flat or --glb-dir / --tsx-dir / --optimized-dir.`,
     "--keep-materials",
     "Preserve original materials during --optimize. Skips the palette step that merges untextured materials into a tiny palette texture.",
   )
+  .option(
+    "--no-recover-textures",
+    "Disable post-conversion texture recovery (placeholder swaps, sibling-Textures seeding, foliage alpha hints). On by default.",
+  )
+  .option(
+    "--textures-dir <path>",
+    "Extra directory to scan for textures when seeding missing material textures. By default conv3d scans the source file's directory and common siblings (Textures/, textures/, tex/, Materials/).",
+  )
+  .option(
+    "--material-colors <path>",
+    "Path to a JSON manifest of per-material baseColorFactor values (output of scripts/blender/extract-material-colors.py). Applied to materials whose names match.",
+    (v) => {
+      try {
+        const text = readFileSync(resolve(v), "utf8");
+        return JSON.parse(text);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        throw new Error(`--material-colors: could not read JSON at "${v}": ${msg}`);
+      }
+    },
+  )
   .usage("[command] [options]");
 
 program.addHelpText(
@@ -163,6 +185,10 @@ export type GlobalOptions = {
   concurrency?: number;
   resolution?: number;
   keepMaterials?: boolean;
+  recoverTextures?: boolean;
+  texturesDir?: string;
+  // biome-ignore lint/suspicious/noExplicitAny: parsed JSON manifest, shape validated at use sites.
+  materialColors?: any;
 };
 
 export function isNonInteractive(): boolean {

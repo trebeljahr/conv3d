@@ -1,4 +1,4 @@
-import { readdir, readFile, rename, rm, rmdir, stat, writeFile } from "node:fs/promises";
+import { readdir, readFile, rename, rm, rmdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import chalk from "chalk";
 import convertFbxToGlb from "fbx2gltf";
@@ -9,7 +9,10 @@ import { createSpinner, err, info, warn } from "./log.js";
 import type { OutputDirs } from "./outputDirs.js";
 import { globalOptions, isDryRun, resolveConcurrency, resolveOverwriteMode } from "./program.js";
 import { askForFileOverwrite } from "./prompts.js";
+import { type PostProcessOptions, postProcessGlb } from "./recovery.js";
 import { checkFileExists } from "./utils.js";
+
+export { recoverFbxTextures } from "./recovery.js";
 
 const { green, red, yellow } = chalk;
 const { gltfToGlb } = gltfPipeline;
@@ -270,6 +273,7 @@ export async function convertSingleObj(inputPath: string, outputPath: string) {
   // but semantically wrong.
   const glb = (await obj2gltf(inputPath, { binary: true })) as Buffer;
   await writeFile(outputPath, glb);
+  await runPostProcess(outputPath, inputPath);
 }
 
 export async function convertSingleFbx(inputPath: string, outputPath: string) {
@@ -291,21 +295,7 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
 
   try {
     await convertFbxToGlb(inputPath, outputPath, ["--binary", "--pbr-metallic-roughness"]);
-    // fbx2gltf bakes a 1×1 magenta placeholder when it can't resolve a
-    // texture (e.g. Kenney/Kaykit packs store textures via absolute Windows
-    // paths that don't exist on macOS/Linux, and the FBX SDK doesn't fall
-    // back to the basename). Patch any such placeholders by matching against
-    // image files next to the .fbx.
-    const recovered = await recoverFbxTextures(outputPath, inputPath);
-    if (recovered > 0) {
-      info(
-        green(
-          `✨ Recovered ${recovered} external texture${
-            recovered === 1 ? "" : "s"
-          } for ${path.basename(inputPath)}`,
-        ),
-      );
-    }
+    await runPostProcess(outputPath, inputPath);
   } catch (error) {
     await cleanup();
     throw error;
@@ -319,6 +309,51 @@ export async function convertSingleGltf(inputPath: string, outputPath: string) {
   const options = { resourceDirectory: path.dirname(inputPath) };
   const results = await gltfToGlb(gltf, options);
   await writeFile(outputPath, results.glb);
+  await runPostProcess(outputPath, inputPath);
+}
+
+async function runPostProcess(glbPath: string, sourcePath: string): Promise<void> {
+  const opts: PostProcessOptions = {
+    recoverTextures: globalOptions.recoverTextures !== false,
+    ...(globalOptions.texturesDir ? { texturesDir: globalOptions.texturesDir } : {}),
+    ...(globalOptions.materialColors ? { materialColors: globalOptions.materialColors } : {}),
+  };
+  if (!opts.recoverTextures && !opts.materialColors) return;
+
+  const result = await postProcessGlb(glbPath, sourcePath, opts);
+  const base = path.basename(sourcePath);
+  const messages: string[] = [];
+  if (result.placeholdersRecovered > 0) {
+    messages.push(
+      `${result.placeholdersRecovered} placeholder texture${
+        result.placeholdersRecovered === 1 ? "" : "s"
+      } recovered`,
+    );
+  }
+  if (result.texturesSeeded > 0) {
+    messages.push(
+      `${result.texturesSeeded} missing texture${
+        result.texturesSeeded === 1 ? "" : "s"
+      } seeded from sibling files`,
+    );
+  }
+  if (result.foliageHinted > 0) {
+    messages.push(
+      `${result.foliageHinted} foliage material${
+        result.foliageHinted === 1 ? "" : "s"
+      } set to alpha-mask`,
+    );
+  }
+  if (result.colorsApplied > 0) {
+    messages.push(
+      `${result.colorsApplied} material color${
+        result.colorsApplied === 1 ? "" : "s"
+      } applied from manifest`,
+    );
+  }
+  if (messages.length > 0) {
+    info(green(`✨ ${base}: ${messages.join(", ")}`));
+  }
 }
 
 export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
@@ -329,244 +364,4 @@ export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
     ...(globalOptions.resolution !== undefined ? { resolution: globalOptions.resolution } : {}),
     ...(globalOptions.keepMaterials ? { keepmaterials: true } : {}),
   });
-}
-
-// ---------------------------------------------------------------------------
-// FBX placeholder-texture recovery
-//
-// fbx2gltf bakes a 1×1 magenta PNG into the output GLB whenever the FBX SDK
-// can't resolve a referenced texture file. Two common reasons:
-//
-//  - Many free packs (Kenney's KAYKIT, etc.) record `FileName` and even
-//    `RelativeFilename` as absolute Windows paths (`C:\\Files\\Work\\...`),
-//    which obviously don't exist on macOS/Linux.
-//  - The FBX SDK's fallback "look next to the FBX" search doesn't kick in
-//    because the (relative) filename it derived is empty.
-//
-// We post-process the GLB to: (1) detect those 1×1 placeholders, (2) match
-// them against image files in the FBX's directory using a tiny scoring
-// heuristic, and (3) swap the placeholder bytes for the real file.
-// ---------------------------------------------------------------------------
-
-type TextureSlot = "baseColor" | "normal" | "metallicRoughness" | "emissive" | "occlusion";
-
-const PLACEHOLDER_BYTE_LIMIT = 256;
-const PLACEHOLDER_DIM_LIMIT = 4;
-
-const SLOT_KEYWORDS: Record<TextureSlot, string[]> = {
-  baseColor: ["basecolor", "base_color", "diffuse", "albedo", "_color", "texture"],
-  normal: ["normal", "_nrm", "bump"],
-  metallicRoughness: [
-    "metallic_roughness",
-    "metallicroughness",
-    "metalrough",
-    "_orm",
-    "_mr_",
-    "roughness",
-  ],
-  emissive: ["emissive", "emission", "emit"],
-  occlusion: ["occlusion", "_ao", "ambientocclusion"],
-};
-
-const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
-
-const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47] as const;
-const GLB_MAGIC = 0x46546c67;
-const GLB_JSON = 0x4e4f534a;
-const GLB_BIN = 0x004e4942;
-
-type GltfImage = {
-  bufferView?: number;
-  uri?: string;
-  mimeType?: string;
-  name?: string;
-  extras?: { _pipeline?: { source?: Buffer } };
-};
-// biome-ignore lint/suspicious/noExplicitAny: gltf JSON has no static type
-type GltfJson = any;
-
-function parseGlbMinimal(buf: Buffer): { json: GltfJson; bin: Buffer | null } {
-  if (buf.length < 12 || buf.readUInt32LE(0) !== GLB_MAGIC) {
-    throw new Error("Not a valid GLB");
-  }
-  const totalLength = buf.readUInt32LE(8);
-  let offset = 12;
-  let json: GltfJson | null = null;
-  let bin: Buffer | null = null;
-  while (offset < totalLength) {
-    const chunkLength = buf.readUInt32LE(offset);
-    const chunkType = buf.readUInt32LE(offset + 4);
-    offset += 8;
-    const data = buf.subarray(offset, offset + chunkLength);
-    if (chunkType === GLB_JSON) json = JSON.parse(data.toString("utf8"));
-    else if (chunkType === GLB_BIN) bin = Buffer.from(data);
-    offset += chunkLength;
-  }
-  if (!json) throw new Error("GLB has no JSON chunk");
-  return { json, bin };
-}
-
-function getImageBytes(img: GltfImage, gltf: GltfJson, bin: Buffer | null): Buffer | null {
-  if (img.bufferView !== undefined && bin) {
-    const bv = gltf.bufferViews[img.bufferView];
-    const start = bv.byteOffset ?? 0;
-    return Buffer.from(bin.subarray(start, start + bv.byteLength));
-  }
-  if (typeof img.uri === "string" && img.uri.startsWith("data:")) {
-    const marker = ";base64,";
-    const idx = img.uri.indexOf(marker);
-    if (idx < 0) return null;
-    return Buffer.from(img.uri.slice(idx + marker.length), "base64");
-  }
-  return null;
-}
-
-function isPlaceholderPng(data: Buffer): boolean {
-  if (data.length >= PLACEHOLDER_BYTE_LIMIT) return false;
-  if (data.length < 24) return false;
-  for (let i = 0; i < PNG_MAGIC.length; i++) {
-    if (data[i] !== PNG_MAGIC[i]) return false;
-  }
-  const w = data.readUInt32BE(16);
-  const h = data.readUInt32BE(20);
-  return w > 0 && h > 0 && w <= PLACEHOLDER_DIM_LIMIT && h <= PLACEHOLDER_DIM_LIMIT;
-}
-
-function detectImageSlot(gltf: GltfJson, imageIdx: number): TextureSlot | null {
-  const textures: { source?: number }[] = gltf.textures ?? [];
-  const texturesUsingImage = new Set<number>();
-  for (let ti = 0; ti < textures.length; ti++) {
-    if (textures[ti]?.source === imageIdx) texturesUsingImage.add(ti);
-  }
-  if (texturesUsingImage.size === 0) return null;
-  const materials = gltf.materials ?? [];
-  for (const mat of materials) {
-    const pbr = mat.pbrMetallicRoughness ?? {};
-    if (texturesUsingImage.has(pbr.baseColorTexture?.index)) return "baseColor";
-    if (texturesUsingImage.has(pbr.metallicRoughnessTexture?.index)) return "metallicRoughness";
-    if (texturesUsingImage.has(mat.normalTexture?.index)) return "normal";
-    if (texturesUsingImage.has(mat.occlusionTexture?.index)) return "occlusion";
-    if (texturesUsingImage.has(mat.emissiveTexture?.index)) return "emissive";
-  }
-  return null;
-}
-
-function mimeForExtension(ext: string): string {
-  const lower = ext.toLowerCase();
-  if (lower === ".jpg" || lower === ".jpeg") return "image/jpeg";
-  if (lower === ".webp") return "image/webp";
-  if (lower === ".bmp") return "image/bmp";
-  return "image/png";
-}
-
-async function findReplacementTexture(
-  fbxDir: string,
-  fbxBaseLower: string,
-  slot: TextureSlot | null,
-): Promise<string | null> {
-  let entries: string[];
-  try {
-    entries = await readdir(fbxDir);
-  } catch {
-    return null;
-  }
-  const candidates = entries.filter((n) => {
-    if (n.startsWith(".")) return false;
-    const ext = path.extname(n).toLowerCase();
-    if (!IMAGE_EXTENSIONS.has(ext)) return false;
-    const lower = n.toLowerCase();
-    return !lower.includes("preview") && !lower.includes("thumbnail") && !lower.includes("sample");
-  });
-  if (candidates.length === 0) return null;
-
-  const slotKeywords = slot ? SLOT_KEYWORDS[slot] : [];
-
-  let best: { p: string; score: number; size: number } | null = null;
-  for (const name of candidates) {
-    const lower = name.toLowerCase();
-    let score = 1;
-    if (fbxBaseLower && lower.includes(fbxBaseLower)) score += 10;
-    if (slotKeywords.some((k) => lower.includes(k))) score += 5;
-    // Subtract points when the file looks like a different slot, so a
-    // baseColor placeholder doesn't grab a Normal map sitting in the same dir.
-    if (slot) {
-      for (const [other, kws] of Object.entries(SLOT_KEYWORDS) as [TextureSlot, string[]][]) {
-        if (other === slot) continue;
-        if (kws.some((k) => lower.includes(k))) {
-          score -= 5;
-          break;
-        }
-      }
-    }
-    if (score <= 0) continue;
-    const full = path.join(fbxDir, name);
-    let size = 0;
-    try {
-      size = (await stat(full)).size;
-    } catch {
-      continue;
-    }
-    if (!best || score > best.score || (score === best.score && size > best.size)) {
-      best = { p: full, score, size };
-    }
-  }
-  return best?.p ?? null;
-}
-
-export async function recoverFbxTextures(glbPath: string, fbxPath: string): Promise<number> {
-  let buf: Buffer;
-  try {
-    buf = await readFile(glbPath);
-  } catch {
-    return 0;
-  }
-  let parsed: { json: GltfJson; bin: Buffer | null };
-  try {
-    parsed = parseGlbMinimal(buf);
-  } catch {
-    return 0;
-  }
-  const { json: gltf, bin } = parsed;
-  const images: GltfImage[] = gltf.images ?? [];
-  if (images.length === 0) return 0;
-
-  const fbxDir = path.dirname(fbxPath);
-  const fbxBaseLower = path.basename(fbxPath, path.extname(fbxPath)).toLowerCase();
-
-  let recovered = 0;
-  for (let i = 0; i < images.length; i++) {
-    const img = images[i]!;
-    const data = getImageBytes(img, gltf, bin);
-    if (!data || !isPlaceholderPng(data)) continue;
-
-    const slot = detectImageSlot(gltf, i);
-    const replacementPath = await findReplacementTexture(fbxDir, fbxBaseLower, slot);
-    if (!replacementPath) continue;
-
-    const real = await readFile(replacementPath);
-    img.extras = img.extras ?? {};
-    img.extras._pipeline = img.extras._pipeline ?? {};
-    img.extras._pipeline.source = real;
-    img.mimeType = mimeForExtension(path.extname(replacementPath));
-    img.bufferView = undefined;
-    img.uri = undefined;
-    recovered++;
-  }
-  if (recovered === 0) return 0;
-
-  // gltf-pipeline's gltfToGlb reads buffer.extras._pipeline.source for the
-  // existing BIN chunk and replaces the image bufferViews from our patched
-  // `extras._pipeline.source`. Then it re-merges buffers for output.
-  // Ensure buffers/bufferViews arrays exist — addBuffer (called during write)
-  // assumes both are arrays.
-  if (!Array.isArray(gltf.buffers)) gltf.buffers = [];
-  if (!Array.isArray(gltf.bufferViews)) gltf.bufferViews = [];
-  if (bin && gltf.buffers.length > 0) {
-    gltf.buffers[0].extras = gltf.buffers[0].extras ?? {};
-    gltf.buffers[0].extras._pipeline = gltf.buffers[0].extras._pipeline ?? {};
-    gltf.buffers[0].extras._pipeline.source = bin;
-  }
-  const result = await gltfToGlb(gltf);
-  await writeFile(glbPath, result.glb);
-  return recovered;
 }
