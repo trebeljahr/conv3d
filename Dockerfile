@@ -22,8 +22,15 @@ ARG NODE_VERSION=24
 
 FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app/docs
+# docs/package.json doesn't pin packageManager (the root package.json does,
+# but we never copy it). Without an explicit pin corepack falls back to a
+# newer pnpm than local, and fumadocs-mdx@15's postinstall blows up trying
+# to load a `vite/index.js` that isn't a declared dep
+# (ERR_MODULE_NOT_FOUND: Cannot find package 'vite'). Pin to match what
+# the local install + build was tested against.
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 COPY docs/package.json docs/pnpm-lock.yaml* ./
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 COPY docs/ ./
 RUN pnpm build
 
