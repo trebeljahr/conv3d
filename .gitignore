@@ -4,13 +4,15 @@ node_modules
 dist
 tsconfig.tsbuildinfo
 
-# docs site (Docusaurus build output + cache)
-docs/build
-docs/.docusaurus
+# docs site (Next.js build output + cache)
+docs/.next
+docs/out
+docs/.source
 
 # claude code
 .claude/settings.local.json
 .claude/worktrees/
+.claude/launch.json
 
 # standard defaults (mirrors ~/.config/git/ignore)
 .DS_Store

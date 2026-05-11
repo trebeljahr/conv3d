@@ -1,6 +1,6 @@
 name: Deploy docs to GitHub Pages
 
-# Builds the Docusaurus site in `docs/` and publishes it to GitHub Pages.
+# Builds the Next.js + Fumadocs site in `docs/` and publishes it to GitHub Pages.
 # Triggers only when docs (or this workflow) actually change, so normal
 # CLI work doesn't rebuild the site needlessly.
 
@@ -50,14 +50,14 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Build with Docusaurus
+      - name: Build with Next.js
         run: pnpm build
         env:
           NODE_ENV: production
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/build
+          path: docs/out
 
   deploy:
     needs: build

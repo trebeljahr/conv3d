@@ -1,11 +1,7 @@
 ---
-sidebar_position: 2
 title: Getting Started
+description: From nothing to your first converted model in three minutes.
 ---
-
-# Getting Started
-
-From nothing to your first converted model in three minutes.
 
 ## 1. Install
 
@@ -104,10 +100,10 @@ conv3d bulk ./models -m ALL --tsx --optimize -y --json
 - `--json` emits a single result object on stdout. Stderr keeps the human-readable errors.
 - The process exits `0` on success, `2` if some files failed (look at `errors[]` in the JSON), `1` on a fatal error.
 
-See [Using conv3d from scripts & agents](./agents.md) for the full contract.
+See [Using conv3d from scripts & agents](./agents) for the full contract.
 
 ## Next
 
-- [Commands reference](./commands.md) — every flag for every command.
-- [Output layout](./output.md) — how to control where files land.
-- [FBX texture recovery](./textures.md) — what those `✨ Recovered N external texture(s)` lines mean.
+- [Commands reference](./commands) — every flag for every command.
+- [Output layout](./output) — how to control where files land.
+- [FBX texture recovery](./textures) — what those `✨ Recovered N external texture(s)` lines mean.

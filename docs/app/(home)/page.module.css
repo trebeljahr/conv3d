@@ -1,27 +1,7 @@
-/* Landing page — file-size comparison chart as the anchor, no terminal cosplay. */
+/* Landing page — file-size comparison chart as the anchor, no terminal cosplay.
+   Defaults are light-mode; .dark overrides for dark-mode (Tailwind v4 class strategy). */
 
 .main {
-  --c3-fg: #e6f4f1;
-  --c3-fg-muted: #94a8b0;
-  --c3-fg-dim: #5f7079;
-  --c3-bg: #0a1014;
-  --c3-bg-alt: #0d1418;
-  --c3-surface: #131c22;
-  --c3-surface-2: #18232b;
-  --c3-border: rgba(255, 255, 255, 0.08);
-  --c3-border-strong: rgba(255, 255, 255, 0.16);
-  --c3-accent: #5eead4;
-  --c3-accent-strong: #2dd4bf;
-  --c3-accent-glow: rgba(20, 184, 166, 0.28);
-  --c3-warn: #f59e0b;
-  --c3-warn-soft: rgba(245, 158, 11, 0.18);
-  --c3-success: #34d399;
-  --c3-radius-lg: 14px;
-  --c3-radius-md: 10px;
-  --c3-radius-sm: 6px;
-}
-
-[data-theme="light"] .main {
   --c3-fg: #0a1014;
   --c3-fg-muted: #4b5563;
   --c3-fg-dim: #6b7280;
@@ -37,11 +17,31 @@
   --c3-warn: #b45309;
   --c3-warn-soft: rgba(180, 83, 9, 0.12);
   --c3-success: #047857;
-}
+  --c3-radius-lg: 14px;
+  --c3-radius-md: 10px;
+  --c3-radius-sm: 6px;
+  --c3-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-.main {
   background: var(--c3-bg);
   color: var(--c3-fg);
+}
+
+:global(.dark) .main {
+  --c3-fg: #e6f4f1;
+  --c3-fg-muted: #94a8b0;
+  --c3-fg-dim: #5f7079;
+  --c3-bg: #0a1014;
+  --c3-bg-alt: #0d1418;
+  --c3-surface: #131c22;
+  --c3-surface-2: #18232b;
+  --c3-border: rgba(255, 255, 255, 0.08);
+  --c3-border-strong: rgba(255, 255, 255, 0.16);
+  --c3-accent: #5eead4;
+  --c3-accent-strong: #2dd4bf;
+  --c3-accent-glow: rgba(20, 184, 166, 0.28);
+  --c3-warn: #f59e0b;
+  --c3-warn-soft: rgba(245, 158, 11, 0.18);
+  --c3-success: #34d399;
 }
 
 /* ───── Hero ───────────────────────────────────────────────── */
@@ -88,7 +88,7 @@
 }
 
 .heroCode {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.88em;
   padding: 0.1em 0.35em;
   background: var(--c3-surface);
@@ -188,7 +188,7 @@
 }
 
 .chartHeadKbd {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--c3-fg);
@@ -214,7 +214,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
 }
 
 .legendDot {
@@ -245,7 +245,7 @@
 }
 
 .chartFile {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.85rem;
   color: var(--c3-fg);
   white-space: nowrap;
@@ -256,7 +256,7 @@
 .chartTrack {
   position: relative;
   height: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 16, 20, 0.025);
   border: 1px solid var(--c3-border);
   border-radius: var(--c3-radius-sm);
   overflow: hidden;
@@ -264,8 +264,8 @@
   align-items: center;
 }
 
-[data-theme="light"] .chartTrack {
-  background: rgba(10, 16, 20, 0.025);
+:global(.dark) .chartTrack {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .barBefore,
@@ -293,7 +293,7 @@
   z-index: 1;
   margin-left: auto;
   margin-right: 0.5rem;
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.78rem;
   font-weight: 600;
   text-shadow: 0 0 6px var(--c3-surface);
@@ -308,7 +308,7 @@
 }
 
 .chartPct {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--c3-accent);
@@ -317,7 +317,7 @@
 
 .chartEllipsis {
   padding: 0.5rem 0 0.75rem;
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.8rem;
   color: var(--c3-fg-dim);
   text-align: center;
@@ -333,7 +333,7 @@
   padding: 1rem 1.25rem;
   background: var(--c3-surface-2);
   border-top: 1px solid var(--c3-border);
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
 }
 
 .chartTotalLabel {
@@ -406,7 +406,7 @@
 }
 
 .ledeCode {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.92em;
   padding: 0.1em 0.4em;
   background: var(--c3-surface);
@@ -457,7 +457,7 @@
 }
 
 .shrinkHeadline {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--c3-accent);
@@ -468,7 +468,7 @@
 }
 
 .shrinkLabel {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.78rem;
   color: var(--c3-fg-dim);
   text-transform: uppercase;
@@ -532,7 +532,7 @@
 }
 
 .fileChipName {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--c3-fg);
@@ -569,7 +569,7 @@
 }
 
 .codeFrameTab {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--c3-fg);
@@ -582,7 +582,7 @@
 .codeFrameSub {
   font-size: 0.75rem;
   color: var(--c3-fg-dim);
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
 }
 
 .codeFrameBody {
@@ -590,7 +590,7 @@
   padding: 1.25rem 1.5rem;
   font-size: 0.82rem;
   line-height: 1.65;
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   color: var(--c3-fg);
   background: transparent;
   white-space: pre;
@@ -605,49 +605,51 @@
   color: inherit;
 }
 
+/* Light-mode token colors (default) */
 .tokKeyword {
-  color: #c084fc;
+  color: #7c3aed;
 }
 .tokString {
-  color: #86efac;
+  color: #15803d;
 }
 .tokType {
-  color: #93c5fd;
+  color: #1d4ed8;
 }
 .tokFunc {
-  color: #fde68a;
+  color: #b45309;
 }
 .tokSymbol {
   color: var(--c3-accent);
 }
 .tokTag {
-  color: #f87171;
+  color: #b91c1c;
 }
 .tokAttr {
-  color: #fdba74;
+  color: #9a3412;
 }
 .tokComment {
   color: var(--c3-fg-dim);
   font-style: italic;
 }
 
-[data-theme="light"] .tokKeyword {
-  color: #7c3aed;
+/* Dark-mode token colors */
+:global(.dark) .tokKeyword {
+  color: #c084fc;
 }
-[data-theme="light"] .tokString {
-  color: #15803d;
+:global(.dark) .tokString {
+  color: #86efac;
 }
-[data-theme="light"] .tokType {
-  color: #1d4ed8;
+:global(.dark) .tokType {
+  color: #93c5fd;
 }
-[data-theme="light"] .tokFunc {
-  color: #b45309;
+:global(.dark) .tokFunc {
+  color: #fde68a;
 }
-[data-theme="light"] .tokTag {
-  color: #b91c1c;
+:global(.dark) .tokTag {
+  color: #f87171;
 }
-[data-theme="light"] .tokAttr {
-  color: #9a3412;
+:global(.dark) .tokAttr {
+  color: #fdba74;
 }
 
 /* ───── Final CTA ──────────────────────────────────────────── */
@@ -676,7 +678,7 @@
 }
 
 .finalLede code {
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.92em;
   padding: 0.1em 0.35em;
   background: var(--c3-surface);
@@ -692,7 +694,7 @@
   background: var(--c3-surface);
   border: 1px solid var(--c3-border-strong);
   border-radius: var(--c3-radius-md);
-  font-family: var(--ifm-font-family-monospace);
+  font-family: var(--c3-font-mono);
   font-size: 0.95rem;
   text-align: left;
   max-width: 100%;

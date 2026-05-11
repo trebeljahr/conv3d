@@ -1,8 +1,6 @@
-import Link from "@docusaurus/Link";
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import Layout from "@theme/Layout";
+import Link from "next/link";
 import type { ReactNode } from "react";
-import styles from "./index.module.css";
+import styles from "./page.module.css";
 
 type FileRow = { name: string; before: number; after: number };
 
@@ -37,7 +35,7 @@ function Hero() {
           Fiber component to use them with.
         </p>
         <div className={styles.heroCtas}>
-          <Link className={styles.ctaPrimary} to="/docs/getting-started">
+          <Link className={styles.ctaPrimary} href="/docs/getting-started">
             Get started →
           </Link>
           <Link className={styles.ctaSecondary} href="https://github.com/trebeljahr/conv3d">
@@ -288,7 +286,7 @@ function FinalCta() {
           </code>
         </pre>
         <div className={styles.heroCtas}>
-          <Link className={styles.ctaPrimary} to="/docs/getting-started">
+          <Link className={styles.ctaPrimary} href="/docs/getting-started">
             Read the docs →
           </Link>
           <Link className={styles.ctaSecondary} href="https://github.com/trebeljahr/conv3d">
@@ -301,18 +299,12 @@ function FinalCta() {
 }
 
 export default function Home(): ReactNode {
-  const { siteConfig } = useDocusaurusContext();
   return (
-    <Layout
-      title={siteConfig.title}
-      description="Convert FBX, OBJ, and glTF files into compact GLB — typically 90% smaller — and get a typed React Three Fiber component for each."
-    >
-      <main className={styles.main}>
-        <Hero />
-        <Shrink />
-        <ComponentShowcase />
-        <FinalCta />
-      </main>
-    </Layout>
+    <main className={styles.main}>
+      <Hero />
+      <Shrink />
+      <ComponentShowcase />
+      <FinalCta />
+    </main>
   );
 }

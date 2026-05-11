@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* conv3d — cyan/teal accent on top of the neutral preset.
+   Token names mirror Fumadocs' design tokens so doc pages pick them up. */
+:root {
+  --color-fd-primary: oklch(70% 0.12 180);
+  --color-fd-ring: oklch(70% 0.12 180);
+}
+
+.dark {
+  --color-fd-primary: oklch(82% 0.13 180);
+  --color-fd-ring: oklch(82% 0.13 180);
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}

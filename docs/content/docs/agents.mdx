@@ -1,9 +1,7 @@
 ---
-sidebar_position: 5
 title: Scripts & agents
+description: The contract for calling conv3d from CI pipelines, build scripts, and AI coding agents.
 ---
-
-# Using conv3d from scripts & agents
 
 conv3d is designed to be safe to call from CI pipelines, build scripts, and AI coding agents. This page is the contract.
 
@@ -15,7 +13,7 @@ conv3d is designed to be safe to call from CI pipelines, build scripts, and AI c
 4. **Pass `--json`** to get a single, machine-readable result object on stdout.
 5. **Pass `--dry-run`** first to preview what would be written without touching disk.
 6. **Check the exit code.** `0` = success, `1` = fatal, `2` = partial (some files failed — read `errors[]`).
-7. **Know the output layout** — or pass `-o`, `--flat`, or the `--*-dir` flags for full control. See [Output layout](./output.md).
+7. **Know the output layout** — or pass `-o`, `--flat`, or the `--*-dir` flags for full control. See [Output layout](./output).
 
 ## A minimal agent invocation
 
