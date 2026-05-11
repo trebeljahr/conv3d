@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "cliVersion": "0.1.42",
+  "scaffoldedAt": "2026-05-11T21:40:37.769Z",
+  "name": "conv3d",
+  "domain": "conv3d.trebeljahr.com",
+  "description": "An interactive 3D CLI",
+  "features": ["s3"],
+  "mlServices": [],
+  "s3Provider": "existing",
+  "deployTarget": "existing",
+  "deploymentMode": "coolify",
+  "ports": {
+    "server": 3000,
+    "client": 3001
+  },
+  "surfaces": "client-only",
+  "s3Buckets": {
+    "assets": {
+      "name": "conv3d-assets",
+      "publicUrl": "https://assets.conv3d.trebeljahr.com",
+      "cors": {
+        "origins": [
+          "http://localhost:3000",
+          "http://localhost:3001",
+          "https://conv3d.trebeljahr.com"
+        ],
+        "methods": ["GET", "HEAD"],
+        "maxAgeSeconds": 86400
+      }
+    },
+    "tokenId": "08397783a07f726f65eeb77a79dbba71",
+    "accountId": "236db6b7957ea3079844334856fc162e"
+  }
+}

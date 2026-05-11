@@ -1,0 +1,102 @@
+# Build → push → deploy pipeline scaffolded by hatchkit.
+#
+#   1. Build the image from the repo's Dockerfile.
+#   2. Push it to GHCR as both `ghcr.io/<owner>/<name>:<short-sha>`
+#      and `:latest` (on the default branch).
+#   3. Trigger Coolify to redeploy via the per-app deploy webhook.
+#
+# Required repo secrets (hatchkit sets these via `gh secret set`
+# during adopt / create; rotate via the GitHub UI / `gh` whenever
+# needed):
+#   COOLIFY_WEBHOOK_URL           — full URL incl. uuid query param
+#   COOLIFY_TOKEN                 — bearer token for the deploy endpoint
+#   DOTENV_PRIVATE_KEY_PRODUCTION — dotenvx private key; passed to the
+#                                   docker build as a BuildKit secret
+#                                   (mounted as tmpfs, never written
+#                                   to a layer or `docker history`).
+#                                   The Dockerfile uses it to decrypt
+#                                   .env.production in memory and bake
+#                                   build-time values (NEXT_PUBLIC_*
+#                                   etc.) into the output. Stored in
+#                                   your OS keychain under
+#                                   `dotenvx:<project>:production-private-key`
+#                                   — `hatchkit keys show <project>` to retrieve.
+#
+# GHCR auth uses the workflow's built-in GITHUB_TOKEN. For Coolify
+# to pull a private package, configure GHCR credentials in the
+# Coolify dashboard once (Servers → Settings → Registry).
+#
+# Action versions: pinned to the latest Node.js 24-native releases
+# where available. FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 below opts the
+# remaining Node 20 actions (docker/* family) into the Node 24 runner
+# until upstream cuts new majors — silences the GitHub Actions runner
+# deprecation warning that fires on every workflow run otherwise.
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          # BuildKit secret for decrypting .env.production at build
+          # time. Mounted as tmpfs inside the Dockerfile's RUN step,
+          # never written to a layer or `docker history`. The Dockerfile
+          # exposes it as the DOTENV_PRIVATE_KEY_PRODUCTION env var for
+          # `dotenvx run -- pnpm build`, which decrypts in memory and
+          # bakes NEXT_PUBLIC_* / VITE_* values into the bundle.
+          secrets: |
+            dotenvx_private_key=${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
+
+      - name: Trigger Coolify deploy
+        env:
+          COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -z "$COOLIFY_WEBHOOK_URL" ]; then
+            echo "::notice::COOLIFY_WEBHOOK_URL not set — skipping Coolify webhook (image still pushed). Run \`hatchkit keys push <project>\` or set the secret manually if you want auto-deploy."
+            exit 0
+          fi
+          curl -fsSL -X GET "$COOLIFY_WEBHOOK_URL" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN"

@@ -1,0 +1,36 @@
+# Coolify reads this file (build pack: dockercompose) to deploy
+# conv3d. The image is built by .github/workflows/deploy.yml and
+# pushed to GHCR; Coolify pulls it and (re)starts the service when
+# the workflow's deploy webhook fires.
+#
+# To pin a specific version, change the tag below from `latest` to a
+# git sha, semver tag, or whatever your release process uses.
+services:
+  app:
+    image: ghcr.io/trebeljahr/conv3d:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+      # Forwarded from Coolify's app env. dotenvx inside the
+      # container uses this to decrypt .env.production at runtime.
+      - DOTENV_PRIVATE_KEY_PRODUCTION
+    # Coolify reads this and gates Traefik/Caddy routing on it.
+    # Without a healthcheck Coolify shows "No health check configured"
+    # and routes blind — traffic can hit the container before it's
+    # ready.
+    #
+    # If your app's `/` legitimately returns a non-2xx (common for
+    # API-only servers that 404 the root), point this at a known-good
+    # path instead — e.g. replace `/` with `/health` or whatever your
+    # framework exposes.
+    # `wget --spider` issues a HEAD-style request and exits non-zero
+    # on any 4xx/5xx. busybox (bundled in nginx:alpine and node:alpine
+    # base images) ships `wget`, so no extra deps are needed.
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s

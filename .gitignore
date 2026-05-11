@@ -43,3 +43,6 @@ venv/
 .env.test
 .envrc.local
 .vercel/
+
+# hatchkit: dotenvx private keys (NEVER commit)
+.env.keys
