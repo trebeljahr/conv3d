@@ -40,7 +40,7 @@ async function maybeShowBanner(args: string[]) {
 await maybeShowBanner(normalizedArgv.slice(2));
 
 if (deprecatedForceOverwrite) {
-  // TODO(v2): remove the --forceOverwrite alias.
+  // TODO(v2.0.0): remove the camelCase --forceOverwrite alias.
   console.error(yellow("⚠️ --forceOverwrite is deprecated; use --force-overwrite (or -f) instead."));
 }
 

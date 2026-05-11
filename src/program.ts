@@ -205,7 +205,7 @@ export function isDryRun(): boolean {
 export function resolveOverwriteMode(): OverwriteMode {
   const opts = program.opts() as GlobalOptions;
   if (opts.overwrite) return opts.overwrite;
-  // TODO(v2): remove --force-overwrite alias; use --overwrite=replace instead.
+  // TODO(v2.0.0): remove --force-overwrite alias; --overwrite=replace is the supported form.
   if (opts.forceOverwrite) return "replace";
   if (isNonInteractive()) return "skip";
   return "ask";
