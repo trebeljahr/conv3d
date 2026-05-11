@@ -4,22 +4,37 @@ import Layout from "@theme/Layout";
 import type { ReactNode } from "react";
 import styles from "./index.module.css";
 
+type FileRow = { name: string; before: number; after: number };
+
+const heroFiles: FileRow[] = [
+  { name: "Knight.fbx", before: 31.2, after: 2.1 },
+  { name: "Barbarian.fbx", before: 28.4, after: 1.8 },
+  { name: "Wizard.fbx", before: 26.8, after: 1.9 },
+  { name: "Archer.fbx", before: 24.1, after: 1.6 },
+  { name: "Rogue.fbx", before: 22.6, after: 1.4 },
+];
+
+const heroTotal = { before: 286, after: 21, count: 12 };
+
+const HERO_MAX = Math.max(...heroFiles.map((f) => f.before));
+
+const fmt = (mb: number) => (mb >= 100 ? `${mb.toFixed(0)} MB` : `${mb.toFixed(1)} MB`);
+const pct = (b: number, a: number) => `${Math.round((1 - a / b) * 100)}%`;
+
 function Hero() {
   return (
     <header className={styles.hero}>
       <div className={styles.heroInner}>
-        <p className={styles.eyebrow}>
-          <span className={styles.eyebrowDot} aria-hidden /> npm i -g conv3d &nbsp;·&nbsp; v1.0.5
-        </p>
         <h1 className={styles.heroTitle}>
-          From <code className={styles.inlineCode}>.fbx</code> to a typed
-          <br />
-          React Three Fiber component.
+          Game-ready 3D, <span className={styles.heroAccent}>web-ready size</span>.
         </h1>
         <p className={styles.heroTagline}>
-          Command-line converter for 3D models. Drop FBX, OBJ, or glTF in — get optimized GLB files
-          and ready-to-import <code className={styles.inlineCodeSmall}>.tsx</code> components out.
-          No Blender round-trip. Safe to call from scripts and AI agents.
+          conv3d converts <code className={styles.heroCode}>.fbx</code>,{" "}
+          <code className={styles.heroCode}>.obj</code>, and{" "}
+          <code className={styles.heroCode}>.glTF</code> into compact{" "}
+          <code className={styles.heroCode}>.glb</code> — typically{" "}
+          <strong className={styles.heroStrong}>90% smaller</strong> — and writes the React Three
+          Fiber component to use them with.
         </p>
         <div className={styles.heroCtas}>
           <Link className={styles.ctaPrimary} to="/docs/getting-started">
@@ -30,102 +45,100 @@ function Hero() {
           </Link>
         </div>
 
-        <div className={styles.terminal} aria-label="Example terminal session">
-          <div className={styles.terminalBar}>
-            <span className={styles.dot} data-color="red" />
-            <span className={styles.dot} data-color="amber" />
-            <span className={styles.dot} data-color="green" />
-            <span className={styles.terminalTitle}>~/projects/game</span>
+        <div className={styles.chart} aria-label="File size comparison: FBX vs optimized GLB">
+          <div className={styles.chartHead}>
+            <div className={styles.chartHeadLeft}>
+              <span className={styles.chartHeadKbd}>./asset-pack/</span>
+              <span className={styles.chartHeadSub}>{heroTotal.count} models · one command</span>
+            </div>
+            <div className={styles.chartLegend}>
+              <span className={styles.legendItem}>
+                <span className={`${styles.legendDot} ${styles.legendBefore}`} /> .fbx
+              </span>
+              <span className={styles.legendItem}>
+                <span className={`${styles.legendDot} ${styles.legendAfter}`} /> .glb
+              </span>
+            </div>
           </div>
-          <pre className={styles.terminalBody}>
-            <code>
-              <span className={styles.prompt}>$</span>{" "}
-              <span className={styles.cmd}>
-                conv3d bulk ./raw-assets -m FBX --tsx --optimize -y
-              </span>
-              {"\n\n"}
-              <span className={styles.muted}>Found 12 .fbx files in ./raw-assets</span>
-              {"\n"}
-              <span className={styles.ok}>✓</span>{" "}
-              <span className={styles.muted}>barbarian.fbx → barbarian.glb</span>
-              {"\n"}
-              <span className={styles.ok}>✓</span>{" "}
-              <span className={styles.muted}>✨ Recovered 4 external texture(s)</span>
-              {"\n"}
-              <span className={styles.ok}>✓</span>{" "}
-              <span className={styles.muted}>rogue.fbx → rogue.glb + rogue.tsx</span>
-              {"\n"}
-              <span className={styles.ok}>✓</span>{" "}
-              <span className={styles.muted}>knight.fbx → knight.glb + knight-transformed.glb</span>
-              {"\n"}
-              <span className={styles.dim}>… 9 more</span>
-              {"\n\n"}
-              <span className={styles.success}>
-                → 12 glb · 12 tsx · 12 web-glb (avg 87% smaller)
-              </span>
-            </code>
-          </pre>
+
+          <div className={styles.chartBody}>
+            {heroFiles.map((f) => (
+              <div key={f.name} className={styles.chartRow}>
+                <span className={styles.chartFile}>{f.name}</span>
+                <div className={styles.chartTrack}>
+                  <div
+                    className={styles.barBefore}
+                    style={{ width: `${(f.before / HERO_MAX) * 100}%` }}
+                  />
+                  <span className={styles.barLabelBefore}>{fmt(f.before)}</span>
+                </div>
+                <div className={styles.chartTrack}>
+                  <div
+                    className={styles.barAfter}
+                    style={{ width: `${(f.after / HERO_MAX) * 100}%` }}
+                  />
+                  <span className={styles.barLabelAfter}>{fmt(f.after)}</span>
+                </div>
+                <span className={styles.chartPct}>−{pct(f.before, f.after)}</span>
+              </div>
+            ))}
+            <div className={styles.chartEllipsis}>+ {heroTotal.count - heroFiles.length} more</div>
+          </div>
+
+          <div className={styles.chartTotal}>
+            <span className={styles.chartTotalLabel}>Total</span>
+            <span className={styles.chartTotalBefore}>{fmt(heroTotal.before)}</span>
+            <span className={styles.chartTotalArrow} aria-hidden>
+              →
+            </span>
+            <span className={styles.chartTotalAfter}>{fmt(heroTotal.after)}</span>
+            <span className={styles.chartTotalPct}>−{pct(heroTotal.before, heroTotal.after)}</span>
+          </div>
         </div>
       </div>
     </header>
   );
 }
 
-type Pillar = {
-  title: string;
-  body: string;
-  bullets: string[];
-};
-
-const pillars: Pillar[] = [
+const shrinks = [
   {
-    title: "Convert",
-    body: "FBX, OBJ, glTF — directories, single files, or glob patterns. Always lands as a clean .glb.",
-    bullets: [
-      "obj2gltf + gltf-pipeline + fbx2gltf under the hood",
-      "Parallel by default (min(cpus, 4)) — tunable with -c",
-      "Globs accepted directly: ./assets/**/*.fbx",
-    ],
+    title: "Textures",
+    label: "KTX2 + clamp",
+    headline: "~80% smaller",
+    body: "Textures are downsampled to 1024 px and re-encoded as KTX2 — the GPU decodes them directly, and they take roughly a fifth of the PNG bytes.",
   },
   {
-    title: "Generate",
-    body: "Drop converted GLBs straight into a React Three Fiber project as typed .tsx components.",
-    bullets: [
-      "Powered by gltfjsx — typed props, instancing, named meshes",
-      "Skip the prompt with --tsx (or --no-tsx)",
-      "Re-run over existing .glb files with conv3d tsx-gen",
-    ],
+    title: "Meshes",
+    label: "Draco compression",
+    headline: "~80% smaller",
+    body: "Vertex buffers are quantized and Draco-compressed. The browser decodes them straight onto the GPU, no JS-side decode pass.",
   },
   {
-    title: "Optimize",
-    body: "A second .glb pass produces a web-ready, palette-merged, texture-clamped version of every model.",
-    bullets: [
-      "Default 1024 texture clamp (normals get max(n, 2048))",
-      "Independent of --tsx — emit one, the other, or both",
-      "--keep-materials preserves originals when needed",
-    ],
+    title: "Materials",
+    label: "Palette merge",
+    headline: "fewer draw calls",
+    body: "Untextured materials get merged into a single tiny palette texture. Same look, one draw call per model instead of one per material.",
   },
 ];
 
-function Pillars() {
+function Shrink() {
   return (
     <section className={styles.section}>
       <div className={styles.sectionInner}>
-        <h2 className={styles.sectionTitle}>One command. Three artefacts. Web-ready.</h2>
+        <h2 className={styles.sectionTitle}>Three things that get smaller.</h2>
         <p className={styles.sectionLede}>
-          conv3d takes the asset pipeline that normally lives between Blender, gltf-pipeline,
-          gltfjsx, and a handful of npm scripts — and folds it into a single CLI.
+          The savings stack. A typical character model lands between 85% and 95% smaller than its
+          source FBX — game-asset sized files, web-asset sized payloads.
         </p>
-        <div className={styles.pillarGrid}>
-          {pillars.map((p) => (
-            <article key={p.title} className={styles.pillarCard}>
-              <h3 className={styles.pillarTitle}>{p.title}</h3>
-              <p className={styles.pillarBody}>{p.body}</p>
-              <ul className={styles.pillarList}>
-                {p.bullets.map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
+        <div className={styles.shrinkGrid}>
+          {shrinks.map((s) => (
+            <article key={s.title} className={styles.shrinkCard}>
+              <div className={styles.shrinkHead}>
+                <h3 className={styles.shrinkTitle}>{s.title}</h3>
+                <span className={styles.shrinkHeadline}>{s.headline}</span>
+              </div>
+              <div className={styles.shrinkLabel}>{s.label}</div>
+              <p className={styles.shrinkBody}>{s.body}</p>
             </article>
           ))}
         </div>
@@ -134,139 +147,124 @@ function Pillars() {
   );
 }
 
-function Workflow() {
-  const steps = [
-    {
-      num: "01",
-      cmd: "conv3d single",
-      title: "One file, quickly",
-      body: "Point it at a model, optionally pass --tsx / --optimize. Interactive prompts fill in anything you didn't decide upfront.",
-    },
-    {
-      num: "02",
-      cmd: "conv3d bulk",
-      title: "A folder or a glob",
-      body: "Recurse into a directory or expand a glob pattern. Outputs land in <inputDir>/_convert-3d-for-web/ — or wherever -o sends them.",
-    },
-    {
-      num: "03",
-      cmd: "conv3d tsx-gen",
-      title: "Components from existing GLBs",
-      body: "Already have .glb files? Skip conversion — just generate React components (and optional web-optimized .glb) over what's there.",
-    },
-    {
-      num: "04",
-      cmd: "conv3d doctor",
-      title: "Verify the install",
-      body: "Read-only environment check: Node version, OS, bundled lib versions. --json for agents debugging an install.",
-    },
-  ];
-
+function ComponentShowcase() {
   return (
     <section className={`${styles.section} ${styles.sectionAlt}`}>
       <div className={styles.sectionInner}>
-        <h2 className={styles.sectionTitle}>Four commands to know.</h2>
+        <h2 className={styles.sectionTitle}>You also get the component.</h2>
         <p className={styles.sectionLede}>
-          conv3d's surface area is small on purpose. Every command works interactively or fully
-          non-interactively — pass <code className={styles.inlineCodeSmall}>-y</code> to skip every
-          prompt.
+          Pass <code className={styles.ledeCode}>--tsx</code> and conv3d emits a typed React Three
+          Fiber component for every model. Drop it into your scene; mesh nodes, materials, and
+          preload are wired up for you.
         </p>
-        <ol className={styles.steps}>
-          {steps.map((s) => (
-            <li key={s.num} className={styles.step}>
-              <div className={styles.stepNum}>{s.num}</div>
-              <div className={styles.stepBody}>
-                <code className={styles.stepCmd}>{s.cmd}</code>
-                <h3 className={styles.stepTitle}>{s.title}</h3>
-                <p>{s.body}</p>
+
+        <div className={styles.flow}>
+          <div className={styles.flowInput}>
+            <div className={styles.fileChip}>
+              <span className={styles.fileChipIcon} aria-hidden>
+                ▣
+              </span>
+              <div>
+                <div className={styles.fileChipName}>Knight.fbx</div>
+                <div className={styles.fileChipMeta}>31.2 MB · 14k tris</div>
               </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-const formatGroups: { label: string; items: string[] }[] = [
-  { label: "Input", items: [".fbx", ".obj", ".gltf"] },
-  { label: "Output", items: [".glb", ".tsx", "web-optimized .glb"] },
-  { label: "Selection", items: ["File", "Directory", "Glob pattern"] },
-  { label: "Modes", items: ["Interactive", "--yes", "--dry-run", "--json"] },
-  {
-    label: "Under the hood",
-    items: ["obj2gltf", "gltf-pipeline", "fbx2gltf", "gltfjsx"],
-  },
-  { label: "Runtime", items: ["Node 24+", "macOS", "Linux"] },
-];
-
-function Formats() {
-  return (
-    <section className={styles.section}>
-      <div className={styles.sectionInner}>
-        <h2 className={styles.sectionTitle}>Talks to the formats you already have.</h2>
-        <p className={styles.sectionLede}>
-          Wraps the best-of-breed converters in one consistent CLI — flags, output layout, exit
-          codes, JSON schema, all unified.
-        </p>
-        <div className={styles.formats}>
-          {formatGroups.map((g) => (
-            <div key={g.label} className={styles.formatGroup}>
-              <div className={styles.formatLabel}>{g.label}</div>
-              <ul className={styles.formatList}>
-                {g.items.map((i) => (
-                  <li key={i} className={styles.formatChip}>
-                    {i}
-                  </li>
-                ))}
-              </ul>
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+            <div className={styles.fileChip}>
+              <span className={styles.fileChipIcon} aria-hidden>
+                ▣
+              </span>
+              <div>
+                <div className={styles.fileChipName}>Knight.glb</div>
+                <div className={styles.fileChipMeta}>2.1 MB · web-optimized</div>
+              </div>
+            </div>
+          </div>
 
-function Philosophy() {
-  return (
-    <section className={`${styles.section} ${styles.sectionAlt}`}>
-      <div className={styles.sectionInner}>
-        <blockquote className={styles.quote}>
-          <p>
-            Your assets, your project, your pipeline. conv3d is the converter that knows how to be a
-            good citizen in a script — and then gets out of the way.
-          </p>
-        </blockquote>
-        <div className={styles.principles}>
-          <div>
-            <h4>Interactive when you want it</h4>
-            <p>
-              Prompts guide the first run; flags skip every prompt when you've made up your mind.
-              Same binary, both modes.
-            </p>
+          <div className={styles.flowArrow} aria-hidden>
+            <svg viewBox="0 0 32 32" width="28" height="28">
+              <path
+                d="M6 16 H24 M18 10 L24 16 L18 22"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
           </div>
-          <div>
-            <h4>Safe for agents</h4>
-            <p>
-              <code>--json</code>, <code>--dry-run</code>, and stable exit codes (0 / 1 / 2). Stdout
-              is the result; stderr is the chatter.
-            </p>
-          </div>
-          <div>
-            <h4>Texture recovery</h4>
-            <p>
-              Detects 1×1 magenta placeholders left behind by <code>fbx2gltf</code> and swaps them
-              with the matching texture from the FBX's directory. No more solid-color models.
-            </p>
-          </div>
-          <div>
-            <h4>Predictable output</h4>
-            <p>
-              Sub-trees <code>glb/</code>, <code>tsx/</code>, <code>glb-for-web/</code> by default —
-              or <code>--flat</code> and <code>--*-dir</code> overrides when your project says
-              otherwise.
-            </p>
+
+          <div className={styles.codeFrame}>
+            <div className={styles.codeFrameHead}>
+              <span className={styles.codeFrameTab}>Knight.tsx</span>
+              <span className={styles.codeFrameSub}>generated by conv3d</span>
+            </div>
+            <pre className={styles.codeFrameBody}>
+              <code>
+                <span className={styles.tokComment}>{`// auto-generated — re-runs are safe`}</span>
+                {"\n"}
+                <span className={styles.tokKeyword}>import</span>
+                {" { "}
+                <span className={styles.tokSymbol}>useGLTF</span>
+                {" } "}
+                <span className={styles.tokKeyword}>from</span>{" "}
+                <span className={styles.tokString}>"@react-three/drei"</span>
+                {";\n"}
+                <span className={styles.tokKeyword}>import type</span>
+                {" { "}
+                <span className={styles.tokType}>JSX</span>
+                {" } "}
+                <span className={styles.tokKeyword}>from</span>{" "}
+                <span className={styles.tokString}>"react"</span>
+                {";\n\n"}
+                <span className={styles.tokKeyword}>export function</span>{" "}
+                <span className={styles.tokFunc}>Knight</span>
+                {"(props: JSX."}
+                <span className={styles.tokType}>IntrinsicElements</span>
+                {"["}
+                <span className={styles.tokString}>"group"</span>
+                {"]) {\n  "}
+                <span className={styles.tokKeyword}>const</span>
+                {" { nodes, materials } = "}
+                <span className={styles.tokSymbol}>useGLTF</span>
+                {"("}
+                <span className={styles.tokString}>"/models/knight.glb"</span>
+                {");\n  "}
+                <span className={styles.tokKeyword}>return</span>
+                {" (\n    "}
+                <span className={styles.tokTag}>{"<group"}</span>
+                {" {..."}
+                <span className={styles.tokSymbol}>props</span>
+                {"} "}
+                <span className={styles.tokAttr}>dispose</span>
+                {"={"}
+                <span className={styles.tokKeyword}>null</span>
+                {"}"}
+                <span className={styles.tokTag}>{">"}</span>
+                {"\n      "}
+                <span className={styles.tokTag}>{"<mesh"}</span>{" "}
+                <span className={styles.tokAttr}>geometry</span>
+                {"={nodes.Body.geometry} "}
+                <span className={styles.tokAttr}>material</span>
+                {"={materials.Armor} "}
+                <span className={styles.tokTag}>{"/>"}</span>
+                {"\n      "}
+                <span className={styles.tokTag}>{"<mesh"}</span>{" "}
+                <span className={styles.tokAttr}>geometry</span>
+                {"={nodes.Helmet.geometry} "}
+                <span className={styles.tokAttr}>material</span>
+                {"={materials.Metal} "}
+                <span className={styles.tokTag}>{"/>"}</span>
+                {"\n    "}
+                <span className={styles.tokTag}>{"</group>"}</span>
+                {"\n  );\n}\n\n"}
+                <span className={styles.tokSymbol}>useGLTF</span>
+                {"."}
+                <span className={styles.tokSymbol}>preload</span>
+                {"("}
+                <span className={styles.tokString}>"/models/knight.glb"</span>
+                {");"}
+              </code>
+            </pre>
           </div>
         </div>
       </div>
@@ -278,13 +276,15 @@ function FinalCta() {
   return (
     <section className={styles.finalCta}>
       <div className={styles.sectionInner}>
-        <h2 className={styles.finalTitle}>Skip the Blender round-trip.</h2>
+        <h2 className={styles.finalTitle}>Try it on your asset pack.</h2>
         <p className={styles.finalLede}>
-          conv3d is MIT-licensed and runs on Node 24+. Try it without installing.
+          Point conv3d at a folder of FBX, OBJ, or glTF files. A few seconds later you have a
+          web-optimized <code>.glb</code> for each, plus a typed component to import them with.
         </p>
         <pre className={styles.finalCmd}>
           <code>
-            <span className={styles.prompt}>$</span> npx conv3d bulk ./models --tsx --optimize -y
+            <span className={styles.finalPrompt}>$</span> npx conv3d bulk ./models --tsx --optimize
+            -y
           </code>
         </pre>
         <div className={styles.heroCtas}>
@@ -305,14 +305,12 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={siteConfig.title}
-      description="Command-line tool that converts FBX, OBJ, and glTF files into GLB and generates matching React Three Fiber components — interactive or fully scripted."
+      description="Convert FBX, OBJ, and glTF files into compact GLB — typically 90% smaller — and get a typed React Three Fiber component for each."
     >
       <main className={styles.main}>
         <Hero />
-        <Pillars />
-        <Workflow />
-        <Formats />
-        <Philosophy />
+        <Shrink />
+        <ComponentShowcase />
         <FinalCta />
       </main>
     </Layout>
