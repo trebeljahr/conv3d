@@ -386,10 +386,58 @@ function appendImageToBin(
   return { textureIndex: texIdx, bin: newBin };
 }
 
+// Score how well an image's normalized stem matches a source-file stem.
+// Returns 0 when there's no relationship at all. Quaternius-style packs
+// suffix textures with "texture" (e.g. SodaTexture.png alongside Soda.fbx),
+// so prefer that convention to break ties between sibling models.
+function scoreStemMatch(sourceStem: string, imageStem: string): number {
+  if (!sourceStem || !imageStem) return 0;
+  if (sourceStem === imageStem) return 100;
+  if (imageStem.startsWith(sourceStem)) {
+    const suffix = imageStem.slice(sourceStem.length);
+    if (suffix === "texture") return 90;
+    if (/^[a-z]+$/.test(suffix)) return 80;
+    if (/^[a-z]/.test(suffix)) return 60; // "PizzaAlt2"
+    return 30; // "Pizza2" — could be a separate variant
+  }
+  // "Donut2" → "Donut" + trailing digit. Try the bare stem.
+  const bare = sourceStem.replace(/\d+$/, "");
+  if (bare && bare !== sourceStem && imageStem.startsWith(bare)) {
+    const suffix = imageStem.slice(bare.length);
+    if (suffix === "texture") return 55;
+    if (/^[a-z]+$/.test(suffix)) return 50; // "Donut2" → "DonutTexture"
+    return 20;
+  }
+  if (imageStem.includes(sourceStem)) return 10;
+  return 0;
+}
+
+function pickBestStemMatch(sourceStem: string, imageIndex: Map<string, string>): string | null {
+  const stemNorm = normalizeName(sourceStem);
+  if (stemNorm.length === 0) return null;
+
+  let bestScore = 0;
+  let bestPaths: string[] = [];
+  for (const [k, v] of imageIndex) {
+    const score = scoreStemMatch(stemNorm, k);
+    if (score === 0) continue;
+    if (score > bestScore) {
+      bestScore = score;
+      bestPaths = [v];
+    } else if (score === bestScore) {
+      bestPaths.push(v);
+    }
+  }
+  // Refuse ambiguous ties — better to leave it untextured than guess wrong.
+  if (bestPaths.length === 1 && bestScore >= 10) return bestPaths[0]!;
+  return null;
+}
+
 export async function seedMissingTextures(
   glbPath: string,
   sourceDir: string,
   extraDirs: string[] = [],
+  sourceStem?: string,
 ): Promise<number> {
   let buf: Buffer;
   try {
@@ -456,7 +504,47 @@ export async function seedMissingTextures(
     attached++;
   }
 
-  // Second pass: shared-atlas fallback. If exactly one image is in the search
+  // Second pass: source-stem fallback. Quaternius-style packs often have
+  // generic material names ("Material") but the source FBX is named after
+  // the model ("Burger.fbx"), and the texture filename embeds the same stem
+  // ("BurgerTexture.png"). Score every image by how well its stem relates to
+  // the source stem and pick the unambiguous winner.
+  //
+  // Tiers (highest first):
+  //   exact          source stem == image stem                              "Pizza" / "Pizza"
+  //   suffix         image stem == source stem + alpha suffix               "Pizza" / "PizzaTexture"
+  //   prefix-alpha   image stem starts with source stem + alpha             "Cake"  / "CakeAlt"
+  //   short-prefix   source stem ends in digits, drop trailing digits then  "Donut2" → "Donut" → "DonutTexture"
+  //                  re-evaluate. (Quaternius numbers variants per model.)
+  //   contains       image stem contains source stem (loosest)              "Pizza" / "Pizza2"
+  if (stillUnmatched.length > 0 && sourceStem) {
+    const lonePath = pickBestStemMatch(sourceStem, imageIndex);
+    if (lonePath) {
+      for (const idx of stillUnmatched) {
+        const m = materials[idx]!;
+        const texIdx = await embedAndAttach(
+          gltf,
+          lonePath,
+          embedded,
+          sourceStem,
+          (newBin) => {
+            bin = newBin;
+          },
+          bin,
+        );
+        m.pbrMetallicRoughness ??= {};
+        const pbr = m.pbrMetallicRoughness;
+        pbr.baseColorTexture = { index: texIdx };
+        pbr.baseColorFactor = [1.0, 1.0, 1.0, 1.0];
+        pbr.metallicFactor = pbr.metallicFactor ?? 0.0;
+        pbr.roughnessFactor = pbr.roughnessFactor ?? 0.9;
+        attached++;
+      }
+      stillUnmatched.length = 0;
+    }
+  }
+
+  // Third pass: shared-atlas fallback. If exactly one image is in the search
   // dirs, every still-unmatched material gets it.
   if (stillUnmatched.length > 0 && imageIndex.size === 1) {
     const lonePath = imageIndex.values().next().value!;
@@ -693,7 +781,13 @@ export async function postProcessGlb(
 
   if (recoverTextures) {
     result.placeholdersRecovered = await recoverFbxPlaceholders(glbPath, sourcePath, extraDirs);
-    result.texturesSeeded = await seedMissingTextures(glbPath, path.dirname(sourcePath), extraDirs);
+    const sourceStem = path.basename(sourcePath, path.extname(sourcePath));
+    result.texturesSeeded = await seedMissingTextures(
+      glbPath,
+      path.dirname(sourcePath),
+      extraDirs,
+      sourceStem,
+    );
     result.foliageHinted = await applyFoliageHints(glbPath);
   }
 

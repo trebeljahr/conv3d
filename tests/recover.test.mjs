@@ -228,6 +228,54 @@ test("seedMissingTextures attaches sibling Textures/ images to materials by name
   }
 });
 
+test("seedMissingTextures uses source-stem fallback to attach a per-file atlas", async () => {
+  // Quaternius case: material is generically named ("Material"), but the FBX
+  // is named after the model and the texture follows a "<Stem>Texture" naming
+  // convention. The scored stem fallback should pick the right texture even
+  // when several siblings contain the stem as a substring.
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-stem-"));
+  try {
+    const glbPath = path.join(dir, "Soda.glb");
+    writeFileSync(glbPath, buildMaterialOnlyGlb(["Material"]));
+
+    // SodaTexture (stem == source + "texture", score 90) should beat
+    // SodaCan (alpha suffix, score 80). Pizza2 (digit suffix, score 30) is
+    // not relevant here but pollutes the search dir.
+    mkdirSync(path.join(dir, "Textures"));
+    writeFileSync(path.join(dir, "Textures", "SodaTexture.png"), Buffer.from(REAL_PNG_B64, "base64"));
+    writeFileSync(path.join(dir, "Textures", "SodaCan.png"), Buffer.from(REAL_PNG_B64, "base64"));
+    writeFileSync(path.join(dir, "Textures", "Pizza2.png"), Buffer.from(REAL_PNG_B64, "base64"));
+
+    const attached = await seedMissingTextures(glbPath, dir, [], "Soda");
+    assert.equal(attached, 1, "should pick the Texture-suffixed sibling");
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    assert.equal(json.images.length, 1);
+    assert.equal(json.images[0].name, "SodaTexture");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("seedMissingTextures source-stem fallback refuses ambiguous ties", async () => {
+  // Two textures tie at the highest score band ("Wolf" + "Texture" alpha
+  // suffix on both "WolfA" and "WolfB"). With no winner, the function must
+  // skip rather than guess.
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-ambiguous-"));
+  try {
+    const glbPath = path.join(dir, "Wolf.glb");
+    writeFileSync(glbPath, buildMaterialOnlyGlb(["Material"]));
+    mkdirSync(path.join(dir, "Textures"));
+    writeFileSync(path.join(dir, "Textures", "WolfA.png"), Buffer.from(REAL_PNG_B64, "base64"));
+    writeFileSync(path.join(dir, "Textures", "WolfB.png"), Buffer.from(REAL_PNG_B64, "base64"));
+
+    const attached = await seedMissingTextures(glbPath, dir, [], "Wolf");
+    assert.equal(attached, 0, "ambiguous match should be refused");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("seedMissingTextures uses single-image fallback as a shared atlas", async () => {
   const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-atlas-"));
   try {
