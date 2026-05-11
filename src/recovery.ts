@@ -422,6 +422,20 @@ function scoreStemMatch(sourceStem: string, imageStem: string): number {
   return 0;
 }
 
+// Tiebreak rule across all match passes: prefer shortest filename (most
+// canonical — "Tree.png" beats "Tree_Bark.png" beats "Tree7_Variant.png"),
+// then alphabetical. Stable across runs and prefers generic names.
+function pickCanonical(paths: string[]): string {
+  if (paths.length === 1) return paths[0]!;
+  const sorted = [...paths].sort((a, b) => {
+    const an = path.basename(a, path.extname(a));
+    const bn = path.basename(b, path.extname(b));
+    if (an.length !== bn.length) return an.length - bn.length;
+    return an.localeCompare(bn);
+  });
+  return sorted[0]!;
+}
+
 function pickBestStemMatch(sourceStem: string, imageIndex: Map<string, string>): string | null {
   const stemNorm = normalizeName(sourceStem);
   if (stemNorm.length === 0) return null;
@@ -439,16 +453,7 @@ function pickBestStemMatch(sourceStem: string, imageIndex: Map<string, string>):
     }
   }
   if (bestPaths.length === 0 || bestScore < 10) return null;
-  if (bestPaths.length === 1) return bestPaths[0]!;
-  // Tied — prefer the shortest filename (most canonical: "Tree.png" beats
-  // "Tree7.png" for a generic Tree-style match), then alphabetical.
-  bestPaths.sort((a, b) => {
-    const an = path.basename(a, path.extname(a));
-    const bn = path.basename(b, path.extname(b));
-    if (an.length !== bn.length) return an.length - bn.length;
-    return an.localeCompare(bn);
-  });
-  return bestPaths[0]!;
+  return pickCanonical(bestPaths);
 }
 
 export async function seedMissingTextures(
@@ -526,8 +531,7 @@ export async function seedMissingTextures(
         }
       }
       if (suffixHits.length > 0) {
-        suffixHits.sort();
-        hit = suffixHits[0];
+        hit = pickCanonical(suffixHits);
       }
     }
 
@@ -540,8 +544,7 @@ export async function seedMissingTextures(
         }
       }
       if (inverseHits.length > 0) {
-        inverseHits.sort();
-        hit = inverseHits[0];
+        hit = pickCanonical(inverseHits);
       }
     }
 
