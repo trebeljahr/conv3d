@@ -29,9 +29,14 @@ WORKDIR /app/docs
 # (ERR_MODULE_NOT_FOUND: Cannot find package 'vite'). Pin to match what
 # the local install + build was tested against.
 RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
-COPY docs/package.json docs/pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+# Copy the whole docs/ tree before install: fumadocs-mdx's postinstall
+# (`fumadocs-mdx` CLI) probes for next.config.* to decide between its
+# Next.js and Vite code paths. Without next.config.mjs present it falls
+# through to ./dist/vite/index.js, which imports `vite` (not declared)
+# and crashes with ERR_MODULE_NOT_FOUND. So skip the split-COPY cache
+# trick and copy everything first.
 COPY docs/ ./
+RUN pnpm install --frozen-lockfile
 RUN pnpm build
 
 FROM nginx:alpine AS runner
