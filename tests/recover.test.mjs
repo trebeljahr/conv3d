@@ -257,11 +257,10 @@ test("seedMissingTextures uses source-stem fallback to attach a per-file atlas",
   }
 });
 
-test("seedMissingTextures source-stem fallback refuses ambiguous ties", async () => {
-  // Two textures tie at the highest score band ("Wolf" + "Texture" alpha
-  // suffix on both "WolfA" and "WolfB"). With no winner, the function must
-  // skip rather than guess.
-  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-ambiguous-"));
+test("seedMissingTextures source-stem fallback breaks ties deterministically", async () => {
+  // Two textures tie at the alpha-suffix score band. With same-length
+  // filenames the alphabetical first wins so reruns are stable.
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-tied-"));
   try {
     const glbPath = path.join(dir, "Wolf.glb");
     writeFileSync(glbPath, buildMaterialOnlyGlb(["Material"]));
@@ -270,7 +269,32 @@ test("seedMissingTextures source-stem fallback refuses ambiguous ties", async ()
     writeFileSync(path.join(dir, "Textures", "WolfB.png"), Buffer.from(REAL_PNG_B64, "base64"));
 
     const attached = await seedMissingTextures(glbPath, dir, [], "Wolf");
-    assert.equal(attached, 0, "ambiguous match should be refused");
+    assert.equal(attached, 1, "should pick a winner deterministically");
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    assert.equal(json.images[0].name, "WolfA", "alphabetical tiebreak picks A");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("seedMissingTextures source-stem fallback handles BigTree → Tree", async () => {
+  // Source "BigTree" with several Tree-prefixed siblings should pick the
+  // canonical (shortest) Tree.png via the reverse-endsWith tier.
+  const dir = mkdtempSync(path.join(tmpdir(), "conv3d-seed-bigtree-"));
+  try {
+    const glbPath = path.join(dir, "BigTree.glb");
+    writeFileSync(glbPath, buildMaterialOnlyGlb(["Material"]));
+    mkdirSync(path.join(dir, "Textures"));
+    for (const name of ["Tree.png", "Tree2.png", "Tree3.png"]) {
+      writeFileSync(path.join(dir, "Textures", name), Buffer.from(REAL_PNG_B64, "base64"));
+    }
+
+    const attached = await seedMissingTextures(glbPath, dir, [], "BigTree");
+    assert.equal(attached, 1);
+
+    const { json } = parseGlbMinimal(readFileSync(glbPath));
+    assert.equal(json.images[0].name, "Tree", "shortest canonical name wins");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

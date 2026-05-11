@@ -408,6 +408,16 @@ function scoreStemMatch(sourceStem: string, imageStem: string): number {
     if (/^[a-z]+$/.test(suffix)) return 50; // "Donut2" → "DonutTexture"
     return 20;
   }
+  // Reverse: "CupcakeCherry" / "Cupcake" → source name extends a parent
+  // image. Useful for variant models that reuse a parent texture.
+  if (imageStem.length >= 4 && sourceStem.startsWith(imageStem)) {
+    return 25;
+  }
+  // Reverse: "BigTree" / "Tree" → source name decorates a base image with
+  // a size/state qualifier prefix.
+  if (imageStem.length >= 4 && sourceStem.endsWith(imageStem)) {
+    return 25;
+  }
   if (imageStem.includes(sourceStem)) return 10;
   return 0;
 }
@@ -428,9 +438,17 @@ function pickBestStemMatch(sourceStem: string, imageIndex: Map<string, string>):
       bestPaths.push(v);
     }
   }
-  // Refuse ambiguous ties — better to leave it untextured than guess wrong.
-  if (bestPaths.length === 1 && bestScore >= 10) return bestPaths[0]!;
-  return null;
+  if (bestPaths.length === 0 || bestScore < 10) return null;
+  if (bestPaths.length === 1) return bestPaths[0]!;
+  // Tied — prefer the shortest filename (most canonical: "Tree.png" beats
+  // "Tree7.png" for a generic Tree-style match), then alphabetical.
+  bestPaths.sort((a, b) => {
+    const an = path.basename(a, path.extname(a));
+    const bn = path.basename(b, path.extname(b));
+    if (an.length !== bn.length) return an.length - bn.length;
+    return an.localeCompare(bn);
+  });
+  return bestPaths[0]!;
 }
 
 export async function seedMissingTextures(
