@@ -1,0 +1,40 @@
+name: CI
+
+# Runs lint, typecheck, and tests for the CLI on every push and PR.
+# Docs site has its own workflow (docs.yml); this one focuses on src/.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck / build
+        run: pnpm run build
+
+      - name: Test
+        run: node --test "tests/**/*.test.mjs"
