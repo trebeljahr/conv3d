@@ -9,8 +9,13 @@ services:
   app:
     image: ghcr.io/trebeljahr/conv3d:latest
     restart: unless-stopped
-    ports:
-      - "80:80"
+    # Coolify's Traefik reverse-proxy already owns host port 80 and routes
+    # to this container via its internal Docker network. Use `expose` (not
+    # `ports`) so we declare the container port without trying to bind it
+    # on the host — binding 80:80 collides with Traefik and the deploy
+    # fails with "Bind for 0.0.0.0:80 failed: port is already allocated".
+    expose:
+      - "80"
     environment:
       - NODE_ENV=production
       # Forwarded from Coolify's app env. dotenvx inside the
