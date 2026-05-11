@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#14b8a6" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#0a1014" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="text" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#ccfbf1"/>
+    </linearGradient>
+    <pattern id="hatch" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="48" stroke="#0f1e1c" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0a1014"/>
+  <rect width="1200" height="630" fill="url(#hatch)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Logo mark -->
+  <g transform="translate(96, 88)">
+    <rect width="120" height="120" rx="28" fill="#2dd4bf"/>
+    <g stroke="#0a1014" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M60 22 L93 41 L60 60 L27 41 Z"/>
+      <path d="M27 41 L27 79 L60 98 L60 60"/>
+      <path d="M93 41 L93 79 L60 98"/>
+    </g>
+  </g>
+
+  <text x="240" y="180" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif" font-size="64" font-weight="700" fill="#ffffff" letter-spacing="-1">conv3d</text>
+
+  <!-- Headline -->
+  <text x="96" y="320" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif" font-size="68" font-weight="700" fill="url(#text)" letter-spacing="-2.2">From <tspan font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="60" fill="#5eead4">.fbx</tspan> to a typed</text>
+  <text x="96" y="402" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif" font-size="68" font-weight="700" fill="url(#text)" letter-spacing="-2.2">React Three Fiber component.</text>
+
+  <!-- Tagline -->
+  <text x="96" y="472" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif" font-size="26" font-weight="400" fill="#94a8b0" letter-spacing="-0.3">Command-line converter for 3D models. FBX, OBJ, glTF in — optimized GLB</text>
+  <text x="96" y="508" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif" font-size="26" font-weight="400" fill="#94a8b0" letter-spacing="-0.3">and ready-to-import .tsx components out. Safe for scripts and agents.</text>
+
+  <!-- URL footer -->
+  <g transform="translate(96, 572)">
+    <circle cx="6" cy="-6" r="5" fill="#34d399"/>
+    <text x="22" y="0" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22" font-weight="500" fill="#94a8b0">conv3d.trebeljahr.com</text>
+  </g>
+
+  <!-- Border accent -->
+  <rect x="0" y="0" width="1200" height="3" fill="#2dd4bf"/>
+</svg>

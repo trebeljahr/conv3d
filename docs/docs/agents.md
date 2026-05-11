@@ -1,0 +1,147 @@
+---
+sidebar_position: 5
+title: Scripts & agents
+---
+
+# Using conv3d from scripts & agents
+
+conv3d is designed to be safe to call from CI pipelines, build scripts, and AI coding agents. This page is the contract.
+
+## The seven rules
+
+1. **Always pass `-y` (or `--non-interactive`)** so no prompt can block. Non-interactive mode is also inferred automatically when stdin is not a TTY.
+2. **Explicitly pass `--tsx` / `--no-tsx` and `--optimize` / `--no-optimize`** — in non-interactive mode the defaults are `--tsx --optimize`, but being explicit means your script doesn't care which version of conv3d is installed.
+3. **For `bulk`, pass `-m`** in directory mode (`FBX` / `OBJ` / `GLTF` / `ALL`). In glob mode, `-m ALL` is the default.
+4. **Pass `--json`** to get a single, machine-readable result object on stdout.
+5. **Pass `--dry-run`** first to preview what would be written without touching disk.
+6. **Check the exit code.** `0` = success, `1` = fatal, `2` = partial (some files failed — read `errors[]`).
+7. **Know the output layout** — or pass `-o`, `--flat`, or the `--*-dir` flags for full control. See [Output layout](./output.md).
+
+## A minimal agent invocation
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize -y --json
+```
+
+That's it. Stdout is a single JSON object; stderr has any human-readable errors; the exit code tells you whether to proceed.
+
+## JSON output schema
+
+On success, stdout is a single JSON object:
+
+```jsonc
+{
+  "command": "bulk",                  // "single" | "bulk" | "tsx-gen" | "doctor"
+  "ok": true,                         // false when errors[] is non-empty
+  "inputDir": "/abs/path/models",     // single uses "inputPath"
+  "outputDir": "/abs/path/models/_convert-3d-for-web",
+  "dryRun": false,
+  "modelType": "ALL",                 // null/unset when n/a
+  "converted": [                      // .glb paths (or planned in --dry-run)
+    "/abs/.../glb/a.glb"
+  ],
+  "tsx": [                            // .tsx paths (empty when --no-tsx)
+    "/abs/.../tsx/A.tsx"
+  ],
+  "glbOptimized": [                   // web-optimized paths (empty when --no-optimize)
+    "/abs/.../glb-for-web/a-transformed.glb"
+  ],
+  "skipped": [],                      // outputs skipped because they already existed
+  "errors": []                        // { file, message } entries for per-file failures
+}
+```
+
+On a **fatal** error (bad args, missing input):
+
+```jsonc
+{ "command": "...", "ok": false, "error": "human-readable message" }
+```
+
+…and the process exits `1`.
+
+On a **partial** success (some files converted, some failed), the exit code is `2` and `errors[]` is non-empty.
+
+## Exit codes
+
+| Code | Meaning | When to retry |
+|---|---|---|
+| `0` | Everything worked. Empty `converted[]` is still `0` if the glob matched nothing (intentional — empty agent globs shouldn't be errors). | Never. |
+| `1` | Fatal: bad arguments, missing input directory, unsupported model type. | After fixing the args. |
+| `2` | Per-file failures. `converted[]` has the successes, `errors[]` has the failures. | Selectively, only the entries in `errors[]`. |
+
+## stdout vs stderr
+
+- **Stdout** carries the result.
+  - In normal mode: human-readable progress lines.
+  - In `--json` / `--quiet` mode: either empty or a single JSON object. **Nothing else.**
+- **Stderr** carries warnings, errors, and the ASCII banner.
+
+This means you can safely do:
+
+```bash
+conv3d bulk ./models -m ALL --tsx -y --json | jq '.converted[]'
+```
+
+…and `jq` will only ever see the JSON object.
+
+The ASCII banner is suppressed automatically when stdout is not a TTY, or when `--help` / `--version` / `--quiet` / `--json` is passed — agents will never see it.
+
+## Recipes
+
+### Convert and pipe paths to another tool
+
+```bash
+conv3d bulk ./models -m ALL --tsx -y --json \
+  | jq -r '.converted[]' \
+  | xargs -I {} my-thumbnail-tool {}
+```
+
+### Verify install health before running
+
+```bash
+if ! conv3d doctor --json | jq -e '.dependencies | all(.installed != null)' >/dev/null; then
+  echo "conv3d install is incomplete" >&2
+  exit 1
+fi
+```
+
+### Idempotent re-run
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize -y -f --json
+# -f replaces existing outputs; safe to run on every build
+```
+
+### Quietly skip already-converted files
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize -y --overwrite=skip --json
+# .skipped[] in the result tells you which were untouched
+```
+
+### Preview a destructive change
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize --dry-run --json \
+  | jq '.converted, .tsx, .glbOptimized'
+```
+
+`--dry-run` never creates files — not even the output directories.
+
+### Parse partial success
+
+```bash
+result=$(conv3d bulk ./models -m ALL --tsx -y --json) || true
+echo "$result" | jq '.errors[] | "FAILED: \(.file) — \(.message)"'
+echo "$result" | jq '.converted | length' # how many succeeded
+```
+
+## Notes for agents
+
+- **Pass `-y` even when calling `single`** — it never prompts then, no matter what.
+- **`single` returns `inputPath`, not `inputDir`** in its JSON. Watch for that.
+- **`tsx-gen` doesn't care about the input format flag** — it always operates on `.glb`.
+- **`doctor` always exits `0`** — even when dependencies are missing. Inspect `.dependencies[].installed` for the actual state.
+- **File-exists conflicts default to `skip`** in non-interactive mode. Pass `--overwrite=replace` (or `-f`) when you want idempotent reruns.
+- **`--dry-run` never writes** — not even the output directory tree.
+- **`figlet` and `lolcatjs` are optional**. `npm install --omit=optional` still gives you a working CLI, just without the rainbow banner.

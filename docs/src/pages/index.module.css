@@ -1,0 +1,608 @@
+/* Landing page — dark-first, cyan/teal accent, terminal vibe. */
+
+.main {
+  --c3-fg: #e6f4f1;
+  --c3-fg-muted: #94a8b0;
+  --c3-fg-dim: #5f7079;
+  --c3-bg: #0a1014;
+  --c3-bg-alt: #0f161b;
+  --c3-surface: #131c22;
+  --c3-border: rgba(255, 255, 255, 0.08);
+  --c3-border-strong: rgba(255, 255, 255, 0.16);
+  --c3-accent: #5eead4;
+  --c3-accent-strong: #2dd4bf;
+  --c3-accent-glow: rgba(20, 184, 166, 0.28);
+  --c3-success: #34d399;
+  --c3-radius-lg: 14px;
+  --c3-radius-md: 10px;
+  --c3-radius-sm: 6px;
+}
+
+[data-theme="light"] .main {
+  --c3-fg: #0a1014;
+  --c3-fg-muted: #4b5563;
+  --c3-fg-dim: #6b7280;
+  --c3-bg: #ffffff;
+  --c3-bg-alt: #f5f9f8;
+  --c3-surface: #ffffff;
+  --c3-border: rgba(10, 16, 20, 0.08);
+  --c3-border-strong: rgba(10, 16, 20, 0.16);
+  --c3-accent: #0d9488;
+  --c3-accent-strong: #0f766e;
+  --c3-accent-glow: rgba(20, 184, 166, 0.18);
+  --c3-success: #047857;
+}
+
+.main {
+  background: var(--c3-bg);
+  color: var(--c3-fg);
+}
+
+/* ───── Hero ───────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  padding: 5rem 1.5rem 4rem;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, var(--c3-accent-glow), transparent 60%),
+    var(--c3-bg);
+  border-bottom: 1px solid var(--c3-border);
+}
+
+.heroInner {
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8125rem;
+  font-family: var(--ifm-font-family-monospace);
+  color: var(--c3-fg-muted);
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: 999px;
+}
+
+.eyebrowDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--c3-success);
+  box-shadow: 0 0 8px var(--c3-success);
+}
+
+.heroTitle {
+  font-size: clamp(2.25rem, 5.5vw, 3.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+  color: var(--c3-fg);
+}
+
+.inlineCode {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border-strong);
+  border-radius: var(--c3-radius-sm);
+  color: var(--c3-accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.inlineCodeSmall {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.92em;
+  padding: 0.05em 0.3em;
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: var(--c3-radius-sm);
+  color: var(--c3-accent);
+}
+
+.heroTagline {
+  font-size: clamp(1rem, 1.5vw, 1.175rem);
+  line-height: 1.55;
+  color: var(--c3-fg-muted);
+  max-width: 660px;
+  margin: 0 auto 2rem;
+}
+
+.heroCtas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 3.5rem;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--c3-radius-md);
+  text-decoration: none;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.ctaPrimary {
+  background: var(--c3-accent-strong);
+  color: #0a1014;
+  border: 1px solid var(--c3-accent-strong);
+  box-shadow:
+    0 8px 24px -8px var(--c3-accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.ctaPrimary:hover {
+  background: var(--c3-accent);
+  color: #0a1014;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.ctaSecondary {
+  background: transparent;
+  color: var(--c3-fg);
+  border: 1px solid var(--c3-border-strong);
+}
+
+.ctaSecondary:hover {
+  border-color: var(--c3-accent);
+  color: var(--c3-fg);
+  text-decoration: none;
+  background: var(--c3-surface);
+}
+
+/* Terminal */
+
+.terminal {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: left;
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: var(--c3-radius-lg);
+  box-shadow:
+    0 24px 60px -24px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--c3-border);
+  overflow: hidden;
+}
+
+.terminalBar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem;
+  background: var(--c3-bg-alt);
+  border-bottom: 1px solid var(--c3-border);
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: #3b3f4a;
+}
+
+.dot[data-color="red"] {
+  background: #ff5f57;
+}
+
+.dot[data-color="amber"] {
+  background: #febc2e;
+}
+
+.dot[data-color="green"] {
+  background: #28c840;
+}
+
+.terminalTitle {
+  margin-left: 0.75rem;
+  font-size: 0.75rem;
+  font-family: var(--ifm-font-family-monospace);
+  color: var(--c3-fg-dim);
+}
+
+.terminalBody {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  background: transparent;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  font-family: var(--ifm-font-family-monospace);
+  color: var(--c3-fg);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.terminalBody code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  font-family: inherit;
+}
+
+.prompt {
+  color: var(--c3-accent);
+  user-select: none;
+}
+
+.cmd {
+  color: var(--c3-fg);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--c3-fg-muted);
+}
+
+.dim {
+  color: var(--c3-fg-dim);
+  font-style: italic;
+}
+
+.input {
+  color: var(--c3-accent);
+}
+
+.ok {
+  color: var(--c3-success);
+  font-weight: 600;
+}
+
+.success {
+  color: var(--c3-success);
+  font-weight: 600;
+}
+
+/* ───── Generic section ────────────────────────────────────── */
+
+.section {
+  padding: 5rem 1.5rem;
+  background: var(--c3-bg);
+}
+
+.sectionAlt {
+  background: var(--c3-bg-alt);
+  border-top: 1px solid var(--c3-border);
+  border-bottom: 1px solid var(--c3-border);
+}
+
+.sectionInner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-size: clamp(1.625rem, 3vw, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.sectionLede {
+  font-size: 1.0625rem;
+  color: var(--c3-fg-muted);
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 3rem;
+  line-height: 1.55;
+}
+
+.sectionLede code {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.92em;
+  padding: 0.05em 0.3em;
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: var(--c3-radius-sm);
+  color: var(--c3-accent);
+}
+
+/* ───── Pillars ────────────────────────────────────────────── */
+
+.pillarGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.pillarCard {
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: var(--c3-radius-lg);
+  padding: 1.75rem;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.pillarCard:hover {
+  border-color: var(--c3-border-strong);
+  transform: translateY(-2px);
+}
+
+.pillarTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--c3-accent);
+  letter-spacing: -0.01em;
+}
+
+.pillarBody {
+  margin: 0 0 1rem;
+  color: var(--c3-fg);
+  line-height: 1.55;
+}
+
+.pillarList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pillarList li {
+  position: relative;
+  padding-left: 1.25rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.9375rem;
+  color: var(--c3-fg-muted);
+  line-height: 1.5;
+}
+
+.pillarList li::before {
+  content: "›";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--c3-accent);
+  font-weight: 700;
+}
+
+/* ───── Workflow steps ─────────────────────────────────────── */
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.step {
+  position: relative;
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: var(--c3-radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.stepNum {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--c3-accent);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.stepCmd {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  background: var(--c3-bg);
+  border: 1px solid var(--c3-border-strong);
+  border-radius: var(--c3-radius-sm);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.825rem;
+  color: var(--c3-accent);
+  margin-bottom: 0.75rem;
+  align-self: flex-start;
+}
+
+.stepTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.stepBody p {
+  margin: 0;
+  color: var(--c3-fg-muted);
+  line-height: 1.55;
+  font-size: 0.9375rem;
+}
+
+/* ───── Formats ────────────────────────────────────────────── */
+
+.formats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem 1rem;
+}
+
+.formatGroup {
+  padding: 1rem 0;
+}
+
+.formatLabel {
+  font-size: 0.7rem;
+  font-family: var(--ifm-font-family-monospace);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c3-fg-dim);
+  margin-bottom: 0.75rem;
+}
+
+.formatList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.formatChip {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-family: var(--ifm-font-family-monospace);
+  color: var(--c3-fg);
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.formatChip:hover {
+  border-color: var(--c3-accent);
+  color: var(--c3-accent);
+}
+
+/* ───── Philosophy ─────────────────────────────────────────── */
+
+.quote {
+  max-width: 740px;
+  margin: 0 auto 3rem;
+  padding: 0;
+  border: none;
+  text-align: center;
+}
+
+.quote p {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--c3-fg);
+  letter-spacing: -0.015em;
+}
+
+.principles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem 2rem;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.principles h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem;
+  color: var(--c3-accent);
+  letter-spacing: -0.005em;
+}
+
+.principles p {
+  margin: 0;
+  color: var(--c3-fg-muted);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.principles code {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.92em;
+  padding: 0.05em 0.3em;
+  background: var(--c3-bg);
+  border: 1px solid var(--c3-border);
+  border-radius: var(--c3-radius-sm);
+  color: var(--c3-accent);
+}
+
+/* ───── Final CTA ──────────────────────────────────────────── */
+
+.finalCta {
+  padding: 6rem 1.5rem;
+  background:
+    radial-gradient(ellipse 60% 60% at 50% 50%, var(--c3-accent-glow), transparent 70%),
+    var(--c3-bg);
+  text-align: center;
+}
+
+.finalTitle {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+}
+
+.finalLede {
+  color: var(--c3-fg-muted);
+  font-size: 1.0625rem;
+  margin: 0 auto 2rem;
+  max-width: 560px;
+  line-height: 1.55;
+}
+
+.finalCmd {
+  display: inline-block;
+  margin: 0 0 2rem;
+  padding: 0.85rem 1.5rem;
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border-strong);
+  border-radius: var(--c3-radius-md);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 1rem;
+  text-align: left;
+}
+
+.finalCmd code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--c3-fg);
+  font-family: inherit;
+}
+
+/* ───── Responsive tweaks ──────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 3.5rem 1rem 3rem;
+  }
+  .section {
+    padding: 3.5rem 1rem;
+  }
+  .terminalBody {
+    font-size: 0.78rem;
+    padding: 1rem 1.1rem;
+  }
+  .heroCtas {
+    margin-bottom: 2.5rem;
+  }
+  .pillarCard,
+  .step {
+    padding: 1.4rem;
+  }
+}

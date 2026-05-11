@@ -1,0 +1,46 @@
+---
+sidebar_position: 1
+title: Overview
+---
+
+# conv3d
+
+A command-line tool for converting 3D models (`.fbx`, `.obj`, `.gltf`) into `.glb` files and generating matching React Three Fiber components — so you can drop them straight into a [react-three-fiber](https://github.com/pmndrs/react-three-fiber) / [three.js](https://threejs.org) project without a round-trip through Blender.
+
+[**Get started →**](./getting-started.md) &nbsp;·&nbsp; [GitHub](https://github.com/trebeljahr/conv3d) &nbsp;·&nbsp; [npm](https://www.npmjs.com/package/conv3d)
+
+---
+
+## What it does
+
+- **Inputs:** `.fbx`, `.obj`, `.gltf` — directories, single files, or glob patterns.
+- **Outputs:** `.glb` (always), `.tsx` components (optional), web-optimized `.glb` (optional).
+- **Works interactively** (prompts guide you) **or fully non-interactively** (`--yes`, `--json`, `--dry-run` — safe for scripts, CI, and AI coding agents).
+- **Parallel conversion** by default — `min(cpus, 4)`, tunable with `--concurrency`.
+
+## Why it exists
+
+Adding a new model to a react-three-fiber app is a multi-step chore: convert FBX → glTF in Blender (or a CLI), bake it down to a `.glb`, run `gltfjsx` to get a typed component, then re-run a separate optimization pass to make it web-sized. Each step lives in a different tool with different ergonomics.
+
+conv3d folds the whole pipeline into one command, on top of the best-of-breed open-source tools that already do each step well:
+
+- [`obj2gltf`](https://www.npmjs.com/package/obj2gltf) for OBJ → glTF.
+- [`gltf-pipeline`](https://www.npmjs.com/package/gltf-pipeline) for glTF → GLB.
+- [`fbx2gltf`](https://www.npmjs.com/package/fbx2gltf) for FBX → glTF.
+- [`gltfjsx`](https://www.npmjs.com/package/gltfjsx) for `.glb` → typed React component + web optimization.
+
+## Design principles
+
+- **Interactive when you want it, scripted when you don't.** Prompts guide first-time use; flags skip them entirely. The same binary serves humans and agents.
+- **Predictable output layout.** `glb/`, `tsx/`, `glb-for-web/` subdirs by default. Override per-bucket or go `--flat`.
+- **Texture recovery for FBX.** When `fbx2gltf` bakes a 1×1 magenta placeholder (because the FBX referenced a Windows path), conv3d swaps in the matching texture from the FBX's own directory.
+- **Stable contract for agents.** `--json` on stdout, errors on stderr, exit codes `0` / `1` / `2`, and `--dry-run` that never touches the filesystem.
+
+## Next steps
+
+- [Getting Started](./getting-started.md) — install and convert your first model.
+- [Commands reference](./commands.md) — `bulk`, `single`, `tsx-gen`, `doctor`.
+- [Output layout](./output.md) — where files land and how to redirect them.
+- [Using conv3d from scripts & agents](./agents.md) — `--yes`, `--json`, exit codes, recipes.
+- [FBX texture recovery](./textures.md) — how conv3d rescues stripped textures.
+- [Architecture](./architecture.md) — what runs when, and why.

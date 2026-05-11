@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect x="2" y="2" width="28" height="28" rx="7" fill="#2dd4bf"/>
+  <!-- Isometric cube wireframe -->
+  <g stroke="#0a1014" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Top face -->
+    <path d="M16 7 L24 11 L16 15 L8 11 Z"/>
+    <!-- Left face -->
+    <path d="M8 11 L8 21 L16 25 L16 15"/>
+    <!-- Right face -->
+    <path d="M24 11 L24 21 L16 25"/>
+  </g>
+  <!-- Center mesh vertex highlight -->
+  <circle cx="16" cy="15" r="1.4" fill="#0a1014"/>
+</svg>
