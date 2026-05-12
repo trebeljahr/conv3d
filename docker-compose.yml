@@ -8,6 +8,13 @@
 services:
   app:
     image: ghcr.io/trebeljahr/conv3d:latest
+    # `latest` is a mutable tag; without this Coolify keeps the locally
+    # cached image and ignores fresh pushes from CI, so a successful
+    # workflow silently has no effect on the running container — the
+    # site keeps serving the previous build (or, after the very first
+    # deploy on a server with no cached image yet, the upstream nginx
+    # welcome page if that's what the cached layer happens to be).
+    pull_policy: always
     restart: unless-stopped
     # Coolify's Traefik reverse-proxy already owns host port 80 and routes
     # to this container via its internal Docker network. Use `expose` (not
