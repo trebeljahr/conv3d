@@ -13,7 +13,7 @@ const plausibleDomain =
 const plausibleScriptUrl =
   process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_URL ??
   process.env.PUBLIC_PLAUSIBLE_SCRIPT_URL ??
-  "https://plausible.trebeljahr.com/js/script.js";
+  "https://plausible.trebeljahr.com/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js";
 const shouldLoadPlausible =
   process.env.NODE_ENV === "production" && Boolean(plausibleDomain && plausibleScriptUrl);
 
@@ -47,11 +47,16 @@ export default function Layout({ children }: { children: ReactNode }) {
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
         {shouldLoadPlausible ? (
-          <Script
-            src={plausibleScriptUrl}
-            data-domain={plausibleDomain}
-            strategy="afterInteractive"
-          />
+          <>
+            <Script id="plausible-queue" strategy="afterInteractive">
+              {`window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }`}
+            </Script>
+            <Script
+              src={plausibleScriptUrl}
+              data-domain={plausibleDomain}
+              strategy="afterInteractive"
+            />
+          </>
         ) : null}
         <RootProvider search={{ enabled: false }}>{children}</RootProvider>
       </body>
