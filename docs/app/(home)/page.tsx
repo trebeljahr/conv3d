@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { HeroFunnelScene } from "./HeroFunnelScene";
 import styles from "./page.module.css";
 
 type FileRow = { name: string; before: number; after: number };
@@ -7,14 +8,12 @@ type FileRow = { name: string; before: number; after: number };
 const REPO_URL = "https://github.com/trebeljahr/conv3d";
 
 const heroFiles: FileRow[] = [
-  { name: "Knight.fbx", before: 31.2, after: 2.1 },
-  { name: "Barbarian.fbx", before: 28.4, after: 1.8 },
-  { name: "Wizard.fbx", before: 26.8, after: 1.9 },
-  { name: "Archer.fbx", before: 24.1, after: 1.6 },
-  { name: "Rogue.fbx", before: 22.6, after: 1.4 },
+  { name: "KnightHelmet.fbx", before: 31.2, after: 2.1 },
+  { name: "AnimatedChest.fbx", before: 28.4, after: 1.8 },
+  { name: "IceStaff.fbx", before: 26.8, after: 1.9 },
 ];
 
-const heroTotal = { before: 286, after: 21, count: 12 };
+const heroTotal = { before: 312, after: 23, count: 13 };
 
 const HERO_MAX = Math.max(...heroFiles.map((f) => f.before));
 
@@ -24,83 +23,101 @@ const pct = (b: number, a: number) => `${Math.round((1 - a / b) * 100)}%`;
 function Hero() {
   return (
     <header className={styles.hero}>
+      <HeroFunnelScene />
+      <div className={styles.heroShade} aria-hidden />
       <div className={styles.heroInner}>
-        <h1 className={styles.heroTitle}>
-          Game-ready 3D, <span className={styles.heroAccent}>web-ready size</span>.
-        </h1>
-        <p className={styles.heroTagline}>
-          conv3d converts <code className={styles.heroCode}>.fbx</code>,{" "}
-          <code className={styles.heroCode}>.obj</code>, and{" "}
-          <code className={styles.heroCode}>.glTF</code> into compact{" "}
-          <code className={styles.heroCode}>.glb</code> — typically{" "}
-          <strong className={styles.heroStrong}>90% smaller</strong> — and writes the React Three
-          Fiber component to use them with.
-        </p>
-        <div className={styles.heroCtas}>
-          <Link className={styles.ctaPrimary} href="/docs/getting-started">
-            Get started →
-          </Link>
-          <Link className={styles.ctaSecondary} href={REPO_URL}>
-            View on GitHub
-          </Link>
-        </div>
-
-        <div
-          className={styles.chart}
-          role="img"
-          aria-label="File size comparison: FBX vs optimized GLB"
-        >
-          <div className={styles.chartHead}>
-            <div className={styles.chartHeadLeft}>
-              <span className={styles.chartHeadKbd}>./asset-pack/</span>
-              <span className={styles.chartHeadSub}>{heroTotal.count} models · one command</span>
-            </div>
-            <div className={styles.chartLegend}>
-              <span className={styles.legendItem}>
-                <span className={`${styles.legendDot} ${styles.legendBefore}`} /> .fbx
-              </span>
-              <span className={styles.legendItem}>
-                <span className={`${styles.legendDot} ${styles.legendAfter}`} /> .glb
-              </span>
-            </div>
+        <div className={styles.heroCopy}>
+          <p className={styles.heroEyebrow}>bulk 3D asset compression</p>
+          <h1 className={styles.heroTitle}>conv3d</h1>
+          <p className={styles.heroHeadline}>Asset packs in. Web-sized GLBs out.</p>
+          <p className={styles.heroTagline}>
+            Convert folders of <code className={styles.heroCode}>.fbx</code>,{" "}
+            <code className={styles.heroCode}>.obj</code>, and{" "}
+            <code className={styles.heroCode}>.glTF</code> into compact{" "}
+            <code className={styles.heroCode}>.glb</code> files, then emit the React Three Fiber
+            components to use them with.
+          </p>
+          <div className={styles.heroCtas}>
+            <Link className={styles.ctaPrimary} href="/docs/getting-started">
+              Get started →
+            </Link>
+            <Link className={styles.ctaSecondary} href={REPO_URL}>
+              View on GitHub
+            </Link>
           </div>
-
-          <div className={styles.chartBody}>
-            {heroFiles.map((f) => (
-              <div key={f.name} className={styles.chartRow}>
-                <span className={styles.chartFile}>{f.name}</span>
-                <div className={styles.chartTrack}>
-                  <div
-                    className={styles.barBefore}
-                    style={{ width: `${(f.before / HERO_MAX) * 100}%` }}
-                  />
-                  <span className={styles.barLabelBefore}>{fmt(f.before)}</span>
-                </div>
-                <div className={styles.chartTrack}>
-                  <div
-                    className={styles.barAfter}
-                    style={{ width: `${(f.after / HERO_MAX) * 100}%` }}
-                  />
-                  <span className={styles.barLabelAfter}>{fmt(f.after)}</span>
-                </div>
-                <span className={styles.chartPct}>−{pct(f.before, f.after)}</span>
-              </div>
-            ))}
-            <div className={styles.chartEllipsis}>+ {heroTotal.count - heroFiles.length} more</div>
-          </div>
-
-          <div className={styles.chartTotal}>
-            <span className={styles.chartTotalLabel}>Total</span>
-            <span className={styles.chartTotalBefore}>{fmt(heroTotal.before)}</span>
-            <span className={styles.chartTotalArrow} aria-hidden>
-              →
+          <div className={styles.heroStats} aria-label="Batch conversion highlights">
+            <span>
+              <strong>{heroTotal.count}</strong> models
             </span>
-            <span className={styles.chartTotalAfter}>{fmt(heroTotal.after)}</span>
-            <span className={styles.chartTotalPct}>−{pct(heroTotal.before, heroTotal.after)}</span>
+            <span>
+              <strong>1</strong> command
+            </span>
+            <span>
+              <strong>−{pct(heroTotal.before, heroTotal.after)}</strong> total bytes
+            </span>
           </div>
         </div>
       </div>
     </header>
+  );
+}
+
+function BatchChart() {
+  return (
+    <div className={styles.chart} role="img" aria-label="File size comparison: FBX vs optimized GLB">
+      <div className={styles.chartHead}>
+        <div className={styles.chartHeadLeft}>
+          <span className={styles.chartHeadKbd}>./asset-pack/</span>
+          <span className={styles.chartHeadSub}>{heroTotal.count} models · one command</span>
+        </div>
+        <div className={styles.chartLegend}>
+          <span className={styles.legendItem}>
+            <span className={`${styles.legendDot} ${styles.legendBefore}`} /> .fbx
+          </span>
+          <span className={styles.legendItem}>
+            <span className={`${styles.legendDot} ${styles.legendAfter}`} /> .glb
+          </span>
+        </div>
+      </div>
+
+      <div className={styles.chartBody}>
+        {heroFiles.map((f) => (
+          <div key={f.name} className={styles.chartRow}>
+            <span className={styles.chartFile}>{f.name}</span>
+            <div className={styles.chartTrack}>
+              <div className={styles.barBefore} style={{ width: `${(f.before / HERO_MAX) * 100}%` }} />
+              <span className={styles.barLabelBefore}>{fmt(f.before)}</span>
+            </div>
+            <div className={styles.chartTrack}>
+              <div className={styles.barAfter} style={{ width: `${(f.after / HERO_MAX) * 100}%` }} />
+              <span className={styles.barLabelAfter}>{fmt(f.after)}</span>
+            </div>
+            <span className={styles.chartPct}>−{pct(f.before, f.after)}</span>
+          </div>
+        ))}
+        <div className={styles.chartEllipsis}>+ {heroTotal.count - heroFiles.length} more</div>
+      </div>
+
+      <div className={styles.chartTotal}>
+        <span className={styles.chartTotalLabel}>Total</span>
+        <span className={styles.chartTotalBefore}>{fmt(heroTotal.before)}</span>
+        <span className={styles.chartTotalArrow} aria-hidden>
+          →
+        </span>
+        <span className={styles.chartTotalAfter}>{fmt(heroTotal.after)}</span>
+        <span className={styles.chartTotalPct}>−{pct(heroTotal.before, heroTotal.after)}</span>
+      </div>
+    </div>
+  );
+}
+
+function BatchProof() {
+  return (
+    <section className={styles.proofSection}>
+      <div className={styles.sectionInner}>
+        <BatchChart />
+      </div>
+    </section>
   );
 }
 
@@ -309,6 +326,7 @@ export default function Home(): ReactNode {
   return (
     <main className={styles.main}>
       <Hero />
+      <BatchProof />
       <Shrink />
       <ComponentShowcase />
       <FinalCta />
