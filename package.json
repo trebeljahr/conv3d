@@ -31,6 +31,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "dev": "pnpm -C docs dev",
     "postinstall": "patch-package",
     "conv3d": "npm run build && node ./dist/conv3d.js",
     "install-local": "npm run build && npm install -g .",
