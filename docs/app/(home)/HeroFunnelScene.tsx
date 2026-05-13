@@ -4,16 +4,13 @@ import { useEffect, useRef } from "react";
 import {
   AmbientLight,
   Box3,
-  BoxGeometry,
   Color,
   DirectionalLight,
   DoubleSide,
-  DynamicDrawUsage,
   FrontSide,
   Group,
   HemisphereLight,
   IcosahedronGeometry,
-  InstancedMesh,
   MathUtils,
   type Material,
   Mesh,
@@ -49,6 +46,8 @@ type FunnelItem = {
   scale: number;
   speed: number;
   spin: Vector3;
+  materials: MaterialShape[];
+  baseOpacity: number[];
 };
 
 type MaterialShape = Material & {
@@ -66,115 +65,82 @@ type MaterialShape = Material & {
 };
 
 const MODEL_ROOT = "/models/conv3d-funnel/";
-const CORE = new Vector3(2.35, 1.1, 0);
-const SHARD_COUNT = 42;
+const CORE = new Vector3(2.95, 1.1, 0);
 
-// CC0 Quaternius models, compressed through the gamedev repo's optimized GLB
-// pipeline. Chunkier silhouettes read better in a moving background.
+// Smallest optimized GLBs from the demo pack. Fewer, chunkier silhouettes keep
+// the funnel readable without procedural debris competing for attention.
 const MODEL_ASSETS: ModelAsset[] = [
   {
     file: "AnimatedChest.glb",
-    start: [-4.2, 1.75, -1.5],
-    end: [6.0, -0.92, -0.75],
-    phase: 0.02,
-    scale: 1.34,
-    spin: [0.28, 0.86, 0.12],
+    start: [-4.35, 1.2, -0.85],
+    end: [6.2, -0.75, 0.22],
+    phase: 0.79,
+    scale: 1.42,
+    spin: [0.22, 0.7, 0.1],
   },
   {
     file: "Burger.glb",
-    start: [-3.8, -0.95, 0.9],
-    end: [5.7, 0.55, 0.4],
-    phase: 0.12,
-    scale: 1.42,
-    spin: [0.18, -0.72, 0.25],
-  },
-  {
-    file: "Cake.glb",
-    start: [-3.3, 0.95, 1.35],
-    end: [6.25, -0.18, 0.82],
-    phase: 0.2,
-    scale: 1.34,
-    spin: [0.46, 0.5, -0.22],
+    start: [-3.9, -1.1, 0.95],
+    end: [5.8, -0.35, -0.2],
+    phase: 0.44,
+    scale: 1.48,
+    spin: [0.16, -0.58, 0.22],
   },
   {
     file: "ChairCushioned.glb",
-    start: [-4.55, 0.2, -0.25],
-    end: [5.45, 1.12, -0.35],
-    phase: 0.29,
-    scale: 1.22,
-    spin: [0.12, 1.2, 0.8],
-  },
-  {
-    file: "Donut.glb",
-    start: [-3.9, 2.15, 0.65],
-    end: [6.35, 0.88, 0.05],
-    phase: 0.36,
+    start: [-4.6, 0.25, -1.2],
+    end: [5.6, 0.45, 0.65],
+    phase: 0.31,
     scale: 1.32,
-    spin: [-0.24, 0.96, 0.44],
+    spin: [0.1, 0.86, 0.54],
   },
   {
     file: "Hotdog.glb",
-    start: [-3.5, -0.55, -1.05],
-    end: [5.85, -1.08, 0.58],
-    phase: 0.43,
-    scale: 1.3,
-    spin: [0.7, -0.32, 0.34],
+    start: [-4.05, -0.65, -1.15],
+    end: [6.05, -1.05, 0.52],
+    phase: 0.56,
+    scale: 1.34,
+    spin: [0.56, -0.28, 0.28],
   },
   {
     file: "KnightHelmet.glb",
-    start: [-4.45, 1.2, 0.05],
-    end: [5.55, 0.14, -0.98],
-    phase: 0.51,
-    scale: 1.3,
-    spin: [0.18, 0.78, -0.18],
+    start: [-3.75, -0.25, 1.35],
+    end: [5.85, 1.35, -0.75],
+    phase: 0.9,
+    scale: 1.36,
+    spin: [0.16, 0.66, -0.16],
   },
   {
     file: "Lamp.glb",
-    start: [-3.8, -1.25, -0.5],
-    end: [6.1, 1.4, 0.72],
-    phase: 0.59,
-    scale: 1.24,
-    spin: [0.36, -0.46, 0.64],
+    start: [-4.1, 1.55, 0.75],
+    end: [6.0, 1.05, -0.45],
+    phase: 0.18,
+    scale: 1.28,
+    spin: [0.28, -0.42, 0.52],
   },
   {
     file: "Milkshake.glb",
-    start: [-3.4, 1.55, 1.15],
-    end: [5.85, -0.54, -0.16],
-    phase: 0.66,
-    scale: 1.3,
-    spin: [-0.28, 0.84, 0.24],
-  },
-  {
-    file: "Pizza.glb",
-    start: [-4.35, -0.25, 1.25],
-    end: [6.25, 0.35, 0.96],
-    phase: 0.74,
+    start: [-3.4, 1.95, -0.3],
+    end: [6.15, 0.7, 0.42],
+    phase: 0.67,
     scale: 1.36,
-    spin: [0.2, 0.55, 0.46],
+    spin: [-0.24, 0.68, 0.2],
   },
   {
     file: "Plant.glb",
-    start: [-3.75, 0.38, -1.35],
-    end: [5.6, -1.36, -0.55],
-    phase: 0.82,
-    scale: 1.26,
-    spin: [0.64, 0.24, -0.36],
-  },
-  {
-    file: "SodaCan.glb",
-    start: [-4.65, 2.0, -0.75],
-    end: [6.15, 0.9, -0.2],
-    phase: 0.9,
-    scale: 1.24,
-    spin: [0.12, 1.08, 0.54],
+    start: [-4.05, 0.9, 1.25],
+    end: [5.7, -1.15, -0.55],
+    phase: 0.68,
+    scale: 1.42,
+    spin: [0.52, 0.2, -0.32],
   },
   {
     file: "Sofa.glb",
-    start: [-3.25, -0.8, 0.2],
-    end: [5.7, -0.86, 1.1],
-    phase: 0.96,
-    scale: 1.34,
-    spin: [-0.42, 0.36, 0.7],
+    start: [-4.3, -0.8, -0.6],
+    end: [5.9, -0.95, 0.85],
+    phase: 0.04,
+    scale: 1.4,
+    spin: [-0.22, 0.32, 0.5],
   },
 ];
 
@@ -184,6 +150,19 @@ function easeInOut(t: number): number {
 
 function easeOut(t: number): number {
   return 1 - (1 - t) ** 3;
+}
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const t = MathUtils.clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function modelFade(progress: number): number {
+  const cycleFade = smoothstep(0.16, 0.3, progress) * (1 - smoothstep(0.84, 0.98, progress));
+  const conversionDip =
+    1 - smoothstep(0.52, 0.6, progress) * (1 - smoothstep(0.6, 0.7, progress)) * 0.42;
+
+  return MathUtils.clamp(cycleFade * conversionDip, 0, 1);
 }
 
 function isMesh(object: Object3D): object is Mesh {
@@ -260,6 +239,43 @@ function normalizeModel(scene: Group, targetSize: number): Group {
   return wrapper;
 }
 
+function collectFadeMaterials(root: Group) {
+  const materials: MaterialShape[] = [];
+  const baseOpacity: number[] = [];
+  const seen = new Set<Material>();
+
+  root.traverse((object) => {
+    if (!isMesh(object)) return;
+
+    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const source of meshMaterials) {
+      if (seen.has(source)) continue;
+      seen.add(source);
+
+      const material = source as MaterialShape;
+      materials.push(material);
+      baseOpacity.push(typeof material.opacity === "number" ? material.opacity : 1);
+      material.transparent = true;
+      material.opacity = 0;
+      material.depthWrite = false;
+      material.needsUpdate = true;
+    }
+  });
+
+  return { materials, baseOpacity };
+}
+
+function setMaterialsOpacity(materials: MaterialShape[], baseOpacity: number[], opacity: number) {
+  materials.forEach((material, index) => {
+    material.opacity = baseOpacity[index] * opacity;
+  });
+}
+
+function setModelOpacity(item: FunnelItem, opacity: number) {
+  item.group.visible = opacity > 0.015;
+  setMaterialsOpacity(item.materials, item.baseOpacity, opacity);
+}
+
 function createProcessor() {
   const group = new Group();
   const rings: Mesh[] = [];
@@ -314,46 +330,6 @@ function createProcessor() {
   return { group, rings, core };
 }
 
-function createShards(color: string, emissive: string): InstancedMesh {
-  const geometry = new BoxGeometry(0.34, 0.21, 0.036);
-  const material = new MeshStandardMaterial({
-    color,
-    emissive,
-    emissiveIntensity: 0.34,
-    metalness: 0.18,
-    roughness: 0.36,
-    transparent: true,
-    opacity: 0.62,
-  });
-  const mesh = new InstancedMesh(geometry, material, SHARD_COUNT);
-  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-  return mesh;
-}
-
-function setShardMatrix(mesh: InstancedMesh, index: number, time: number, outbound: boolean, dummy: Object3D) {
-  const u = (time * (outbound ? 0.16 : 0.13) + index / SHARD_COUNT + (outbound ? 0.42 : 0)) % 1;
-  const p = outbound ? easeOut(u) : easeInOut(u);
-  const row = (index % 7) - 3;
-  const layer = Math.floor(index / 7) % 6;
-  const start = outbound
-    ? CORE
-    : new Vector3(-6.3, -1.4 + row * 0.42, -1.6 + layer * 0.55);
-  const end = outbound
-    ? new Vector3(6.45, -1.0 + row * 0.24, -0.95 + layer * 0.34)
-    : CORE;
-
-  dummy.position.set(
-    MathUtils.lerp(start.x, end.x, p),
-    MathUtils.lerp(start.y, end.y, p) + Math.sin(time * 1.7 + index) * 0.08,
-    MathUtils.lerp(start.z, end.z, p) + Math.cos(time * 1.3 + index) * 0.08,
-  );
-  dummy.rotation.set(time * 0.55 + index, time * 0.34 - index * 0.1, time * 0.48 + index * 0.2);
-  const s = outbound ? MathUtils.lerp(0.24, 0.48, p) : MathUtils.lerp(0.8, 0.2, p);
-  dummy.scale.setScalar(s);
-  dummy.updateMatrix();
-  mesh.setMatrixAt(index, dummy.matrix);
-}
-
 function updateItem(item: FunnelItem, time: number) {
   const u = (time * item.speed + item.phase) % 1;
   const inboundLimit = 0.6;
@@ -375,7 +351,7 @@ function updateItem(item: FunnelItem, time: number) {
       MathUtils.lerp(CORE.y, item.end.y, p) + Math.sin(p * Math.PI * 2 + item.phase * 9) * 0.12,
       MathUtils.lerp(CORE.z, item.end.z, p),
     );
-    stageScale = MathUtils.lerp(0.2, 0.46, p) * MathUtils.lerp(1, 0.7, p);
+    stageScale = MathUtils.lerp(0.22, 0.58, p) * MathUtils.lerp(1, 0.82, p);
   }
 
   item.group.scale.setScalar(item.scale * stageScale);
@@ -384,6 +360,7 @@ function updateItem(item: FunnelItem, time: number) {
     time * item.spin.y + item.phase * 5,
     time * item.spin.z + item.phase * 7,
   );
+  setModelOpacity(item, modelFade(u));
 }
 
 function disposeObject(object: Object3D) {
@@ -424,10 +401,6 @@ export function HeroFunnelScene() {
     const processor = createProcessor();
     scene.add(processor.group);
 
-    const inboundShards = createShards("#ffb25f", "#8f3d00");
-    const outboundShards = createShards("#68f7dd", "#087c72");
-    scene.add(inboundShards, outboundShards);
-
     const ambient = new AmbientLight("#d8fff8", 0.88);
     const hemi = new HemisphereLight("#ccfff6", "#1a1610", 1.28);
     const key = new DirectionalLight("#ffffff", 2.85);
@@ -442,18 +415,20 @@ export function HeroFunnelScene() {
     gltfLoader.setDRACOLoader(dracoLoader);
 
     const items: FunnelItem[] = [];
-    const dummy = new Object3D();
 
     function resize() {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       if (!width || !height) return;
 
+      const sceneOffsetX = width < 720 ? 1.35 : 0;
+      modelRoot.position.x = sceneOffsetX;
+      processor.group.position.x = sceneOffsetX;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
-      camera.position.set(width < 720 ? 1.2 : 0.45, width < 720 ? 1.55 : 1.18, width < 720 ? 9.8 : 8.0);
-      camera.lookAt(width < 720 ? 1.55 : 2.05, width < 720 ? 0.75 : 0.9, 0);
+      camera.position.set(width < 720 ? 0.35 : 0.45, width < 720 ? 1.55 : 1.18, width < 720 ? 10.2 : 8.0);
+      camera.lookAt(width < 720 ? 0.75 : 2.05, width < 720 ? 0.78 : 0.9, 0);
       camera.updateProjectionMatrix();
     }
 
@@ -468,7 +443,9 @@ export function HeroFunnelScene() {
           if (disposed) return;
 
           const group = normalizeModel(gltf.scene, 1);
-          group.visible = true;
+          const fade = collectFadeMaterials(group);
+          group.visible = false;
+          setMaterialsOpacity(fade.materials, fade.baseOpacity, 0);
           modelRoot.add(group);
           items.push({
             group,
@@ -476,8 +453,10 @@ export function HeroFunnelScene() {
             end: new Vector3(...asset.end),
             phase: asset.phase,
             scale: asset.scale,
-            speed: 0.09 + (index % 4) * 0.012,
+            speed: 0.072 + (index % 3) * 0.007,
             spin: new Vector3(...asset.spin),
+            materials: fade.materials,
+            baseOpacity: fade.baseOpacity,
           });
         }),
       );
@@ -499,13 +478,6 @@ export function HeroFunnelScene() {
       });
 
       for (const item of items) updateItem(item, reduceMotion ? 2.4 : time);
-
-      for (let i = 0; i < SHARD_COUNT; i += 1) {
-        setShardMatrix(inboundShards, i, reduceMotion ? 2.4 : time, false, dummy);
-        setShardMatrix(outboundShards, i, reduceMotion ? 2.4 : time, true, dummy);
-      }
-      inboundShards.instanceMatrix.needsUpdate = true;
-      outboundShards.instanceMatrix.needsUpdate = true;
 
       renderer.render(scene, camera);
     }
