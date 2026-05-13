@@ -10,14 +10,12 @@ import {
   FrontSide,
   Group,
   HemisphereLight,
-  IcosahedronGeometry,
   MathUtils,
   type Material,
   Mesh,
   MeshStandardMaterial,
   Object3D,
   PerspectiveCamera,
-  PointLight,
   Scene,
   SRGBColorSpace,
   TorusGeometry,
@@ -33,6 +31,7 @@ type ModelAsset = {
   file: string;
   start: [number, number, number];
   end: [number, number, number];
+  finalRotation: [number, number, number];
   phase: number;
   scale: number;
   spin: [number, number, number];
@@ -46,6 +45,7 @@ type FunnelItem = {
   scale: number;
   speed: number;
   spin: Vector3;
+  finalRotation: Vector3;
   materials: MaterialShape[];
   baseOpacity: number[];
 };
@@ -65,82 +65,91 @@ type MaterialShape = Material & {
 };
 
 const MODEL_ROOT = "/models/conv3d-funnel/";
-const CORE = new Vector3(2.95, 1.1, 0);
+const STREAM_CENTER = new Vector3(3.55, 0.62, 0);
+const GATE = new Vector3(3.55, 0.06, 0);
 
-// Smallest optimized GLBs from the demo pack. Fewer, chunkier silhouettes keep
-// the funnel readable without procedural debris competing for attention.
+// Same optimized GLBs, now staged as a vertical "mess in, grid out" compression loop.
 const MODEL_ASSETS: ModelAsset[] = [
   {
     file: "AnimatedChest.glb",
-    start: [-4.35, 1.2, -0.85],
-    end: [6.2, -0.75, 0.22],
+    start: [1.6, 3.35, -1.25],
+    end: [2.68, -1.1, -0.38],
+    finalRotation: [0.08, -0.35, 0],
     phase: 0.79,
-    scale: 1.42,
-    spin: [0.22, 0.7, 0.1],
+    scale: 1.16,
+    spin: [1.45, 0.9, -0.72],
   },
   {
     file: "Burger.glb",
-    start: [-3.9, -1.1, 0.95],
-    end: [5.8, -0.35, -0.2],
+    start: [4.8, 3.76, 1.05],
+    end: [3.55, -1.1, -0.38],
+    finalRotation: [0.18, 0.4, -0.08],
     phase: 0.44,
-    scale: 1.48,
-    spin: [0.16, -0.58, 0.22],
+    scale: 1.18,
+    spin: [-1.12, 1.28, 0.82],
   },
   {
     file: "ChairCushioned.glb",
-    start: [-4.6, 0.25, -1.2],
-    end: [5.6, 0.45, 0.65],
+    start: [2.4, 4.05, 0.85],
+    end: [4.42, -1.1, -0.38],
+    finalRotation: [0.12, -0.78, 0.03],
     phase: 0.31,
-    scale: 1.32,
-    spin: [0.1, 0.86, 0.54],
+    scale: 1.04,
+    spin: [0.92, -1.34, 1.18],
   },
   {
     file: "Hotdog.glb",
-    start: [-4.05, -0.65, -1.15],
-    end: [6.05, -1.05, 0.52],
+    start: [5.7, 3.18, -0.72],
+    end: [2.68, -1.58, 0],
+    finalRotation: [-0.08, 0.2, 0.18],
     phase: 0.56,
-    scale: 1.34,
-    spin: [0.56, -0.28, 0.28],
+    scale: 1.1,
+    spin: [-1.38, -0.72, 0.96],
   },
   {
     file: "KnightHelmet.glb",
-    start: [-3.75, -0.25, 1.35],
-    end: [5.85, 1.35, -0.75],
+    start: [3.45, 4.25, -1.08],
+    end: [3.55, -1.58, 0],
+    finalRotation: [0.16, 0.72, -0.08],
     phase: 0.9,
-    scale: 1.36,
-    spin: [0.16, 0.66, -0.16],
+    scale: 1.12,
+    spin: [1.08, 1.18, -1.05],
   },
   {
     file: "Lamp.glb",
-    start: [-4.1, 1.55, 0.75],
-    end: [6.0, 1.05, -0.45],
+    start: [6.1, 3.52, 0.36],
+    end: [4.42, -1.58, 0],
+    finalRotation: [0.04, -0.52, 0.12],
     phase: 0.18,
-    scale: 1.28,
-    spin: [0.28, -0.42, 0.52],
+    scale: 1.08,
+    spin: [1.24, -0.86, -0.92],
   },
   {
     file: "Milkshake.glb",
-    start: [-3.4, 1.95, -0.3],
-    end: [6.15, 0.7, 0.42],
+    start: [1.95, 3.78, 0.34],
+    end: [2.68, -2.06, 0.38],
+    finalRotation: [0.12, -0.12, -0.04],
     phase: 0.67,
-    scale: 1.36,
-    spin: [-0.24, 0.68, 0.2],
+    scale: 1.14,
+    spin: [-1.18, 1.02, 0.68],
   },
   {
     file: "Plant.glb",
-    start: [-4.05, 0.9, 1.25],
-    end: [5.7, -1.15, -0.55],
+    start: [4.2, 3.48, -1.48],
+    end: [3.55, -2.06, 0.38],
+    finalRotation: [0.06, 0.48, 0.08],
     phase: 0.68,
-    scale: 1.42,
-    spin: [0.52, 0.2, -0.32],
+    scale: 1.16,
+    spin: [0.82, -1.24, 1.08],
   },
   {
     file: "Sofa.glb",
-    start: [-4.3, -0.8, -0.6],
-    end: [5.9, -0.95, 0.85],
+    start: [5.35, 4.08, 1.42],
+    end: [4.42, -2.06, 0.38],
+    finalRotation: [0.02, -0.18, -0.06],
     phase: 0.04,
-    scale: 1.4,
-    spin: [-0.22, 0.32, 0.5],
+    scale: 1.12,
+    spin: [-0.76, 0.92, -1.22],
   },
 ];
 
@@ -158,11 +167,7 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
 }
 
 function modelFade(progress: number): number {
-  const cycleFade = smoothstep(0.16, 0.3, progress) * (1 - smoothstep(0.84, 0.98, progress));
-  const conversionDip =
-    1 - smoothstep(0.52, 0.6, progress) * (1 - smoothstep(0.6, 0.7, progress)) * 0.42;
-
-  return MathUtils.clamp(cycleFade * conversionDip, 0, 1);
+  return smoothstep(0.02, 0.1, progress) * (1 - smoothstep(0.92, 0.995, progress));
 }
 
 function isMesh(object: Object3D): object is Mesh {
@@ -279,86 +284,104 @@ function setModelOpacity(item: FunnelItem, opacity: number) {
 function createProcessor() {
   const group = new Group();
   const rings: Mesh[] = [];
+  const pads: Mesh[] = [];
   const ringMaterial = new MeshStandardMaterial({
     color: "#73f7df",
-    emissive: "#0b7f75",
-    emissiveIntensity: 1.1,
+    emissive: "#0b4f4a",
+    emissiveIntensity: 0.28,
     metalness: 0.25,
-    roughness: 0.2,
+    roughness: 0.34,
     transparent: true,
-    opacity: 0.74,
+    opacity: 0.42,
   });
   const amberMaterial = new MeshStandardMaterial({
     color: "#ffb25f",
-    emissive: "#9b4a08",
-    emissiveIntensity: 0.64,
+    emissive: "#5f3209",
+    emissiveIntensity: 0.22,
     metalness: 0.16,
-    roughness: 0.38,
+    roughness: 0.45,
     transparent: true,
-    opacity: 0.56,
+    opacity: 0.38,
   });
 
   for (let i = 0; i < 7; i += 1) {
-    const radius = MathUtils.lerp(1.36, 0.34, i / 6);
-    const tube = MathUtils.lerp(0.026, 0.012, i / 6);
+    const progress = i / 6;
+    const radius = MathUtils.lerp(1.48, 0.42, progress);
+    const tube = MathUtils.lerp(0.024, 0.012, progress);
     const ring = new Mesh(new TorusGeometry(radius, tube, 10, 96), i < 3 ? amberMaterial.clone() : ringMaterial.clone());
-    ring.rotation.y = Math.PI / 2;
-    ring.position.x = CORE.x + MathUtils.lerp(-1.28, 0.62, i / 6);
-    ring.position.y = CORE.y + Math.sin(i * 0.8) * 0.05;
-    ring.position.z = CORE.z + Math.cos(i * 0.7) * 0.08;
+    ring.rotation.x = Math.PI / 2;
+    ring.position.x = STREAM_CENTER.x + Math.sin(i * 0.9) * 0.06;
+    ring.position.y = MathUtils.lerp(1.72, -0.02, progress);
+    ring.position.z = STREAM_CENTER.z + Math.cos(i * 0.75) * 0.06;
     group.add(ring);
     rings.push(ring);
   }
 
-  const core = new Mesh(
-    new IcosahedronGeometry(0.32, 1),
-    new MeshStandardMaterial({
-      color: "#a7fff0",
-      emissive: "#20dfc8",
-      emissiveIntensity: 1.65,
-      metalness: 0.5,
-      roughness: 0.18,
-    }),
-  );
-  core.position.copy(CORE);
-  group.add(core);
+  const padMaterial = new MeshStandardMaterial({
+    color: "#e5fff9",
+    emissive: "#183f3b",
+    emissiveIntensity: 0.12,
+    metalness: 0.1,
+    roughness: 0.76,
+    transparent: true,
+    opacity: 0.28,
+  });
 
-  const light = new PointLight("#5eead4", 3.2, 7);
-  light.position.set(CORE.x + 0.2, CORE.y + 0.15, CORE.z + 0.5);
-  group.add(light);
+  for (const asset of MODEL_ASSETS) {
+    const pad = new Mesh(new TorusGeometry(0.28, 0.008, 8, 48), padMaterial.clone());
+    pad.rotation.x = Math.PI / 2;
+    pad.position.set(asset.end[0], asset.end[1] - 0.28, asset.end[2]);
+    group.add(pad);
+    pads.push(pad);
+  }
 
-  return { group, rings, core };
+  return { group, rings, pads };
 }
 
 function updateItem(item: FunnelItem, time: number) {
   const u = (time * item.speed + item.phase) % 1;
-  const inboundLimit = 0.6;
-  const swirl = Math.sin((u + item.phase) * Math.PI * 6);
+  const dropLimit = 0.5;
+  const settleLimit = 0.78;
+  const chaosSeed = item.phase * 97;
   let stageScale: number;
+  let settleRotation = 0;
 
-  if (u < inboundLimit) {
-    const p = easeInOut(u / inboundLimit);
+  if (u < dropLimit) {
+    const p = easeInOut(u / dropLimit);
+    const chaos = (1 - p) * 0.92;
     item.group.position.set(
-      MathUtils.lerp(item.start.x, CORE.x + swirl * 0.1, p),
-      MathUtils.lerp(item.start.y, CORE.y + Math.cos(time + item.phase * 8) * 0.14, p) + Math.sin(p * Math.PI) * 0.38,
-      MathUtils.lerp(item.start.z, CORE.z + Math.cos(time * 0.8 + item.phase * 10) * 0.12, p),
+      MathUtils.lerp(item.start.x, GATE.x, p) +
+        Math.sin(time * 2.4 + chaosSeed) * chaos +
+        Math.sin(p * Math.PI) * Math.sin(chaosSeed) * 0.42,
+      MathUtils.lerp(item.start.y, GATE.y, p) + Math.cos(time * 1.7 + chaosSeed) * chaos * 0.42,
+      MathUtils.lerp(item.start.z, GATE.z, p) + Math.cos(time * 2.1 + chaosSeed) * chaos * 0.78,
     );
-    stageScale = MathUtils.lerp(1.12, 0.22, p);
+    stageScale = MathUtils.lerp(2.24, 0.42, p);
+  } else if (u < settleLimit) {
+    const p = easeOut((u - dropLimit) / (settleLimit - dropLimit));
+    item.group.position.set(
+      MathUtils.lerp(GATE.x, item.end.x, p),
+      MathUtils.lerp(GATE.y, item.end.y, p),
+      MathUtils.lerp(GATE.z, item.end.z, p),
+    );
+    stageScale = MathUtils.lerp(0.42, 0.34, p);
+    settleRotation = p;
   } else {
-    const p = easeOut((u - inboundLimit) / (1 - inboundLimit));
-    item.group.position.set(
-      MathUtils.lerp(CORE.x, item.end.x, p),
-      MathUtils.lerp(CORE.y, item.end.y, p) + Math.sin(p * Math.PI * 2 + item.phase * 9) * 0.12,
-      MathUtils.lerp(CORE.z, item.end.z, p),
-    );
-    stageScale = MathUtils.lerp(0.22, 0.58, p) * MathUtils.lerp(1, 0.82, p);
+    item.group.position.copy(item.end);
+    stageScale = 0.34;
+    settleRotation = 1;
   }
 
   item.group.scale.setScalar(item.scale * stageScale);
+  const chaosRotation = {
+    x: time * item.spin.x + item.phase * 5,
+    y: time * item.spin.y + item.phase * 7,
+    z: time * item.spin.z + item.phase * 11,
+  };
   item.group.rotation.set(
-    time * item.spin.x + item.phase * 3,
-    time * item.spin.y + item.phase * 5,
-    time * item.spin.z + item.phase * 7,
+    MathUtils.lerp(chaosRotation.x, item.finalRotation.x, settleRotation),
+    MathUtils.lerp(chaosRotation.y, item.finalRotation.y, settleRotation),
+    MathUtils.lerp(chaosRotation.z, item.finalRotation.z, settleRotation),
   );
   setModelOpacity(item, modelFade(u));
 }
@@ -421,14 +444,14 @@ export function HeroFunnelScene() {
       const height = canvas.clientHeight;
       if (!width || !height) return;
 
-      const sceneOffsetX = width < 720 ? 1.35 : 0;
+      const sceneOffsetX = width < 720 ? 0.95 : 0;
       modelRoot.position.x = sceneOffsetX;
       processor.group.position.x = sceneOffsetX;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
-      camera.position.set(width < 720 ? 0.35 : 0.45, width < 720 ? 1.55 : 1.18, width < 720 ? 10.2 : 8.0);
-      camera.lookAt(width < 720 ? 0.75 : 2.05, width < 720 ? 0.78 : 0.9, 0);
+      camera.position.set(width < 720 ? 0.55 : 0.75, width < 720 ? 0.8 : 0.55, width < 720 ? 10.6 : 8.4);
+      camera.lookAt(width < 720 ? 1.05 : 2.85, width < 720 ? 0.28 : 0.18, 0);
       camera.updateProjectionMatrix();
     }
 
@@ -453,8 +476,9 @@ export function HeroFunnelScene() {
             end: new Vector3(...asset.end),
             phase: asset.phase,
             scale: asset.scale,
-            speed: 0.072 + (index % 3) * 0.007,
+            speed: 0.082 + (index % 3) * 0.006,
             spin: new Vector3(...asset.spin),
+            finalRotation: new Vector3(...asset.finalRotation),
             materials: fade.materials,
             baseOpacity: fade.baseOpacity,
           });
@@ -466,15 +490,16 @@ export function HeroFunnelScene() {
 
     function renderFrame(now: number) {
       const time = now / 1000;
-      processor.group.rotation.z = Math.sin(time * 0.42) * 0.035;
-      processor.core.rotation.set(time * 0.42, time * 0.6, -time * 0.36);
-      const corePulse = 1 + Math.sin(time * 2.4) * 0.06;
-      processor.core.scale.setScalar(corePulse);
+      processor.group.rotation.z = Math.sin(time * 0.35) * 0.02;
 
       processor.rings.forEach((ring, index) => {
-        const pulse = 1 + Math.sin(time * 1.5 + index * 0.7) * 0.04;
+        const pulse = 1 + Math.sin(time * 1.35 + index * 0.7) * 0.035;
         ring.scale.setScalar(pulse);
-        ring.rotation.x = time * (index % 2 === 0 ? 0.18 : -0.14);
+        ring.rotation.z = time * (index % 2 === 0 ? 0.12 : -0.1);
+      });
+
+      processor.pads.forEach((pad, index) => {
+        pad.scale.setScalar(1 + Math.sin(time * 1.2 + index) * 0.025);
       });
 
       for (const item of items) updateItem(item, reduceMotion ? 2.4 : time);
