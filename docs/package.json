@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node ../scripts/docs-dev.mjs",
+    "dev": "next dev --port 3485",
     "build": "next build",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
