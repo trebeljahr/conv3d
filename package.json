@@ -6,6 +6,11 @@
   "bin": {
     "conv3d": "./dist/conv3d.js"
   },
+  "files": [
+    "dist",
+    "patches",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trebeljahr/conv3d.git"
@@ -13,9 +18,16 @@
   "bugs": {
     "url": "https://github.com/trebeljahr/conv3d/issues"
   },
-  "homepage": "https://github.com/trebeljahr/conv3d#readme",
+  "homepage": "https://conv3d.trebeljahr.com",
   "engines": {
     "node": ">=24"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",
@@ -39,8 +51,11 @@
     "gltf",
     "fbx",
     "obj",
+    "glb",
     "three.js",
     "react-three-fiber",
+    "gltfjsx",
+    "webgl",
     "cli"
   ],
   "author": "Rico Trebeljahr",

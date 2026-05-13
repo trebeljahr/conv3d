@@ -4,6 +4,8 @@
 
 A command-line tool for converting 3D models (GLTF, FBX, OBJ) into GLB and generating matching React Three Fiber components — so you can drop them into a react-three-fiber / three.js project without a round-trip through Blender.
 
+[Docs](https://conv3d.trebeljahr.com) · [npm](https://www.npmjs.com/package/conv3d) · [Issues](https://github.com/trebeljahr/conv3d/issues)
+
 - **Inputs:** `.fbx`, `.obj`, `.gltf` — directories, single files, or glob patterns
 - **Outputs:** `.glb` (always), `.tsx` components (optional), web-optimized `.glb` (optional)
 - **Works interactively** (prompts guide you) **or fully non-interactively** (`--yes`, `--json`, `--dry-run` — ideal for scripts, CI, and AI coding agents)

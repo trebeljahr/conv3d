@@ -4,6 +4,8 @@ import styles from "./page.module.css";
 
 type FileRow = { name: string; before: number; after: number };
 
+const REPO_URL = "https://github.com/trebeljahr/conv3d";
+
 const heroFiles: FileRow[] = [
   { name: "Knight.fbx", before: 31.2, after: 2.1 },
   { name: "Barbarian.fbx", before: 28.4, after: 1.8 },
@@ -38,7 +40,7 @@ function Hero() {
           <Link className={styles.ctaPrimary} href="/docs/getting-started">
             Get started →
           </Link>
-          <Link className={styles.ctaSecondary} href="https://github.com/trebeljahr/conv3d">
+          <Link className={styles.ctaSecondary} href={REPO_URL}>
             View on GitHub
           </Link>
         </div>
@@ -294,7 +296,7 @@ function FinalCta() {
           <Link className={styles.ctaPrimary} href="/docs/getting-started">
             Read the docs →
           </Link>
-          <Link className={styles.ctaSecondary} href="https://github.com/trebeljahr/conv3d">
+          <Link className={styles.ctaSecondary} href={REPO_URL}>
             Star on GitHub
           </Link>
         </div>
