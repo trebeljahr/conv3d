@@ -10,6 +10,7 @@
     "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@hatchkit/dev-plugin-next": "^0.1.43",
     "fumadocs-core": "16.8.9",
     "fumadocs-mdx": "15.0.2",
     "fumadocs-ui": "16.8.9",

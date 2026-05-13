@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@hatchkit/dev-plugin-next':
+        specifier: ^0.1.43
+        version: 0.1.47(next@16.2.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6))
       fumadocs-core:
         specifier: 16.8.9
         version: 16.8.9(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.6))(next@16.2.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(zod@4.4.3)
@@ -242,6 +245,14 @@ packages:
         optional: true
       tailwindcss:
         optional: true
+
+  '@hatchkit/dev-plugin-next@0.1.47':
+    resolution: {integrity: sha512-di6cz/Jjm3iy5Y0UYN/u4EyHuIjG1tcri1//k4yu4bnUlMnpf/TQIf6pro/Yh8NCjc+gKlh+5riYRomu7opAKQ==}
+    peerDependencies:
+      next: '>=14'
+
+  '@hatchkit/dev-shared@0.1.47':
+    resolution: {integrity: sha512-fCsMfi8OYDKA/NYl8r+CUT25PaCsCv4faN0A86MjeOaN/pw6I3oOGuQPmLaOh0Ccg8qH0PeaqtSkxJtQnGmqUw==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -2040,6 +2051,13 @@ snapshots:
     optionalDependencies:
       '@tailwindcss/oxide': 4.3.0
       tailwindcss: 4.3.0
+
+  '@hatchkit/dev-plugin-next@0.1.47(next@16.2.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6))':
+    dependencies:
+      '@hatchkit/dev-shared': 0.1.47
+      next: 16.2.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+
+  '@hatchkit/dev-shared@0.1.47': {}
 
   '@img/colour@1.1.0':
     optional: true

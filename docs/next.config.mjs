@@ -1,3 +1,4 @@
+import { withLocalDev } from "@hatchkit/dev-plugin-next";
 import { createMDX } from 'fumadocs-mdx/next';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -15,4 +16,5 @@ const config = {
   },
 };
 
-export default withMDX(config);
+const __hatchkitLocalDevConfig = withMDX(config);
+export default withLocalDev(__hatchkitLocalDevConfig, { slug: "conv3d" });
