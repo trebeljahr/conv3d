@@ -4,6 +4,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
+import {
+  DEFAULT_SOCIAL_IMAGE,
+  DEFAULT_TWITTER_IMAGE,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"] });
 const plausibleDomain =
@@ -16,30 +23,35 @@ const plausibleScriptUrl =
   "https://plausible.trebeljahr.com/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://conv3d.trebeljahr.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "conv3d",
-    template: "%s · conv3d",
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Command-line tool that converts FBX, OBJ, and glTF files into GLB and generates matching React Three Fiber components — interactive or fully scripted.",
+  description: SITE_DESCRIPTION,
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
-    url: "https://conv3d.trebeljahr.com",
-    title: "conv3d",
-    description:
-      "Convert FBX / OBJ / glTF to GLB and generate React Three Fiber components — without a round-trip through Blender.",
-    images: ["/img/social-card.png"],
+    url: "/",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
+    images: [
+      {
+        url: DEFAULT_SOCIAL_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "conv3d documentation",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "conv3d",
-    description:
-      "Convert FBX / OBJ / glTF to GLB and generate React Three Fiber components — without a round-trip through Blender.",
-    images: ["/img/social-card.png"],
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_TWITTER_IMAGE],
   },
 };
 

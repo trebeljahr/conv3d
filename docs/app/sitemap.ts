@@ -1,9 +1,8 @@
 import type { MetadataRoute } from "next";
+import { absoluteUrl, lastModifiedForDoc, lastModifiedForFile } from "@/lib/seo";
 import { source } from "@/lib/source";
 
-const SITE_URL = "https://conv3d.trebeljahr.com";
-
-const absoluteUrl = (pathname: string) => new URL(pathname, SITE_URL).toString();
+export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const docs: MetadataRoute.Sitemap = source.generateParams().flatMap(({ slug }) => {
@@ -13,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     return [
       {
         url: absoluteUrl(page.url),
+        lastModified: lastModifiedForDoc(slug),
         changeFrequency: "weekly",
         priority: page.url === "/docs" ? 0.9 : 0.7,
       },
@@ -22,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: absoluteUrl("/"),
+      lastModified: lastModifiedForFile("app/(home)/page.tsx"),
       changeFrequency: "monthly",
       priority: 1,
     },
