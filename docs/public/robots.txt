@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://conv3d.trebeljahr.com/sitemap.xml

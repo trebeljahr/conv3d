@@ -6,6 +6,7 @@ import { getMDXComponents } from "@/components/mdx";
 import { source } from "@/lib/source";
 
 type PageParams = { slug?: string[] };
+const SOCIAL_IMAGE = "/img/social-card.png";
 
 export default async function Page(props: { params: Promise<PageParams> }) {
   const params = await props.params;
@@ -41,5 +42,21 @@ export async function generateMetadata(props: { params: Promise<PageParams> }): 
   return {
     title: page.data.title,
     description: page.data.description,
+    alternates: {
+      canonical: page.url,
+    },
+    openGraph: {
+      type: "article",
+      url: page.url,
+      title: page.data.title,
+      description: page.data.description,
+      images: [SOCIAL_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: page.data.title,
+      description: page.data.description,
+      images: [SOCIAL_IMAGE],
+    },
   };
 }

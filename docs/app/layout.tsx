@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   },
   description:
     "Command-line tool that converts FBX, OBJ, and glTF files into GLB and generates matching React Three Fiber components — interactive or fully scripted.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     url: "https://conv3d.trebeljahr.com",
