@@ -14,8 +14,6 @@ const plausibleScriptUrl =
   process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_URL ??
   process.env.PUBLIC_PLAUSIBLE_SCRIPT_URL ??
   "https://plausible.trebeljahr.com/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js";
-const shouldLoadPlausible =
-  process.env.NODE_ENV === "production" && Boolean(plausibleDomain && plausibleScriptUrl);
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://conv3d.trebeljahr.com"),
@@ -46,18 +44,23 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
-        {shouldLoadPlausible ? (
-          <>
-            <Script id="plausible-queue" strategy="afterInteractive">
-              {`window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }`}
-            </Script>
-            <Script
-              src={plausibleScriptUrl}
-              data-domain={plausibleDomain}
-              strategy="afterInteractive"
-            />
-          </>
-        ) : null}
+        <Script id="plausible-loader" strategy="afterInteractive">
+          {`
+              (function () {
+                var domain = ${JSON.stringify(plausibleDomain)};
+                var scriptUrl = ${JSON.stringify(plausibleScriptUrl)};
+                if (!domain || !scriptUrl || location.hostname !== domain) return;
+                window.plausible = window.plausible || function() {
+                  (window.plausible.q = window.plausible.q || []).push(arguments);
+                };
+                var script = document.createElement("script");
+                script.defer = true;
+                script.dataset.domain = domain;
+                script.src = scriptUrl;
+                document.head.appendChild(script);
+              })();
+            `}
+        </Script>
         <RootProvider search={{ enabled: false }}>{children}</RootProvider>
       </body>
     </html>
