@@ -34,7 +34,6 @@ type ModelAsset = {
   finalRotation: [number, number, number];
   phase: number;
   scale: number;
-  spin: [number, number, number];
 };
 
 type FunnelItem = {
@@ -44,7 +43,6 @@ type FunnelItem = {
   phase: number;
   scale: number;
   speed: number;
-  spin: Vector3;
   finalRotation: Vector3;
   materials: MaterialShape[];
   baseOpacity: number[];
@@ -77,7 +75,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.08, -0.35, 0],
     phase: 0.79,
     scale: 1.16,
-    spin: [1.45, 0.9, -0.72],
   },
   {
     file: "Burger.glb",
@@ -86,7 +83,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.18, 0.4, -0.08],
     phase: 0.44,
     scale: 1.18,
-    spin: [-1.12, 1.28, 0.82],
   },
   {
     file: "ChairCushioned.glb",
@@ -95,7 +91,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.12, -0.78, 0.03],
     phase: 0.31,
     scale: 1.04,
-    spin: [0.92, -1.34, 1.18],
   },
   {
     file: "Hotdog.glb",
@@ -104,7 +99,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [-0.08, 0.2, 0.18],
     phase: 0.56,
     scale: 1.1,
-    spin: [-1.38, -0.72, 0.96],
   },
   {
     file: "KnightHelmet.glb",
@@ -113,7 +107,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.16, 0.72, -0.08],
     phase: 0.9,
     scale: 1.12,
-    spin: [1.08, 1.18, -1.05],
   },
   {
     file: "Lamp.glb",
@@ -122,7 +115,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.04, -0.52, 0.12],
     phase: 0.18,
     scale: 1.08,
-    spin: [1.24, -0.86, -0.92],
   },
   {
     file: "Milkshake.glb",
@@ -131,7 +123,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.12, -0.12, -0.04],
     phase: 0.67,
     scale: 1.14,
-    spin: [-1.18, 1.02, 0.68],
   },
   {
     file: "Plant.glb",
@@ -140,7 +131,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.06, 0.48, 0.08],
     phase: 0.68,
     scale: 1.16,
-    spin: [0.82, -1.24, 1.08],
   },
   {
     file: "Sofa.glb",
@@ -149,7 +139,6 @@ const MODEL_ASSETS: ModelAsset[] = [
     finalRotation: [0.02, -0.18, -0.06],
     phase: 0.04,
     scale: 1.12,
-    spin: [-0.76, 0.92, -1.22],
   },
 ];
 
@@ -344,19 +333,32 @@ function updateItem(item: FunnelItem, time: number) {
   const settleLimit = 0.78;
   const chaosSeed = item.phase * 97;
   let stageScale: number;
-  let settleRotation = 0;
+  let rotationBlend = 0;
 
   if (u < dropLimit) {
-    const p = easeInOut(u / dropLimit);
-    const chaos = (1 - p) * 0.92;
+    const dropProgress = u / dropLimit;
+    const p = easeInOut(dropProgress);
+    const startX = item.start.x - GATE.x;
+    const startZ = item.start.z - GATE.z;
+    const startRadius = Math.max(Math.hypot(startX, startZ), 0.72);
+    const startAngle = Math.atan2(startZ, startX);
+    const angularProgress = (dropProgress * 0.65 + dropProgress * dropProgress * 1.9) * Math.PI * 2;
+    const angle = startAngle + angularProgress;
+    const radius = MathUtils.lerp(startRadius, 0.16, p);
+    const drift = (1 - p) * 0.14;
+
     item.group.position.set(
-      MathUtils.lerp(item.start.x, GATE.x, p) +
-        Math.sin(time * 2.4 + chaosSeed) * chaos +
-        Math.sin(p * Math.PI) * Math.sin(chaosSeed) * 0.42,
-      MathUtils.lerp(item.start.y, GATE.y, p) + Math.cos(time * 1.7 + chaosSeed) * chaos * 0.42,
-      MathUtils.lerp(item.start.z, GATE.z, p) + Math.cos(time * 2.1 + chaosSeed) * chaos * 0.78,
+      GATE.x + Math.cos(angle) * radius + Math.sin(angle * 1.4 + chaosSeed) * drift,
+      MathUtils.lerp(item.start.y, GATE.y, p) + Math.cos(angle * 0.72 + chaosSeed) * drift * 0.35,
+      GATE.z + Math.sin(angle) * radius + Math.cos(angle * 1.3 + chaosSeed) * drift,
     );
     stageScale = MathUtils.lerp(2.24, 0.42, p);
+    rotationBlend = smoothstep(0.41, dropLimit, u);
+    item.group.rotation.set(
+      MathUtils.lerp(Math.sin(angle * 0.34 + chaosSeed) * 0.16, item.finalRotation.x, rotationBlend),
+      MathUtils.lerp(angle + Math.PI * 0.5, item.finalRotation.y, rotationBlend),
+      MathUtils.lerp(Math.cos(angle * 0.38 + chaosSeed) * 0.14, item.finalRotation.z, rotationBlend),
+    );
   } else if (u < settleLimit) {
     const p = easeOut((u - dropLimit) / (settleLimit - dropLimit));
     item.group.position.set(
@@ -365,24 +367,15 @@ function updateItem(item: FunnelItem, time: number) {
       MathUtils.lerp(GATE.z, item.end.z, p),
     );
     stageScale = MathUtils.lerp(0.42, 0.34, p);
-    settleRotation = p;
+    rotationBlend = 1;
   } else {
     item.group.position.copy(item.end);
     stageScale = 0.34;
-    settleRotation = 1;
+    rotationBlend = 1;
   }
 
   item.group.scale.setScalar(item.scale * stageScale);
-  const chaosRotation = {
-    x: time * item.spin.x + item.phase * 5,
-    y: time * item.spin.y + item.phase * 7,
-    z: time * item.spin.z + item.phase * 11,
-  };
-  item.group.rotation.set(
-    MathUtils.lerp(chaosRotation.x, item.finalRotation.x, settleRotation),
-    MathUtils.lerp(chaosRotation.y, item.finalRotation.y, settleRotation),
-    MathUtils.lerp(chaosRotation.z, item.finalRotation.z, settleRotation),
-  );
+  if (rotationBlend === 1) item.group.rotation.set(item.finalRotation.x, item.finalRotation.y, item.finalRotation.z);
   setModelOpacity(item, modelFade(u));
 }
 
@@ -405,6 +398,9 @@ export function HeroFunnelScene() {
 
     let disposed = false;
     let frame = 0;
+    const mobileSceneQuery = window.matchMedia("(max-width: 720px)");
+    if (mobileSceneQuery.matches) return;
+
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scene = new Scene();
     const camera = new PerspectiveCamera(42, 1, 0.1, 80);
@@ -444,14 +440,14 @@ export function HeroFunnelScene() {
       const height = canvas.clientHeight;
       if (!width || !height) return;
 
-      const sceneOffsetX = width < 720 ? 0.95 : 0;
+      const sceneOffsetX = 1.35;
       modelRoot.position.x = sceneOffsetX;
       processor.group.position.x = sceneOffsetX;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
-      camera.position.set(width < 720 ? 0.55 : 0.75, width < 720 ? 0.8 : 0.55, width < 720 ? 10.6 : 8.4);
-      camera.lookAt(width < 720 ? 1.05 : 2.85, width < 720 ? 0.28 : 0.18, 0);
+      camera.position.set(0.75, 0.55, 8.4);
+      camera.lookAt(2.85, 0.18, 0);
       camera.updateProjectionMatrix();
     }
 
@@ -477,7 +473,6 @@ export function HeroFunnelScene() {
             phase: asset.phase,
             scale: asset.scale,
             speed: 0.082 + (index % 3) * 0.006,
-            spin: new Vector3(...asset.spin),
             finalRotation: new Vector3(...asset.finalRotation),
             materials: fade.materials,
             baseOpacity: fade.baseOpacity,
