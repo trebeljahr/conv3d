@@ -501,11 +501,23 @@ export function HeroFunnelScene() {
     const camera = new PerspectiveCamera(42, 1, 0.1, 80);
     const renderer = new WebGLRenderer({
       canvas,
-      alpha: true,
       antialias: true,
       powerPreference: "high-performance",
     });
-    renderer.setClearColor(0x000000, 0);
+    const SCENE_BG_DARK = 0x070b0d;
+    const SCENE_BG_LIGHT = 0xf4fbf8;
+    const isDarkTheme = () => document.documentElement.classList.contains("dark");
+    const applyThemeBackground = () => {
+      const color = isDarkTheme() ? SCENE_BG_DARK : SCENE_BG_LIGHT;
+      renderer.setClearColor(color, 1);
+      scene.background = new Color(color);
+    };
+    applyThemeBackground();
+    const themeObserver = new MutationObserver(applyThemeBackground);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.toneMapping = ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -629,6 +641,7 @@ export function HeroFunnelScene() {
       disposed = true;
       window.cancelAnimationFrame(frame);
       resizeObserver.disconnect();
+      themeObserver.disconnect();
       dracoLoader.dispose();
       disposeObject(scene);
       bloomPass.dispose();
