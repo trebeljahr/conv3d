@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import {
+  ACESFilmicToneMapping,
   AmbientLight,
   Box3,
   Color,
@@ -9,6 +10,7 @@ import {
   DoubleSide,
   FrontSide,
   Group,
+  HalfFloatType,
   HemisphereLight,
   type Material,
   MathUtils,
@@ -505,6 +507,8 @@ export function HeroFunnelScene() {
     });
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = SRGBColorSpace;
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
 
     const modelRoot = new Group();
@@ -520,10 +524,13 @@ export function HeroFunnelScene() {
     key.castShadow = true;
     scene.add(ambient, hemi, key);
 
-    const msaaTarget = new WebGLRenderTarget(1, 1, { samples: 4 });
+    const msaaTarget = new WebGLRenderTarget(1, 1, {
+      type: HalfFloatType,
+      samples: 4,
+    });
     const composer = new EffectComposer(renderer, msaaTarget);
     composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.55, 0.6, 0.78);
+    const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.4, 0.85, 0.95);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
 
