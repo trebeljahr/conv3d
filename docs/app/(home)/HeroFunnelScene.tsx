@@ -23,6 +23,7 @@ import {
   Vector2,
   Vector3,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -343,7 +344,7 @@ function createProcessor() {
     const radius = MathUtils.lerp(FUNNEL_TOP_RADIUS, FUNNEL_BOTTOM_RADIUS, progress);
     const tube = MathUtils.lerp(0.028, 0.014, progress);
     const ring = new Mesh(
-      new TorusGeometry(radius, tube, 12, 112),
+      new TorusGeometry(radius, tube, 32, 192),
       i < 3 ? amberMaterial.clone() : ringMaterial.clone(),
     );
     ring.rotation.x = Math.PI / 2;
@@ -365,7 +366,7 @@ function createProcessor() {
   });
 
   for (const asset of MODEL_ASSETS) {
-    const pad = new Mesh(new TorusGeometry(0.28, 0.01, 8, 56), padMaterial.clone());
+    const pad = new Mesh(new TorusGeometry(0.28, 0.01, 20, 96), padMaterial.clone());
     pad.rotation.x = Math.PI / 2;
     pad.position.set(asset.end[0], asset.end[1] - 0.28, asset.end[2]);
     group.add(pad);
@@ -518,7 +519,8 @@ export function HeroFunnelScene() {
     key.castShadow = true;
     scene.add(ambient, hemi, key);
 
-    const composer = new EffectComposer(renderer);
+    const msaaTarget = new WebGLRenderTarget(1, 1, { samples: 4 });
+    const composer = new EffectComposer(renderer, msaaTarget);
     composer.addPass(new RenderPass(scene, camera));
     const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.55, 0.6, 0.78);
     composer.addPass(bloomPass);
@@ -540,7 +542,7 @@ export function HeroFunnelScene() {
       const sceneOffsetX = 1.35;
       modelRoot.position.x = sceneOffsetX;
       processor.group.position.x = sceneOffsetX;
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.8);
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
       renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, false);
       composer.setPixelRatio(pixelRatio);
@@ -623,6 +625,7 @@ export function HeroFunnelScene() {
       disposeObject(scene);
       bloomPass.dispose();
       composer.dispose();
+      msaaTarget.dispose();
       renderer.dispose();
     };
   }, []);

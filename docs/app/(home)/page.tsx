@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { HeroFunnelScene } from "./HeroFunnelScene";
+import { HeroFunnelSceneLazy } from "./HeroFunnelSceneLazy";
 import styles from "./page.module.css";
 
 type FileRow = { name: string; before: number; after: number };
@@ -23,7 +23,7 @@ const pct = (b: number, a: number) => `${Math.round((1 - a / b) * 100)}%`;
 function Hero() {
   return (
     <header className={styles.hero}>
-      <HeroFunnelScene />
+      <HeroFunnelSceneLazy />
       <div className={styles.heroShade} aria-hidden />
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
