@@ -396,7 +396,7 @@ function dropSpiralPosition(item: FunnelItem, p: number, target: Vector3) {
   const startZ = item.start.z - GATE.z;
   const startRadius = Math.max(Math.hypot(startX, startZ), 0.72);
   const startAngle = Math.atan2(startZ, startX);
-  const angularProgress = (p * 0.65 + p * p * 1.9) * Math.PI * 2;
+  const angularProgress = (p * 0.55 + p * p * 0.85) * Math.PI * 2;
   const angle = startAngle + angularProgress;
   const desiredRadius = MathUtils.lerp(startRadius, 0.16, p);
   const yPos = MathUtils.lerp(item.start.y, GATE.y, p);
@@ -434,16 +434,18 @@ function updateItem(item: FunnelItem, time: number) {
       const p = easeInOut(local / spiralEnd);
       const angle = dropSpiralPosition(item, p, item.group.position);
       const stageScale = MathUtils.lerp(2.24, 0.42, p);
-      const rotationBlend = smoothstep(0.8, 1.0, local);
+      const rotationBlend = smoothstep(0.45, 1.0, p);
+      const spinFalloff = 1 - smoothstep(0.55, 1.0, p);
+      const spinAngle = angle * spinFalloff;
       item.group.rotation.set(
         MathUtils.lerp(
-          Math.sin(angle * 0.34 + chaosSeed) * 0.16,
+          Math.sin(spinAngle * 0.34 + chaosSeed) * 0.16,
           item.finalRotation.x,
           rotationBlend,
         ),
-        MathUtils.lerp(angle + Math.PI * 0.5, item.finalRotation.y, rotationBlend),
+        MathUtils.lerp(spinAngle + Math.PI * 0.5, item.finalRotation.y, rotationBlend),
         MathUtils.lerp(
-          Math.cos(angle * 0.38 + chaosSeed) * 0.14,
+          Math.cos(spinAngle * 0.38 + chaosSeed) * 0.14,
           item.finalRotation.z,
           rotationBlend,
         ),
