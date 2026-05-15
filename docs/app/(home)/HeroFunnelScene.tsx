@@ -396,7 +396,7 @@ function dropSpiralPosition(item: FunnelItem, p: number, target: Vector3) {
   const startZ = item.start.z - GATE.z;
   const startRadius = Math.max(Math.hypot(startX, startZ), 0.72);
   const startAngle = Math.atan2(startZ, startX);
-  const angularProgress = (p * p * 1.2 + p * p * p * 2.5) * Math.PI * 2;
+  const angularProgress = (p * p * 0.65 + p * p * p * 1.35) * Math.PI * 2;
   const angle = startAngle + angularProgress;
   const descentP = p ** 1.35;
   const desiredRadius = MathUtils.lerp(startRadius, 0.16, descentP);
