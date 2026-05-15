@@ -18,6 +18,24 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* The Fumadocs theme-switch pill renders with very low contrast against a light page —
+   pale border, muted glyphs, near-white "active" highlight. Lift the border and use the
+   brand accent for the active pip so the control reads in bright mode. */
+button[data-theme-toggle] {
+  border-color: oklch(70% 0.04 180 / 0.45);
+  color: oklch(35% 0.02 180);
+}
+
+.dark button[data-theme-toggle] {
+  border-color: oklch(82% 0.04 180 / 0.32);
+  color: oklch(82% 0.04 180);
+}
+
+button[data-theme-toggle] svg.bg-fd-accent {
+  background-color: var(--color-fd-primary);
+  color: #0a1014;
+}
+
 /* react-remove-scroll (pulled in by fumadocs/radix dialogs) sets inline
    margin-right + scroll-bar-size on body when a modal opens. We rely on
    `scrollbar-gutter: stable` instead, so neutralize the lib's inline values.

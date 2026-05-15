@@ -22,6 +22,17 @@
   --c3-radius-sm: 5px;
   --c3-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
+  /* Tokens used by the dark "scene" sections (hero + proof chart). Light values keep them
+     readable in bright mode while preserving the dramatic dark look in dark mode. */
+  --c3-hero-surface: #f4fbf8;
+  --c3-hero-shade-rgb: 244, 251, 248;
+  --c3-hero-glass: rgba(10, 16, 20, 0.05);
+  --c3-hero-glass-border: rgba(10, 16, 20, 0.12);
+  --c3-proof-surface: #f5f9f8;
+  --c3-proof-chart-bg: rgba(255, 255, 255, 0.86);
+  --c3-proof-chart-border: rgba(10, 16, 20, 0.12);
+  --c3-proof-chart-shadow: rgba(10, 16, 20, 0.12);
+
   background: var(--c3-bg);
   color: var(--c3-fg);
 }
@@ -42,33 +53,26 @@
   --c3-warn: #f59e0b;
   --c3-warn-soft: rgba(245, 158, 11, 0.18);
   --c3-success: #34d399;
+
+  --c3-hero-surface: #070b0d;
+  --c3-hero-shade-rgb: 7, 11, 13;
+  --c3-hero-glass: rgba(246, 255, 251, 0.08);
+  --c3-hero-glass-border: rgba(235, 255, 249, 0.18);
+  --c3-proof-surface: #070b0d;
+  --c3-proof-chart-bg: rgba(9, 14, 16, 0.72);
+  --c3-proof-chart-border: rgba(235, 255, 249, 0.16);
+  --c3-proof-chart-shadow: rgba(0, 0, 0, 0.8);
 }
 
 /* ───── Hero ───────────────────────────────────────────────── */
 
 .hero {
-  --c3-fg: #f6fffb;
-  --c3-fg-muted: #b4c9c3;
-  --c3-fg-dim: #7f9690;
-  --c3-bg: #070b0d;
-  --c3-bg-alt: rgba(11, 16, 18, 0.72);
-  --c3-surface: rgba(11, 17, 19, 0.7);
-  --c3-surface-2: rgba(9, 14, 16, 0.82);
-  --c3-border: rgba(235, 255, 249, 0.11);
-  --c3-border-strong: rgba(235, 255, 249, 0.22);
-  --c3-accent: #64f4db;
-  --c3-accent-strong: #30d6c3;
-  --c3-accent-glow: rgba(48, 214, 195, 0.28);
-  --c3-warn: #ffb25f;
-  --c3-warn-soft: rgba(255, 178, 95, 0.18);
-  --c3-success: #77e3ad;
-
   position: relative;
   min-height: min(740px, calc(100svh - 6.5rem));
   padding: 4.2rem 1.5rem 2.6rem;
   overflow: hidden;
   isolation: isolate;
-  background: #070b0d;
+  background: var(--c3-hero-surface);
   border-bottom: 1px solid var(--c3-border);
 }
 
@@ -90,8 +94,19 @@
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(90deg, rgba(7, 11, 13, 0.98) 0%, rgba(7, 11, 13, 0.86) 30%, rgba(7, 11, 13, 0.26) 62%, rgba(7, 11, 13, 0.04) 100%),
-    linear-gradient(180deg, rgba(7, 11, 13, 0.68) 0%, rgba(7, 11, 13, 0.04) 42%, rgba(7, 11, 13, 0.72) 100%);
+    linear-gradient(
+      90deg,
+      rgba(var(--c3-hero-shade-rgb), 0.98) 0%,
+      rgba(var(--c3-hero-shade-rgb), 0.86) 30%,
+      rgba(var(--c3-hero-shade-rgb), 0.26) 62%,
+      rgba(var(--c3-hero-shade-rgb), 0.04) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(var(--c3-hero-shade-rgb), 0.68) 0%,
+      rgba(var(--c3-hero-shade-rgb), 0.04) 42%,
+      rgba(var(--c3-hero-shade-rgb), 0.72) 100%
+    );
 }
 
 .heroInner {
@@ -149,8 +164,8 @@
   font-family: var(--c3-font-mono);
   font-size: 0.88em;
   padding: 0.1em 0.35em;
-  background: rgba(246, 255, 251, 0.08);
-  border: 1px solid var(--c3-border);
+  background: var(--c3-hero-glass);
+  border: 1px solid var(--c3-hero-glass-border);
   border-radius: var(--c3-radius-sm);
   color: var(--c3-fg);
 }
@@ -188,8 +203,8 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.45rem 0.65rem;
-  border: 1px solid var(--c3-border);
-  background: rgba(246, 255, 251, 0.055);
+  border: 1px solid var(--c3-hero-glass-border);
+  background: var(--c3-hero-glass);
   border-radius: var(--c3-radius-md);
   backdrop-filter: blur(14px);
 }
@@ -270,33 +285,17 @@
 }
 
 .proofSection {
-  --c3-fg: #f6fffb;
-  --c3-fg-muted: #b4c9c3;
-  --c3-fg-dim: #7f9690;
-  --c3-bg: #070b0d;
-  --c3-bg-alt: rgba(11, 16, 18, 0.72);
-  --c3-surface: rgba(11, 17, 19, 0.74);
-  --c3-surface-2: rgba(9, 14, 16, 0.82);
-  --c3-border: rgba(235, 255, 249, 0.11);
-  --c3-border-strong: rgba(235, 255, 249, 0.22);
-  --c3-accent: #64f4db;
-  --c3-accent-strong: #30d6c3;
-  --c3-accent-glow: rgba(48, 214, 195, 0.28);
-  --c3-warn: #ffb25f;
-  --c3-warn-soft: rgba(255, 178, 95, 0.18);
-  --c3-success: #77e3ad;
-
   padding: 1.25rem 1.5rem 4.5rem;
-  background: #070b0d;
+  background: var(--c3-proof-surface);
   border-bottom: 1px solid var(--c3-border);
 }
 
 .proofSection .chart {
-  background: rgba(9, 14, 16, 0.72);
-  border-color: rgba(235, 255, 249, 0.16);
+  background: var(--c3-proof-chart-bg);
+  border-color: var(--c3-proof-chart-border);
   backdrop-filter: blur(18px);
   box-shadow:
-    0 34px 90px -36px rgba(0, 0, 0, 0.8),
+    0 34px 90px -36px var(--c3-proof-chart-shadow),
     0 0 34px -24px var(--c3-accent);
 }
 
@@ -544,7 +543,7 @@
 }
 
 .shrinkCard {
-  background: var(--c3-surface);
+  background: var(--c3-surface-2);
   border: 1px solid var(--c3-border);
   border-radius: var(--c3-radius-lg);
   padding: 1.75rem;
@@ -811,7 +810,7 @@
   display: inline-block;
   margin: 0 0 2rem;
   padding: 0.9rem 1.5rem;
-  background: var(--c3-surface);
+  background: var(--c3-surface-2);
   border: 1px solid var(--c3-border-strong);
   border-radius: var(--c3-radius-md);
   font-family: var(--c3-font-mono);
@@ -855,8 +854,18 @@
   }
   .heroShade {
     background:
-      linear-gradient(90deg, rgba(7, 11, 13, 0.98) 0%, rgba(7, 11, 13, 0.88) 50%, rgba(7, 11, 13, 0.36) 100%),
-      linear-gradient(180deg, rgba(7, 11, 13, 0.78) 0%, rgba(7, 11, 13, 0.12) 42%, rgba(7, 11, 13, 0.84) 100%);
+      linear-gradient(
+        90deg,
+        rgba(var(--c3-hero-shade-rgb), 0.98) 0%,
+        rgba(var(--c3-hero-shade-rgb), 0.88) 50%,
+        rgba(var(--c3-hero-shade-rgb), 0.36) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(var(--c3-hero-shade-rgb), 0.78) 0%,
+        rgba(var(--c3-hero-shade-rgb), 0.12) 42%,
+        rgba(var(--c3-hero-shade-rgb), 0.84) 100%
+      );
   }
   .flow {
     grid-template-columns: 1fr;
