@@ -27,7 +27,7 @@ function Hero() {
       <div className={styles.heroShade} aria-hidden />
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
-          <p className={styles.heroEyebrow}>bulk 3D asset compression</p>
+          <p className={styles.heroEyebrow}>bulk 3D asset conversion &amp; compression</p>
           <h1 className={styles.heroTitle}>conv3d</h1>
           <p className={styles.heroHeadline}>Asset packs in. Web-sized GLBs out.</p>
           <p className={styles.heroTagline}>
@@ -64,7 +64,11 @@ function Hero() {
 
 function BatchChart() {
   return (
-    <div className={styles.chart} role="img" aria-label="File size comparison: FBX vs optimized GLB">
+    <div
+      className={styles.chart}
+      role="img"
+      aria-label="File size comparison: FBX vs optimized GLB"
+    >
       <div className={styles.chartHead}>
         <div className={styles.chartHeadLeft}>
           <span className={styles.chartHeadKbd}>./asset-pack/</span>
@@ -85,11 +89,17 @@ function BatchChart() {
           <div key={f.name} className={styles.chartRow}>
             <span className={styles.chartFile}>{f.name}</span>
             <div className={styles.chartTrack}>
-              <div className={styles.barBefore} style={{ width: `${(f.before / HERO_MAX) * 100}%` }} />
+              <div
+                className={styles.barBefore}
+                style={{ width: `${(f.before / HERO_MAX) * 100}%` }}
+              />
               <span className={styles.barLabelBefore}>{fmt(f.before)}</span>
             </div>
             <div className={styles.chartTrack}>
-              <div className={styles.barAfter} style={{ width: `${(f.after / HERO_MAX) * 100}%` }} />
+              <div
+                className={styles.barAfter}
+                style={{ width: `${(f.after / HERO_MAX) * 100}%` }}
+              />
               <span className={styles.barLabelAfter}>{fmt(f.after)}</span>
             </div>
             <span className={styles.chartPct}>−{pct(f.before, f.after)}</span>
