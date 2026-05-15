@@ -5,26 +5,32 @@ import {
   AmbientLight,
   Box3,
   Color,
+  CylinderGeometry,
   DirectionalLight,
   DoubleSide,
   FrontSide,
   Group,
   HemisphereLight,
-  MathUtils,
   type Material,
+  MathUtils,
   Mesh,
   MeshStandardMaterial,
-  Object3D,
+  type Object3D,
   PerspectiveCamera,
   Scene,
   SRGBColorSpace,
-  TorusGeometry,
   type Texture,
+  TorusGeometry,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import styles from "./page.module.css";
 
 type ModelAsset = {
@@ -42,7 +48,6 @@ type FunnelItem = {
   end: Vector3;
   phase: number;
   scale: number;
-  speed: number;
   finalRotation: Vector3;
   materials: MaterialShape[];
   baseOpacity: number[];
@@ -65,6 +70,25 @@ type MaterialShape = Material & {
 const MODEL_ROOT = "/models/conv3d-funnel/";
 const STREAM_CENTER = new Vector3(3.55, 0.62, 0);
 const GATE = new Vector3(3.55, 0.06, 0);
+
+const FUNNEL_TOP_Y = 1.72;
+const FUNNEL_BOTTOM_Y = -0.02;
+const FUNNEL_TOP_RADIUS = 1.48;
+const FUNNEL_BOTTOM_RADIUS = 0.42;
+const FUNNEL_WALL_PADDING = 0.86;
+
+const CYCLE_SECONDS = 16;
+const DROP_DURATION = 0.2;
+const DROP_WINDOW_END = 0.55;
+const HOLD_END = 0.9;
+const CLEAR_END = 0.99;
+const MAX_DROP_START = DROP_WINDOW_END - DROP_DURATION;
+
+function funnelMaxRadius(y: number): number {
+  if (y >= FUNNEL_TOP_Y) return Number.POSITIVE_INFINITY;
+  const t = MathUtils.clamp((FUNNEL_TOP_Y - y) / (FUNNEL_TOP_Y - FUNNEL_BOTTOM_Y), 0, 1);
+  return MathUtils.lerp(FUNNEL_TOP_RADIUS, FUNNEL_BOTTOM_RADIUS, t) * FUNNEL_WALL_PADDING;
+}
 
 // Same optimized GLBs, now staged as a vertical "mess in, grid out" compression loop.
 const MODEL_ASSETS: ModelAsset[] = [
@@ -155,10 +179,6 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
   return t * t * (3 - 2 * t);
 }
 
-function modelFade(progress: number): number {
-  return smoothstep(0.02, 0.1, progress) * (1 - smoothstep(0.92, 0.995, progress));
-}
-
 function isMesh(object: Object3D): object is Mesh {
   return (object as Mesh).isMesh === true;
 }
@@ -172,8 +192,10 @@ function liftMaterial(src: Material): Material {
 
   if (material.isMeshStandardMaterial || material.isMeshPhysicalMaterial) {
     material.side = materialSide(material);
-    if (typeof material.roughness === "number") material.roughness = Math.max(material.roughness, 0.58);
-    if (typeof material.metalness === "number") material.metalness = Math.min(material.metalness, 0.45);
+    if (typeof material.roughness === "number")
+      material.roughness = Math.max(material.roughness, 0.58);
+    if (typeof material.metalness === "number")
+      material.metalness = Math.min(material.metalness, 0.45);
     material.needsUpdate = true;
     return material;
   }
@@ -275,108 +297,178 @@ function createProcessor() {
   const rings: Mesh[] = [];
   const pads: Mesh[] = [];
   const ringMaterial = new MeshStandardMaterial({
-    color: "#73f7df",
-    emissive: "#0b4f4a",
-    emissiveIntensity: 0.28,
+    color: "#86fce6",
+    emissive: "#3bf0d4",
+    emissiveIntensity: 2.4,
     metalness: 0.25,
-    roughness: 0.34,
+    roughness: 0.32,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.7,
   });
   const amberMaterial = new MeshStandardMaterial({
-    color: "#ffb25f",
-    emissive: "#5f3209",
-    emissiveIntensity: 0.22,
+    color: "#ffc382",
+    emissive: "#ff9134",
+    emissiveIntensity: 2.0,
     metalness: 0.16,
-    roughness: 0.45,
+    roughness: 0.42,
     transparent: true,
-    opacity: 0.38,
+    opacity: 0.66,
   });
 
   for (let i = 0; i < 7; i += 1) {
     const progress = i / 6;
-    const radius = MathUtils.lerp(1.48, 0.42, progress);
-    const tube = MathUtils.lerp(0.024, 0.012, progress);
-    const ring = new Mesh(new TorusGeometry(radius, tube, 10, 96), i < 3 ? amberMaterial.clone() : ringMaterial.clone());
+    const radius = MathUtils.lerp(FUNNEL_TOP_RADIUS, FUNNEL_BOTTOM_RADIUS, progress);
+    const tube = MathUtils.lerp(0.028, 0.014, progress);
+    const ring = new Mesh(
+      new TorusGeometry(radius, tube, 12, 112),
+      i < 3 ? amberMaterial.clone() : ringMaterial.clone(),
+    );
     ring.rotation.x = Math.PI / 2;
     ring.position.x = STREAM_CENTER.x + Math.sin(i * 0.9) * 0.06;
-    ring.position.y = MathUtils.lerp(1.72, -0.02, progress);
+    ring.position.y = MathUtils.lerp(FUNNEL_TOP_Y, FUNNEL_BOTTOM_Y, progress);
     ring.position.z = STREAM_CENTER.z + Math.cos(i * 0.75) * 0.06;
     group.add(ring);
     rings.push(ring);
   }
 
-  const padMaterial = new MeshStandardMaterial({
-    color: "#e5fff9",
-    emissive: "#183f3b",
-    emissiveIntensity: 0.12,
-    metalness: 0.1,
-    roughness: 0.76,
+  const coreMaterial = new MeshStandardMaterial({
+    color: "#bafff1",
+    emissive: "#7af3df",
+    emissiveIntensity: 5.5,
+    metalness: 0.0,
+    roughness: 0.6,
     transparent: true,
-    opacity: 0.28,
+    opacity: 0.32,
+    side: DoubleSide,
+    depthWrite: false,
+  });
+  const coreHeight = FUNNEL_TOP_Y - FUNNEL_BOTTOM_Y;
+  const core = new Mesh(
+    new CylinderGeometry(
+      FUNNEL_BOTTOM_RADIUS * 0.5,
+      FUNNEL_TOP_RADIUS * 0.36,
+      coreHeight,
+      32,
+      1,
+      true,
+    ),
+    coreMaterial,
+  );
+  core.position.set(STREAM_CENTER.x, (FUNNEL_TOP_Y + FUNNEL_BOTTOM_Y) / 2, STREAM_CENTER.z);
+  group.add(core);
+
+  const padMaterial = new MeshStandardMaterial({
+    color: "#eafff9",
+    emissive: "#39d8c0",
+    emissiveIntensity: 0.95,
+    metalness: 0.1,
+    roughness: 0.7,
+    transparent: true,
+    opacity: 0.45,
   });
 
   for (const asset of MODEL_ASSETS) {
-    const pad = new Mesh(new TorusGeometry(0.28, 0.008, 8, 48), padMaterial.clone());
+    const pad = new Mesh(new TorusGeometry(0.28, 0.01, 8, 56), padMaterial.clone());
     pad.rotation.x = Math.PI / 2;
     pad.position.set(asset.end[0], asset.end[1] - 0.28, asset.end[2]);
     group.add(pad);
     pads.push(pad);
   }
 
-  return { group, rings, pads };
+  return { group, rings, pads, core };
+}
+
+function clampInsideFunnel(position: Vector3) {
+  if (position.y >= FUNNEL_TOP_Y) return;
+  const dx = position.x - GATE.x;
+  const dz = position.z - GATE.z;
+  const radius = Math.hypot(dx, dz);
+  const maxR = funnelMaxRadius(position.y);
+  if (radius <= maxR || radius === 0) return;
+  const scale = maxR / radius;
+  position.x = GATE.x + dx * scale;
+  position.z = GATE.z + dz * scale;
+}
+
+function dropSpiralPosition(item: FunnelItem, p: number, target: Vector3) {
+  const chaosSeed = item.phase * 97;
+  const startX = item.start.x - GATE.x;
+  const startZ = item.start.z - GATE.z;
+  const startRadius = Math.max(Math.hypot(startX, startZ), 0.72);
+  const startAngle = Math.atan2(startZ, startX);
+  const angularProgress = (p * 0.65 + p * p * 1.9) * Math.PI * 2;
+  const angle = startAngle + angularProgress;
+  const desiredRadius = MathUtils.lerp(startRadius, 0.16, p);
+  const yPos = MathUtils.lerp(item.start.y, GATE.y, p);
+  const drift = (1 - p) * 0.09;
+  const maxR = funnelMaxRadius(yPos);
+  const radius = Math.min(desiredRadius, maxR);
+
+  target.set(
+    GATE.x + Math.cos(angle) * radius + Math.sin(angle * 1.4 + chaosSeed) * drift,
+    yPos + Math.cos(angle * 0.72 + chaosSeed) * drift * 0.35,
+    GATE.z + Math.sin(angle) * radius + Math.cos(angle * 1.3 + chaosSeed) * drift,
+  );
+  clampInsideFunnel(target);
+  return angle;
 }
 
 function updateItem(item: FunnelItem, time: number) {
-  const u = (time * item.speed + item.phase) % 1;
-  const dropLimit = 0.5;
-  const settleLimit = 0.78;
+  const cycle = (((time / CYCLE_SECONDS) % 1) + 1) % 1;
+  const dropStart = item.phase * MAX_DROP_START;
+  const local = (cycle - dropStart) / DROP_DURATION;
   const chaosSeed = item.phase * 97;
-  let stageScale: number;
-  let rotationBlend = 0;
+  const cycleFadeOut = cycle > HOLD_END ? 1 - smoothstep(HOLD_END, CLEAR_END, cycle) : 1;
 
-  if (u < dropLimit) {
-    const dropProgress = u / dropLimit;
-    const p = easeInOut(dropProgress);
-    const startX = item.start.x - GATE.x;
-    const startZ = item.start.z - GATE.z;
-    const startRadius = Math.max(Math.hypot(startX, startZ), 0.72);
-    const startAngle = Math.atan2(startZ, startX);
-    const angularProgress = (dropProgress * 0.65 + dropProgress * dropProgress * 1.9) * Math.PI * 2;
-    const angle = startAngle + angularProgress;
-    const radius = MathUtils.lerp(startRadius, 0.16, p);
-    const drift = (1 - p) * 0.14;
-
-    item.group.position.set(
-      GATE.x + Math.cos(angle) * radius + Math.sin(angle * 1.4 + chaosSeed) * drift,
-      MathUtils.lerp(item.start.y, GATE.y, p) + Math.cos(angle * 0.72 + chaosSeed) * drift * 0.35,
-      GATE.z + Math.sin(angle) * radius + Math.cos(angle * 1.3 + chaosSeed) * drift,
-    );
-    stageScale = MathUtils.lerp(2.24, 0.42, p);
-    rotationBlend = smoothstep(0.41, dropLimit, u);
-    item.group.rotation.set(
-      MathUtils.lerp(Math.sin(angle * 0.34 + chaosSeed) * 0.16, item.finalRotation.x, rotationBlend),
-      MathUtils.lerp(angle + Math.PI * 0.5, item.finalRotation.y, rotationBlend),
-      MathUtils.lerp(Math.cos(angle * 0.38 + chaosSeed) * 0.14, item.finalRotation.z, rotationBlend),
-    );
-  } else if (u < settleLimit) {
-    const p = easeOut((u - dropLimit) / (settleLimit - dropLimit));
-    item.group.position.set(
-      MathUtils.lerp(GATE.x, item.end.x, p),
-      MathUtils.lerp(GATE.y, item.end.y, p),
-      MathUtils.lerp(GATE.z, item.end.z, p),
-    );
-    stageScale = MathUtils.lerp(0.42, 0.34, p);
-    rotationBlend = 1;
-  } else {
-    item.group.position.copy(item.end);
-    stageScale = 0.34;
-    rotationBlend = 1;
+  if (local < 0) {
+    item.group.position.copy(item.start);
+    item.group.scale.setScalar(item.scale * 2.24);
+    item.group.rotation.set(0, 0, 0);
+    setModelOpacity(item, 0);
+    return;
   }
 
-  item.group.scale.setScalar(item.scale * stageScale);
-  if (rotationBlend === 1) item.group.rotation.set(item.finalRotation.x, item.finalRotation.y, item.finalRotation.z);
-  setModelOpacity(item, modelFade(u));
+  if (local <= 1) {
+    const spiralEnd = 0.62;
+    if (local <= spiralEnd) {
+      const p = easeInOut(local / spiralEnd);
+      const angle = dropSpiralPosition(item, p, item.group.position);
+      const stageScale = MathUtils.lerp(2.24, 0.42, p);
+      const rotationBlend = smoothstep(0.8, 1.0, local);
+      item.group.rotation.set(
+        MathUtils.lerp(
+          Math.sin(angle * 0.34 + chaosSeed) * 0.16,
+          item.finalRotation.x,
+          rotationBlend,
+        ),
+        MathUtils.lerp(angle + Math.PI * 0.5, item.finalRotation.y, rotationBlend),
+        MathUtils.lerp(
+          Math.cos(angle * 0.38 + chaosSeed) * 0.14,
+          item.finalRotation.z,
+          rotationBlend,
+        ),
+      );
+      item.group.scale.setScalar(item.scale * stageScale);
+    } else {
+      const p = easeOut((local - spiralEnd) / (1 - spiralEnd));
+      item.group.position.set(
+        MathUtils.lerp(GATE.x, item.end.x, p),
+        MathUtils.lerp(GATE.y, item.end.y, p),
+        MathUtils.lerp(GATE.z, item.end.z, p),
+      );
+      const stageScale = MathUtils.lerp(0.42, 0.34, p);
+      item.group.scale.setScalar(item.scale * stageScale);
+      item.group.rotation.set(item.finalRotation.x, item.finalRotation.y, item.finalRotation.z);
+    }
+    const fadeIn = smoothstep(0, 0.14, local);
+    setModelOpacity(item, fadeIn * cycleFadeOut);
+    return;
+  }
+
+  item.group.position.copy(item.end);
+  item.group.scale.setScalar(item.scale * 0.34);
+  item.group.rotation.set(item.finalRotation.x, item.finalRotation.y, item.finalRotation.z);
+  setModelOpacity(item, cycleFadeOut);
 }
 
 function disposeObject(object: Object3D) {
@@ -427,6 +519,12 @@ export function HeroFunnelScene() {
     key.castShadow = true;
     scene.add(ambient, hemi, key);
 
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.7, 0.7, 0.62);
+    composer.addPass(bloomPass);
+    composer.addPass(new OutputPass());
+
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath("/draco/");
     dracoLoader.setDecoderConfig({ type: "wasm" });
@@ -443,8 +541,12 @@ export function HeroFunnelScene() {
       const sceneOffsetX = 1.35;
       modelRoot.position.x = sceneOffsetX;
       processor.group.position.x = sceneOffsetX;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.8);
+      renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, false);
+      composer.setPixelRatio(pixelRatio);
+      composer.setSize(width, height);
+      bloomPass.setSize(width, height);
       camera.aspect = width / height;
       camera.position.set(0.75, 0.55, 8.4);
       camera.lookAt(2.85, 0.18, 0);
@@ -457,7 +559,7 @@ export function HeroFunnelScene() {
 
     async function loadModels() {
       await Promise.allSettled(
-        MODEL_ASSETS.map(async (asset, index) => {
+        MODEL_ASSETS.map(async (asset) => {
           const gltf = await gltfLoader.loadAsync(`${MODEL_ROOT}${asset.file}`);
           if (disposed) return;
 
@@ -472,7 +574,6 @@ export function HeroFunnelScene() {
             end: new Vector3(...asset.end),
             phase: asset.phase,
             scale: asset.scale,
-            speed: 0.082 + (index % 3) * 0.006,
             finalRotation: new Vector3(...asset.finalRotation),
             materials: fade.materials,
             baseOpacity: fade.baseOpacity,
@@ -488,18 +589,26 @@ export function HeroFunnelScene() {
       processor.group.rotation.z = Math.sin(time * 0.35) * 0.02;
 
       processor.rings.forEach((ring, index) => {
-        const pulse = 1 + Math.sin(time * 1.35 + index * 0.7) * 0.035;
+        const pulse = 1 + Math.sin(time * 1.35 + index * 0.7) * 0.045;
         ring.scale.setScalar(pulse);
         ring.rotation.z = time * (index % 2 === 0 ? 0.12 : -0.1);
+        const material = ring.material as MeshStandardMaterial;
+        material.emissiveIntensity = 1.6 + Math.sin(time * 1.8 + index * 0.5) * 0.55;
       });
 
       processor.pads.forEach((pad, index) => {
-        pad.scale.setScalar(1 + Math.sin(time * 1.2 + index) * 0.025);
+        pad.scale.setScalar(1 + Math.sin(time * 1.2 + index) * 0.04);
+        const material = pad.material as MeshStandardMaterial;
+        material.emissiveIntensity = 0.7 + Math.sin(time * 1.5 + index * 0.9) * 0.35;
       });
+
+      const coreMaterial = processor.core.material as MeshStandardMaterial;
+      coreMaterial.emissiveIntensity = 5.0 + Math.sin(time * 1.1) * 1.1;
+      processor.core.rotation.y = time * 0.18;
 
       for (const item of items) updateItem(item, reduceMotion ? 2.4 : time);
 
-      renderer.render(scene, camera);
+      composer.render();
     }
 
     function animate(now: number) {
@@ -517,6 +626,8 @@ export function HeroFunnelScene() {
       resizeObserver.disconnect();
       dracoLoader.dispose();
       disposeObject(scene);
+      bloomPass.dispose();
+      composer.dispose();
       renderer.dispose();
     };
   }, []);
