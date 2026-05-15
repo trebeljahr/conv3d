@@ -77,11 +77,11 @@ const FUNNEL_TOP_RADIUS = 1.48;
 const FUNNEL_BOTTOM_RADIUS = 0.42;
 const FUNNEL_WALL_PADDING = 0.86;
 
-const CYCLE_SECONDS = 16;
-const DROP_DURATION = 0.2;
-const DROP_WINDOW_END = 0.55;
-const HOLD_END = 0.9;
-const CLEAR_END = 0.99;
+const CYCLE_SECONDS = 13;
+const DROP_DURATION = 0.22;
+const DROP_WINDOW_END = 0.52;
+const HOLD_END = 0.82;
+const CLEAR_END = 1.0;
 const MAX_DROP_START = DROP_WINDOW_END - DROP_DURATION;
 
 function funnelMaxRadius(y: number): number {
@@ -95,73 +95,97 @@ const MODEL_ASSETS: ModelAsset[] = [
   {
     file: "AnimatedChest.glb",
     start: [1.6, 3.35, -1.25],
-    end: [2.68, -1.1, -0.38],
+    end: [2.68, -0.85, -0.45],
     finalRotation: [0.08, -0.35, 0],
-    phase: 0.79,
+    phase: 0.0,
     scale: 1.16,
   },
   {
     file: "Burger.glb",
     start: [4.8, 3.76, 1.05],
-    end: [3.55, -1.1, -0.38],
+    end: [3.55, -0.85, -0.45],
     finalRotation: [0.18, 0.4, -0.08],
-    phase: 0.44,
+    phase: 0.55,
     scale: 1.18,
+  },
+  {
+    file: "Cake.glb",
+    start: [3.0, 4.18, 1.55],
+    end: [4.42, -0.85, -0.45],
+    finalRotation: [0.0, 0.12, 0.0],
+    phase: 0.27,
+    scale: 1.12,
   },
   {
     file: "ChairCushioned.glb",
     start: [2.4, 4.05, 0.85],
-    end: [4.42, -1.1, -0.38],
+    end: [2.68, -1.32, -0.15],
     finalRotation: [0.12, -0.78, 0.03],
-    phase: 0.31,
+    phase: 0.82,
     scale: 1.04,
+  },
+  {
+    file: "Donut.glb",
+    start: [5.4, 3.6, -1.0],
+    end: [3.55, -1.32, -0.15],
+    finalRotation: [0.0, 0.25, 0.0],
+    phase: 0.09,
+    scale: 1.0,
   },
   {
     file: "Hotdog.glb",
     start: [5.7, 3.18, -0.72],
-    end: [2.68, -1.58, 0],
+    end: [4.42, -1.32, -0.15],
     finalRotation: [-0.08, 0.2, 0.18],
-    phase: 0.56,
+    phase: 0.64,
     scale: 1.1,
   },
   {
     file: "KnightHelmet.glb",
     start: [3.45, 4.25, -1.08],
-    end: [3.55, -1.58, 0],
+    end: [2.68, -1.79, 0.15],
     finalRotation: [0.16, 0.72, -0.08],
-    phase: 0.9,
+    phase: 0.36,
     scale: 1.12,
   },
   {
     file: "Lamp.glb",
     start: [6.1, 3.52, 0.36],
-    end: [4.42, -1.58, 0],
+    end: [3.55, -1.79, 0.15],
     finalRotation: [0.04, -0.52, 0.12],
-    phase: 0.18,
+    phase: 0.91,
     scale: 1.08,
   },
   {
     file: "Milkshake.glb",
     start: [1.95, 3.78, 0.34],
-    end: [2.68, -2.06, 0.38],
+    end: [4.42, -1.79, 0.15],
     finalRotation: [0.12, -0.12, -0.04],
-    phase: 0.67,
+    phase: 0.18,
     scale: 1.14,
+  },
+  {
+    file: "Pizza.glb",
+    start: [4.0, 4.18, 1.4],
+    end: [2.68, -2.26, 0.45],
+    finalRotation: [0.0, 0.45, 0.0],
+    phase: 0.73,
+    scale: 1.1,
   },
   {
     file: "Plant.glb",
     start: [4.2, 3.48, -1.48],
-    end: [3.55, -2.06, 0.38],
+    end: [3.55, -2.26, 0.45],
     finalRotation: [0.06, 0.48, 0.08],
-    phase: 0.68,
+    phase: 0.45,
     scale: 1.16,
   },
   {
     file: "Sofa.glb",
     start: [5.35, 4.08, 1.42],
-    end: [4.42, -2.06, 0.38],
+    end: [4.42, -2.26, 0.45],
     finalRotation: [0.02, -0.18, -0.06],
-    phase: 0.04,
+    phase: 1.0,
     scale: 1.12,
   },
 ];
@@ -299,20 +323,20 @@ function createProcessor() {
   const ringMaterial = new MeshStandardMaterial({
     color: "#86fce6",
     emissive: "#3bf0d4",
-    emissiveIntensity: 2.4,
+    emissiveIntensity: 0.85,
     metalness: 0.25,
     roughness: 0.32,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.55,
   });
   const amberMaterial = new MeshStandardMaterial({
     color: "#ffc382",
     emissive: "#ff9134",
-    emissiveIntensity: 2.0,
+    emissiveIntensity: 0.7,
     metalness: 0.16,
     roughness: 0.42,
     transparent: true,
-    opacity: 0.66,
+    opacity: 0.52,
   });
 
   for (let i = 0; i < 7; i += 1) {
@@ -334,11 +358,11 @@ function createProcessor() {
   const coreMaterial = new MeshStandardMaterial({
     color: "#bafff1",
     emissive: "#7af3df",
-    emissiveIntensity: 5.5,
+    emissiveIntensity: 1.5,
     metalness: 0.0,
     roughness: 0.6,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.18,
     side: DoubleSide,
     depthWrite: false,
   });
@@ -360,11 +384,11 @@ function createProcessor() {
   const padMaterial = new MeshStandardMaterial({
     color: "#eafff9",
     emissive: "#39d8c0",
-    emissiveIntensity: 0.95,
+    emissiveIntensity: 0.45,
     metalness: 0.1,
     roughness: 0.7,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.35,
   });
 
   for (const asset of MODEL_ASSETS) {
@@ -523,7 +547,7 @@ export function HeroFunnelScene() {
 
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.7, 0.7, 0.62);
+    const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.32, 0.55, 0.82);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
 
@@ -591,21 +615,21 @@ export function HeroFunnelScene() {
       processor.group.rotation.z = Math.sin(time * 0.35) * 0.02;
 
       processor.rings.forEach((ring, index) => {
-        const pulse = 1 + Math.sin(time * 1.35 + index * 0.7) * 0.045;
+        const pulse = 1 + Math.sin(time * 1.35 + index * 0.7) * 0.04;
         ring.scale.setScalar(pulse);
         ring.rotation.z = time * (index % 2 === 0 ? 0.12 : -0.1);
         const material = ring.material as MeshStandardMaterial;
-        material.emissiveIntensity = 1.6 + Math.sin(time * 1.8 + index * 0.5) * 0.55;
+        material.emissiveIntensity = 0.7 + Math.sin(time * 1.8 + index * 0.5) * 0.22;
       });
 
       processor.pads.forEach((pad, index) => {
-        pad.scale.setScalar(1 + Math.sin(time * 1.2 + index) * 0.04);
+        pad.scale.setScalar(1 + Math.sin(time * 1.2 + index) * 0.035);
         const material = pad.material as MeshStandardMaterial;
-        material.emissiveIntensity = 0.7 + Math.sin(time * 1.5 + index * 0.9) * 0.35;
+        material.emissiveIntensity = 0.35 + Math.sin(time * 1.5 + index * 0.9) * 0.14;
       });
 
       const coreMaterial = processor.core.material as MeshStandardMaterial;
-      coreMaterial.emissiveIntensity = 5.0 + Math.sin(time * 1.1) * 1.1;
+      coreMaterial.emissiveIntensity = 1.3 + Math.sin(time * 1.1) * 0.35;
       processor.core.rotation.y = time * 0.18;
 
       for (const item of items) updateItem(item, reduceMotion ? 2.4 : time);
