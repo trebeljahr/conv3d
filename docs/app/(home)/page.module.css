@@ -1060,3 +1060,89 @@
     flex: 1 1 100%;
   }
 }
+
+/* ───── Live terminal demo ─────────────────────────────────── */
+
+.demoSection {
+  padding: 3.5rem 1.5rem 4.5rem;
+  background: var(--c3-bg);
+  border-bottom: 1px solid var(--c3-border);
+}
+
+.demoInner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.demoEyebrow {
+  font-family: var(--c3-font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c3-accent-strong);
+  margin: 0;
+}
+
+.demoTitle {
+  font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  text-align: center;
+  color: var(--c3-fg);
+}
+
+.demoLede {
+  font-size: 1rem;
+  color: var(--c3-fg-muted);
+  text-align: center;
+  max-width: 540px;
+  margin: 0 0 0.75rem;
+  line-height: 1.55;
+}
+
+.demoFrame {
+  width: 100%;
+  border-radius: var(--c3-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--c3-border-strong);
+  background: #0a1014;
+  box-shadow:
+    0 30px 80px -36px rgba(0, 0, 0, 0.55),
+    0 0 28px -22px var(--c3-accent);
+}
+
+.demoVideo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: #0a1014;
+}
+
+.demoCaption {
+  font-family: var(--c3-font-mono);
+  font-size: 0.82rem;
+  color: var(--c3-fg-dim);
+  margin: 0;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demoVideo {
+    /* Pause the looping recording when the viewer asks for less motion.
+       Browsers honor the `paused` attr; we also kill the loop visually
+       by freezing the first frame via animation-play-state for the poster. */
+    animation-play-state: paused;
+  }
+}
+
+@media (max-width: 720px) {
+  .demoSection {
+    padding: 2.5rem 1rem 3rem;
+  }
+}

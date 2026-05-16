@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { HeroFunnelSceneLazy } from "./HeroFunnelSceneLazy";
+import { LandingDemoVideo } from "./LandingDemoVideo";
 import styles from "./page.module.css";
 
 type FileRow = { name: string; before: number; after: number };
@@ -126,6 +127,30 @@ function BatchProof() {
     <section className={styles.proofSection}>
       <div className={styles.sectionInner}>
         <BatchChart />
+      </div>
+    </section>
+  );
+}
+
+function LiveDemo() {
+  return (
+    <section className={styles.demoSection} aria-labelledby="live-demo-title">
+      <div className={styles.demoInner}>
+        <p className={styles.demoEyebrow}>live from a real terminal</p>
+        <h2 id="live-demo-title" className={styles.demoTitle}>
+          One command. Thirteen models. No prompts.
+        </h2>
+        <p className={styles.demoLede}>
+          A recording of conv3d running against a sample pack — health check, then a bulk conversion
+          piped into <code className={styles.ledeCode}>jq</code> for the count.
+        </p>
+        <div className={styles.demoFrame}>
+          <LandingDemoVideo />
+        </div>
+        <p className={styles.demoCaption}>
+          $ conv3d bulk ./sample-pack -m FBX --tsx --optimize -y --json | jq &apos;.converted |
+          length&apos;
+        </p>
       </div>
     </section>
   );
@@ -336,6 +361,7 @@ export default function Home(): ReactNode {
   return (
     <main className={styles.main}>
       <Hero />
+      <LiveDemo />
       <BatchProof />
       <Shrink />
       <ComponentShowcase />
