@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
-    "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit"
+    "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@hatchkit/dev-plugin-next": "^0.1.43",
@@ -20,6 +23,7 @@
     "three": "^0.159.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@types/mdx": "^2.0.13",
     "@types/node": "^22.10.0",
