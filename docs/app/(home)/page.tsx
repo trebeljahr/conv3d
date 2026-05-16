@@ -358,14 +358,16 @@ function FinalCta() {
 }
 
 export default function Home(): ReactNode {
+  // Fumadocs HomeLayout already supplies the page <main>; using a plain <div>
+  // here avoids two main landmarks (axe: landmark-no-duplicate-main).
   return (
-    <main className={styles.main}>
+    <div className={styles.main}>
       <Hero />
       <LiveDemo />
       <BatchProof />
       <Shrink />
       <ComponentShowcase />
       <FinalCta />
-    </main>
+    </div>
   );
 }

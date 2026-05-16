@@ -3,8 +3,8 @@
 
 .main {
   --c3-fg: #0a1014;
-  --c3-fg-muted: #4b5563;
-  --c3-fg-dim: #6b7280;
+  --c3-fg-muted: #404a57;
+  --c3-fg-dim: #525d6b;
   --c3-bg: #ffffff;
   --c3-bg-alt: #f5f9f8;
   --c3-surface: #ffffff;
@@ -42,7 +42,7 @@
 :global(.dark) .main {
   --c3-fg: #e6f4f1;
   --c3-fg-muted: #94a8b0;
-  --c3-fg-dim: #5f7079;
+  --c3-fg-dim: #8a9ba5;
   --c3-bg: #0a1014;
   --c3-bg-alt: #0d1418;
   --c3-surface: #131c22;
@@ -281,6 +281,13 @@
     0 0 0 1px var(--c3-accent-glow),
     0 8px 24px -8px var(--c3-accent-glow),
     0 16px 36px -16px var(--c3-accent-glow);
+}
+
+.ctaPrimary:focus-visible,
+.ctaSecondary:focus-visible {
+  outline: 2px solid var(--c3-accent-bright);
+  outline-offset: 3px;
+  text-decoration: none;
 }
 
 :global(.dark) .ctaPrimary {
