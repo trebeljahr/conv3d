@@ -13,7 +13,9 @@
   --c3-border-strong: rgba(10, 16, 20, 0.18);
   --c3-accent: #0d9488;
   --c3-accent-strong: #0f766e;
-  --c3-accent-glow: rgba(20, 184, 166, 0.18);
+  --c3-accent-glow: rgba(20, 184, 166, 0.28);
+  --c3-accent-bright: #14b8a6;
+  --c3-accent-bright-2: #2dd4bf;
   --c3-warn: #b45309;
   --c3-warn-soft: rgba(180, 83, 9, 0.12);
   --c3-success: #047857;
@@ -50,6 +52,8 @@
   --c3-accent: #5eead4;
   --c3-accent-strong: #2dd4bf;
   --c3-accent-glow: rgba(20, 184, 166, 0.28);
+  --c3-accent-bright: #2dd4bf;
+  --c3-accent-bright-2: #5eead4;
   --c3-warn: #f59e0b;
   --c3-warn-soft: rgba(245, 158, 11, 0.18);
   --c3-success: #34d399;
@@ -232,31 +236,55 @@
 }
 
 .ctaPrimary {
-  background: var(--c3-accent-strong);
-  color: #0a1014;
-  border: 1px solid var(--c3-accent-strong);
+  background: linear-gradient(135deg, var(--c3-accent-bright) 0%, var(--c3-accent-bright-2) 100%);
+  color: #04221f;
+  border: 1px solid var(--c3-accent-bright);
   box-shadow:
-    0 10px 28px -10px var(--c3-accent-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    0 0 0 1px rgba(94, 234, 212, 0.35),
+    0 8px 24px -6px var(--c3-accent-glow),
+    0 18px 44px -16px var(--c3-accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .ctaPrimary:hover {
-  background: var(--c3-accent);
-  color: #0a1014;
+  background: linear-gradient(135deg, var(--c3-accent-bright-2) 0%, var(--c3-accent-bright) 100%);
+  color: #04221f;
   text-decoration: none;
   transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(94, 234, 212, 0.55),
+    0 10px 28px -6px var(--c3-accent-glow),
+    0 24px 56px -14px var(--c3-accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .ctaSecondary {
-  background: transparent;
+  background: var(--c3-surface);
   color: var(--c3-fg);
   border: 1px solid var(--c3-border-strong);
+  box-shadow:
+    0 0 0 1px rgba(20, 184, 166, 0.08),
+    0 6px 18px -10px var(--c3-accent-glow);
 }
 
 .ctaSecondary:hover {
   border-color: var(--c3-accent);
   background: var(--c3-surface);
+  color: var(--c3-accent);
   text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px var(--c3-accent-glow),
+    0 8px 24px -8px var(--c3-accent-glow),
+    0 16px 36px -16px var(--c3-accent-glow);
+}
+
+:global(.dark) .ctaPrimary {
+  color: #0a1014;
+}
+
+:global(.dark) .ctaPrimary:hover {
+  color: #0a1014;
 }
 
 /* ───── File-size chart ────────────────────────────────────── */
