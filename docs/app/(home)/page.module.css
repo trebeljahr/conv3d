@@ -97,6 +97,10 @@
   position: absolute;
   inset: 0;
   z-index: -1;
+  background: none;
+}
+
+:global(.dark) .heroShade {
   background:
     linear-gradient(
       90deg,
