@@ -318,23 +318,51 @@ function setModelOpacity(item: FunnelItem, opacity: number) {
   setMaterialsOpacity(item.materials, item.baseOpacity, opacity);
 }
 
+type RingKind = "amber" | "teal";
+
+type RingTone = {
+  color: string;
+  emissive: string;
+  base: number;
+  amp: number;
+};
+
+type SceneTheme = {
+  bg: number;
+  ring: RingTone;
+  amber: RingTone;
+  pad: RingTone;
+  bloom: boolean;
+};
+
+const THEME_DARK: SceneTheme = {
+  bg: 0x070b0d,
+  ring: { color: "#86fce6", emissive: "#3bf0d4", base: 1.5, amp: 0.4 },
+  amber: { color: "#ffc382", emissive: "#ff9134", base: 1.5, amp: 0.4 },
+  pad: { color: "#eafff9", emissive: "#39d8c0", base: 0.65, amp: 0.22 },
+  bloom: true,
+};
+
+const THEME_LIGHT: SceneTheme = {
+  bg: 0xf4fbf8,
+  ring: { color: "#1c7a6a", emissive: "#0f5b4d", base: 0.35, amp: 0.1 },
+  amber: { color: "#a8521a", emissive: "#7a3b08", base: 0.35, amp: 0.1 },
+  pad: { color: "#3a8a78", emissive: "#1f5a4a", base: 0.22, amp: 0.08 },
+  bloom: false,
+};
+
 function createProcessor() {
   const group = new Group();
   const rings: Mesh[] = [];
+  const ringKinds: RingKind[] = [];
   const pads: Mesh[] = [];
   const ringMaterial = new MeshStandardMaterial({
-    color: "#86fce6",
-    emissive: "#3bf0d4",
-    emissiveIntensity: 1.8,
     metalness: 0.25,
     roughness: 0.32,
     transparent: true,
     opacity: 0.6,
   });
   const amberMaterial = new MeshStandardMaterial({
-    color: "#ffc382",
-    emissive: "#ff9134",
-    emissiveIntensity: 1.5,
     metalness: 0.16,
     roughness: 0.42,
     transparent: true,
@@ -345,9 +373,10 @@ function createProcessor() {
     const progress = i / 6;
     const radius = MathUtils.lerp(FUNNEL_TOP_RADIUS, FUNNEL_BOTTOM_RADIUS, progress);
     const tube = MathUtils.lerp(0.028, 0.014, progress);
+    const isAmber = i < 3;
     const ring = new Mesh(
       new TorusGeometry(radius, tube, 32, 192),
-      i < 3 ? amberMaterial.clone() : ringMaterial.clone(),
+      isAmber ? amberMaterial.clone() : ringMaterial.clone(),
     );
     ring.rotation.x = Math.PI / 2;
     ring.position.x = STREAM_CENTER.x + Math.sin(i * 0.9) * 0.06;
@@ -355,12 +384,10 @@ function createProcessor() {
     ring.position.z = STREAM_CENTER.z + Math.cos(i * 0.75) * 0.06;
     group.add(ring);
     rings.push(ring);
+    ringKinds.push(isAmber ? "amber" : "teal");
   }
 
   const padMaterial = new MeshStandardMaterial({
-    color: "#eafff9",
-    emissive: "#39d8c0",
-    emissiveIntensity: 0.85,
     metalness: 0.1,
     roughness: 0.7,
     transparent: true,
@@ -375,7 +402,23 @@ function createProcessor() {
     pads.push(pad);
   }
 
-  return { group, rings, pads };
+  return { group, rings, ringKinds, pads };
+}
+
+function applySceneTheme(rings: Mesh[], ringKinds: RingKind[], pads: Mesh[], theme: SceneTheme) {
+  rings.forEach((ring, i) => {
+    const tone = ringKinds[i] === "amber" ? theme.amber : theme.ring;
+    const mat = ring.material as MeshStandardMaterial;
+    mat.color.set(tone.color);
+    mat.emissive.set(tone.emissive);
+    mat.needsUpdate = true;
+  });
+  for (const pad of pads) {
+    const mat = pad.material as MeshStandardMaterial;
+    mat.color.set(theme.pad.color);
+    mat.emissive.set(theme.pad.emissive);
+    mat.needsUpdate = true;
+  }
 }
 
 function clampInsideFunnel(position: Vector3) {
@@ -504,20 +547,8 @@ export function HeroFunnelScene() {
       antialias: true,
       powerPreference: "high-performance",
     });
-    const SCENE_BG_DARK = 0x070b0d;
-    const SCENE_BG_LIGHT = 0xf4fbf8;
     const isDarkTheme = () => document.documentElement.classList.contains("dark");
-    const applyThemeBackground = () => {
-      const color = isDarkTheme() ? SCENE_BG_DARK : SCENE_BG_LIGHT;
-      renderer.setClearColor(color, 1);
-      scene.background = new Color(color);
-    };
-    applyThemeBackground();
-    const themeObserver = new MutationObserver(applyThemeBackground);
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+    let activeTheme: SceneTheme = isDarkTheme() ? THEME_DARK : THEME_LIGHT;
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.toneMapping = ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -545,6 +576,20 @@ export function HeroFunnelScene() {
     const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.4, 0.85, 0.95);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
+
+    const applyTheme = () => {
+      activeTheme = isDarkTheme() ? THEME_DARK : THEME_LIGHT;
+      renderer.setClearColor(activeTheme.bg, 1);
+      scene.background = new Color(activeTheme.bg);
+      applySceneTheme(processor.rings, processor.ringKinds, processor.pads, activeTheme);
+      bloomPass.enabled = activeTheme.bloom;
+    };
+    applyTheme();
+    const themeObserver = new MutationObserver(applyTheme);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath("/draco/");
@@ -614,13 +659,15 @@ export function HeroFunnelScene() {
         ring.scale.setScalar(pulse);
         ring.rotation.z = time * (index % 2 === 0 ? 0.12 : -0.1);
         const material = ring.material as MeshStandardMaterial;
-        material.emissiveIntensity = 1.5 + Math.sin(time * 1.8 + index * 0.5) * 0.4;
+        const tone = processor.ringKinds[index] === "amber" ? activeTheme.amber : activeTheme.ring;
+        material.emissiveIntensity = tone.base + Math.sin(time * 1.8 + index * 0.5) * tone.amp;
       });
 
       processor.pads.forEach((pad, index) => {
         pad.scale.setScalar(1 + Math.sin(time * 1.2 + index) * 0.035);
         const material = pad.material as MeshStandardMaterial;
-        material.emissiveIntensity = 0.65 + Math.sin(time * 1.5 + index * 0.9) * 0.22;
+        material.emissiveIntensity =
+          activeTheme.pad.base + Math.sin(time * 1.5 + index * 0.9) * activeTheme.pad.amp;
       });
 
       for (const item of items) updateItem(item, reduceMotion ? 2.4 : time);
