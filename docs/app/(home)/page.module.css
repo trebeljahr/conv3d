@@ -653,6 +653,93 @@
   margin: 0 auto;
 }
 
+.showcaseStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.showcaseCanvasFrame {
+  background: var(--c3-surface);
+  border: 1px solid var(--c3-border);
+  border-radius: var(--c3-radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.showcaseCanvasHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  background: var(--c3-bg-alt);
+  border-bottom: 1px solid var(--c3-border);
+}
+
+.showcaseCanvasBody {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(45, 212, 191, 0.08), transparent 70%),
+    linear-gradient(180deg, var(--c3-surface) 0%, var(--c3-surface-2) 100%);
+}
+
+:global(.dark) .showcaseCanvasBody {
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(45, 212, 191, 0.14), transparent 70%),
+    linear-gradient(180deg, #0d1418 0%, #070b0d 100%);
+}
+
+.showcaseCanvasBody > div {
+  width: 100%;
+  height: 100%;
+}
+
+.showcaseCanvasBody canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+.showcaseCanvasFallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-family: var(--c3-font-mono);
+  font-size: 0.78rem;
+  color: var(--c3-fg-dim);
+  letter-spacing: 0.04em;
+}
+
+.showcaseCanvasFallbackDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c3-accent);
+  box-shadow: 0 0 12px var(--c3-accent-glow);
+  animation: showcasePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes showcasePulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
 .flowInput {
   display: flex;
   flex-direction: column;
