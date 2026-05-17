@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
+import { SiteFooter } from "@/components/site-footer";
 import {
   DEFAULT_SOCIAL_IMAGE,
   DEFAULT_TWITTER_IMAGE,
@@ -76,7 +77,10 @@ export default function Layout({ children }: { children: ReactNode }) {
               })();
             `}
         </Script>
-        <RootProvider search={{ options: { type: "static" } }}>{children}</RootProvider>
+        <RootProvider search={{ options: { type: "static" } }}>
+          {children}
+          <SiteFooter />
+        </RootProvider>
       </body>
     </html>
   );
