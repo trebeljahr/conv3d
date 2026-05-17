@@ -1,0 +1,162 @@
+---
+title: Recipes
+description: Copy-paste invocations for the conversions you actually need to run.
+---
+
+Practical conv3d invocations, grouped by what you're trying to do. Every flag here exists — verify against [Commands](./commands) if you want the full reference.
+
+## Drop FBX into a Next.js project
+
+Flatten into `public/models/` so the URLs are short and predictable.
+
+```bash
+conv3d bulk ./raw-assets/characters \
+  -o ./public/models --flat \
+  -m FBX -r --tsx --optimize -y
+```
+
+Each `.fbx` lands as a `*.glb` + `*-transformed.glb` + `*.tsx` side-by-side. Only safe when filenames don't collide.
+
+## Grab every FBX, no matter how nested
+
+```bash
+conv3d bulk "./assets/**/*.fbx" -o ./public/models --tsx --optimize -y
+```
+
+Globs imply `-m ALL` and don't need `-r`. Quote the glob so the shell doesn't expand it.
+
+## Optimize without generating React components
+
+```bash
+conv3d bulk ./models -m ALL --no-tsx --optimize -y
+```
+
+Web-ready `.glb` files land in `glb-for-web/`. Pair with `--keep-materials` when you've authored materials by hand and don't want the palette merge to touch them.
+
+## Preserve hand-authored materials
+
+```bash
+conv3d bulk ./models -m ALL --optimize --keep-materials -y
+```
+
+Skips the palette step during `--optimize`, so original materials survive verbatim. Textures still get clamped to `--resolution`.
+
+## Higher-resolution textures
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize --resolution 2048 -y
+```
+
+Default is `1024`. Normals are always clamped to at least `2048` regardless, so bumping this mainly affects baseColor / emissive maps.
+
+## Idempotent rebuild — replace stale outputs
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize -y -f
+# or, explicit
+conv3d bulk ./models -m ALL --tsx --optimize -y --overwrite=replace
+```
+
+Safe to wire into every CI build. Non-interactive runs default to `--overwrite=skip`, which is why a stale build leaves outdated GLBs behind unless you opt in to `replace`.
+
+## Skip files that are already converted
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize -y --overwrite=skip --json \
+  | jq '.skipped'
+```
+
+`skipped[]` in the JSON tells you which outputs were left untouched.
+
+## Preview before writing
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize --dry-run --json \
+  | jq '{converted, tsx, glbOptimized}'
+```
+
+`--dry-run` never creates files — not even the output directory tree.
+
+## Agent JSON pipeline
+
+```bash
+conv3d bulk ./models -m ALL --tsx -y --json \
+  | jq -r '.converted[]' \
+  | xargs -I {} my-thumbnail-tool {}
+```
+
+Stdout is one JSON object, stderr has the progress lines — `jq` only ever sees the result.
+
+## Parse partial-success runs
+
+```bash
+result=$(conv3d bulk ./models -m ALL --tsx -y --json) || true
+echo "$result" | jq '.errors[] | "FAILED: \(.file) — \(.message)"'
+echo "$result" | jq '.converted | length'
+```
+
+Exit code `2` means "some files failed" — `converted[]` has the successes, `errors[]` the failures.
+
+## Sanity-check the install before running
+
+```bash
+if ! conv3d doctor --json | jq -e '.dependencies | all(.installed != null)' >/dev/null; then
+  echo "conv3d install is incomplete" >&2
+  exit 1
+fi
+```
+
+`doctor` always exits `0`, even with missing deps — inspect `.dependencies[].installed` to actually decide.
+
+## Generate components for GLBs you already have
+
+```bash
+conv3d tsx-gen ./public/models -r --optimize -y
+```
+
+`tsx-gen` skips the FBX/OBJ/glTF conversion step and runs `gltfjsx` directly over existing `.glb` files. `--optimize` here means "emit a `-transformed.glb` next to each one" — the originals are left alone.
+
+## Textures live in a shared folder
+
+```bash
+conv3d bulk ./models -m FBX --textures-dir ./shared-textures -y
+```
+
+Added to the search list during FBX texture recovery. See [Texture recovery](./textures) for the full picture.
+
+## Override colors for materials that have no texture
+
+```bash
+conv3d bulk ./models -m FBX --material-colors ./colors.json -y
+```
+
+`colors.json` maps material names to baseColor RGB(A):
+
+```json
+{
+  "barbarian_skin": [0.86, 0.65, 0.45, 1],
+  "barbarian_armor": [0.18, 0.18, 0.22, 1]
+}
+```
+
+There's a Blender extraction script under `scripts/blender/extract-material-colors.py`.
+
+## Per-bucket output directories
+
+```bash
+conv3d bulk ./raw-assets -m FBX --tsx --optimize \
+  --glb-dir ./public/models \
+  --tsx-dir ./src/components/models \
+  --optimized-dir ./public/models-web \
+  -y
+```
+
+Independent of `-o` and `--flat`. Hand each artefact to a different folder.
+
+## Limit parallelism on a low-RAM machine
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize -y -c 2
+```
+
+Default is `min(cpus, 4)`. Conversions hold full meshes in memory — drop to `1` or `2` when you're running near the OOM line.
