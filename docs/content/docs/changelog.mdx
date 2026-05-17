@@ -1,0 +1,44 @@
+---
+title: Changelog
+description: Release notes for conv3d. The full commit history lives on GitHub.
+---
+
+What changed between conv3d releases. The [full commit history](https://github.com/trebeljahr/conv3d/commits/main) lives on GitHub; this page summarizes user-visible changes.
+
+## Unreleased
+
+Work merged to `main` since `v1.0.5`. Will ship in the next published version on npm.
+
+### FBX texture recovery
+
+`fbx2gltf` strips embedded textures down to 1×1 magenta placeholders whenever the source FBX references a Windows path it can't resolve on macOS or Linux. conv3d now repairs that on the way out:
+
+- **Texture rescue.** When a baked texture is a 1×1 placeholder, conv3d locates the matching image in the FBX's own directory and swaps it back in before writing the `.glb`.
+- **Scored source-stem fallback for `seedMissingTextures`.** Quaternius-style packs (generic material name "Material", sibling `<Stem>Texture.png`) used to fail the strict "exactly-one-image-contains-stem" heuristic. Replaced with a scored matcher (exact → "texture" suffix → alpha → digits-stripped → contains) that picks the best unique winner and refuses ties rather than guessing.
+- **Per-material composite / suffix / inverse tiers.** Texture-to-material assignment now walks tiered candidates (composite names, common suffixes like `_BaseColor` / `_albedo`, inverse mappings) before falling back to the source-stem heuristic.
+- **Bidirectional stem matching with canonical-shortest tiebreak.** When multiple candidate textures score the same, conv3d prefers the canonically shortest name — stable behavior across reruns instead of order-dependent picks.
+- **`.bin` sibling resolution.** `.gltf` files that reference an external `.bin` buffer now resolve relative to each gltf's own directory instead of the run's cwd.
+
+### Docs
+
+- **New documentation site.** Migrated from Docusaurus to Next.js 16 + Fumadocs, with a 3D landing hero at [conv3d.trebeljahr.com](https://conv3d.trebeljahr.com).
+
+## v1.0.5 — 2025-03-06
+
+- Fix forgotten `await` in the bulk convert pipeline.
+- Fix `lstat` errors when conv3d encountered broken symlinks while walking input directories.
+
+## v1.0.4 — 2025-03-06
+
+First public release on npm. Includes:
+
+- `bulk` — convert a directory of `.fbx` / `.obj` / `.gltf` files to `.glb`.
+- `single` — convert one model.
+- `tsx-gen` — generate typed React Three Fiber components via `gltfjsx`.
+- `doctor` — environment + dependency check.
+- Overwrite protection on the output directory.
+- Predictable output layout (`glb/`, `tsx/`, `glb-for-web/`) with `--flat` override.
+
+---
+
+Older history is preserved in [git](https://github.com/trebeljahr/conv3d/commits/main). For per-commit detail between two releases, use GitHub's [compare view](https://github.com/trebeljahr/conv3d/compare/v1.0.4...v1.0.5).

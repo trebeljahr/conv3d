@@ -16,6 +16,10 @@ export function baseOptions(): BaseLayoutProps {
         url: "/docs/getting-started",
       },
       {
+        text: "Changelog",
+        url: "/docs/changelog",
+      },
+      {
         text: "npm",
         url: "https://www.npmjs.com/package/conv3d",
         external: true,
