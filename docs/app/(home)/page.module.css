@@ -222,6 +222,55 @@
   font-weight: 800;
 }
 
+/* ───── Social proof (discreet metrics row) ───────────────── */
+
+.proofRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  font-family: var(--c3-font-mono);
+  font-size: 0.74rem;
+}
+
+.proofChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--c3-border);
+  background: transparent;
+  border-radius: 999px;
+  color: var(--c3-fg-muted);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease,
+    background 0.12s ease;
+}
+
+.proofChip:hover {
+  border-color: var(--c3-accent);
+  color: var(--c3-fg);
+  background: var(--c3-hero-glass);
+  text-decoration: none;
+}
+
+.proofChipLabel {
+  color: var(--c3-fg-dim);
+  letter-spacing: 0.04em;
+}
+
+.proofChipValue {
+  color: var(--c3-fg);
+  font-weight: 600;
+}
+
+.proofChip:hover .proofChipValue {
+  color: var(--c3-accent);
+}
+
 .ctaPrimary,
 .ctaSecondary {
   display: inline-flex;

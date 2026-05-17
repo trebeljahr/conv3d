@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { HeroFunnelSceneLazy } from "./HeroFunnelSceneLazy";
 import { KnightShowcaseSceneLazy } from "./KnightShowcaseSceneLazy";
 import { LandingDemoVideo } from "./LandingDemoVideo";
+import { SocialProof } from "./SocialProof";
 import styles from "./page.module.css";
 
 type FileRow = { name: string; before: number; after: number };
@@ -58,6 +59,7 @@ function Hero() {
               <strong>−{pct(heroTotal.before, heroTotal.after)}</strong> total bytes
             </span>
           </div>
+          <SocialProof />
         </div>
       </div>
     </header>
