@@ -1,0 +1,175 @@
+---
+title: Troubleshooting
+description: Common failures, what they mean, and how to get unstuck.
+---
+
+A pass through the failure modes you're most likely to hit, and what each one tells you.
+
+## Start with `conv3d doctor`
+
+If anything looks off, run:
+
+```bash
+conv3d doctor
+```
+
+You'll see something like:
+
+```
+conv3d  1.0.5
+node    v24.4.0
+platform darwin-arm64
+cwd     /Users/you/project
+install /usr/local/lib/node_modules/conv3d
+
+dependencies:
+  obj2gltf         declared ^3.1.6   installed 3.1.6
+  gltf-pipeline    declared ^4.1.0   installed 4.1.0
+  fbx2gltf         declared ^0.9.7   installed 0.9.7
+  gltfjsx          declared ^6.5.3   installed 6.5.3
+  commander        declared ^14.0.2  installed 14.0.2
+  inquirer         declared ^12.10.0 installed 12.10.0
+  fast-glob        declared ^3.3.3   installed 3.3.3
+```
+
+Read each line:
+
+- **`conv3d`** — installed version of the CLI.
+- **`node`** — your Node runtime. Must be `v24` or higher (see below).
+- **`platform`** — `${process.platform}-${process.arch}`. Only `darwin-*` and `linux-*` are supported.
+- **`cwd`** — where you ran the command from.
+- **`install`** — where conv3d itself lives on disk. Useful when something resolves a different copy than you expect.
+- **`dependencies`** — each row shows the declared range vs. the actually-installed version.
+
+A row whose installed column reads `not found` means the dependency is missing from disk. That's almost always a broken install — reinstall and try again:
+
+```bash
+npm install -g conv3d
+```
+
+For machine-readable output:
+
+```bash
+conv3d doctor --json | jq '.dependencies[] | select(.installed == null)'
+```
+
+`doctor` always exits `0`, even when deps are missing. Inspect the report, don't rely on the exit code.
+
+## Node version mismatch
+
+conv3d requires **Node.js 24 or newer**. The `engines` field in `package.json` is `>=24`, and `fbx2gltf` needs a modern runtime.
+
+Symptoms:
+
+- `npm install -g conv3d` refuses with an `EBADENGINE` warning.
+- The CLI exits immediately with a syntax error from Node.
+
+Check your version:
+
+```bash
+node --version
+```
+
+Upgrade with `nvm`, `fnm`, Homebrew, or whatever you use, then reinstall conv3d.
+
+## Windows is unsupported
+
+conv3d's `package.json` declares `"os": ["darwin", "linux"]`. The blocker is `fbx2gltf` — its native binaries don't ship for Windows.
+
+If you must run conv3d on a Windows host, use WSL2 (Ubuntu / Debian) and install conv3d inside the Linux environment, not on the Windows side.
+
+## FBX → magenta 1×1 placeholder
+
+You convert an FBX, load the `.glb` in three.js, and the mesh is solid pink. This is the FBX texture path problem — `fbx2gltf` bakes a 1×1 magenta PNG when it can't resolve a texture path baked into the source FBX (often an absolute Windows path).
+
+conv3d already runs a recovery pass after every FBX conversion. You'll see:
+
+```
+✨ <file>: N placeholder textures recovered
+```
+
+If you don't see that line and the model is still magenta:
+
+- The textures aren't next to the FBX or in the usual sibling folders (`Textures/`, `textures/`, `tex/`, `Materials/`). Point conv3d at them explicitly:
+
+  ```bash
+  conv3d bulk ./models -m FBX --textures-dir ./shared-textures -y
+  ```
+
+- The recovery pass was disabled. Make sure you didn't pass `--no-recover-textures`.
+
+For the full mechanism, see [FBX texture recovery](./textures).
+
+## Glob matched zero files
+
+```
+⚠️ Glob matched no files: ./assets/**/*.fbx
+```
+
+The process **exits `0`** with an empty result object. This is intentional — agent globs that legitimately match nothing shouldn't be errors. If you want a hard failure, check `converted.length` yourself:
+
+```bash
+result=$(conv3d bulk "./assets/**/*.fbx" -m ALL -y --json)
+if [ "$(echo "$result" | jq '.converted | length')" -eq 0 ]; then
+  echo "no matches" >&2
+  exit 1
+fi
+```
+
+Directory mode behaves the same — `⚠️ No suitable models found in <dir>` also exits `0`.
+
+## Exit code `2` — per-file failures
+
+Exit `2` means the run completed, but at least one file failed. `converted[]` lists the successes, `errors[]` lists the failures:
+
+```bash
+result=$(conv3d bulk ./models -m ALL --tsx -y --json) || true
+echo "$result" | jq '.errors[] | "FAILED: \(.file) — \(.message)"'
+echo "$result" | jq '.converted | length'
+```
+
+Each entry in `errors[]` is `{ "file": "...", "message": "..." }`. Retry only the failed files, not the whole batch.
+
+Exit code summary:
+
+| Code | Meaning |
+|---|---|
+| `0` | Success — including empty glob matches. |
+| `1` | Fatal: bad args, missing input, unsupported model type. JSON has `{ ok: false, error }`. |
+| `2` | Partial: some files failed. JSON has `errors[]` populated. |
+
+## File-exists conflicts default to `skip`
+
+In non-interactive mode (`-y`, or any time stdin isn't a TTY), conv3d **skips** outputs that already exist. They show up in `skipped[]`, not `errors[]`, and the exit code is still `0`.
+
+If you're re-running a build and wondering why nothing changed, that's why. Force overwrite explicitly:
+
+```bash
+conv3d bulk ./models -m ALL --tsx --optimize -y -f --json
+# or:
+conv3d bulk ./models -m ALL --tsx --optimize -y --overwrite=replace --json
+```
+
+Interactive mode defaults to `ask` (prompts for each conflict). To make a script idempotent, always pass `--overwrite=replace` (or `-f`).
+
+## Banner gone — optional deps missing
+
+The rainbow `conv3d` banner needs two `optionalDependencies`: [`figlet`](https://www.npmjs.com/package/figlet) and [`lolcatjs`](https://www.npmjs.com/package/lolcatjs). If you installed with `--omit=optional` (or your platform skipped them), conv3d silently skips the banner. The CLI still works — only the cosmetic intro disappears.
+
+To get the banner back:
+
+```bash
+npm install -g conv3d   # default includes optionals
+```
+
+The banner is also suppressed (intentionally) when stdout isn't a TTY, or when any of `--help` / `--version` / `--quiet` / `--json` is passed — agents and pipes never see it.
+
+## Still stuck?
+
+Open an issue with `conv3d doctor --json` pasted in:
+
+```bash
+conv3d doctor --json
+```
+
+That gives the maintainers the exact versions, platform, and dependency state of your install — everything needed to reproduce the bug. File at [github.com/trebeljahr/conv3d/issues](https://github.com/trebeljahr/conv3d/issues).
