@@ -5,6 +5,10 @@ description: The contract for calling conv3d from CI pipelines, build scripts, a
 
 conv3d is designed to be safe to call from CI pipelines, build scripts, and AI coding agents. This page is the contract.
 
+## Programmatic use
+
+conv3d ships as a CLI only — there is no `import "conv3d"` API. The supported integration surface is **`--json` for machine-readable output, `--yes` for non-interactive runs, and the `0` / `1` / `2` exit codes** — everything below documents that contract.
+
 ## The seven rules
 
 1. **Always pass `-y` (or `--non-interactive`)** so no prompt can block. Non-interactive mode is also inferred automatically when stdin is not a TTY.

@@ -44,3 +44,9 @@ conv3d folds the whole pipeline into one command, on top of the best-of-breed op
 - [Troubleshooting](./troubleshooting) — common failures and how to read `doctor` output.
 - [Architecture](./architecture) — what runs when, and why.
 - [Changelog](./changelog) — what's new between releases.
+
+## Common questions
+
+- **Is there a programmatic / Node API?** No — conv3d is a CLI only. The supported way to call it from another program (Node script, build tool, CI job, AI agent) is `--json` + `--yes` + parsing the exit code. See [Scripts & agents](./agents) for the full contract.
+- **Can I run it without prompts?** Yes — pass `-y` (or `--yes`). Non-interactive mode is also inferred automatically when stdin is not a TTY.
+- **Can I preview without writing files?** Yes — `--dry-run` prints the plan and exits `0` without touching disk.
