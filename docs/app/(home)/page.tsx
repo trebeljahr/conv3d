@@ -10,17 +10,22 @@ type FileRow = { name: string; before: number; after: number };
 
 const REPO_URL = "https://github.com/trebeljahr/conv3d";
 
+// data: KAYKIT Adventurers 2.0 FREE characters pack, conv3d bulk --optimize, measured 2026-05-16
 const heroFiles: FileRow[] = [
-  { name: "KnightHelmet.fbx", before: 31.2, after: 2.1 },
-  { name: "AnimatedChest.fbx", before: 28.4, after: 1.8 },
-  { name: "IceStaff.fbx", before: 26.8, after: 1.9 },
+  { name: "Ranger.fbx", before: 0.537, after: 0.105 },
+  { name: "Mage.fbx", before: 0.467, after: 0.094 },
+  { name: "Knight.fbx", before: 0.464, after: 0.09 },
 ];
 
-const heroTotal = { before: 312, after: 23, count: 13 };
+const heroTotal = { before: 2.896, after: 0.588, count: 6 };
 
 const HERO_MAX = Math.max(...heroFiles.map((f) => f.before));
 
-const fmt = (mb: number) => (mb >= 100 ? `${mb.toFixed(0)} MB` : `${mb.toFixed(1)} MB`);
+const fmt = (mb: number) => {
+  if (mb < 1) return `${Math.round(mb * 1024)} KB`;
+  if (mb >= 100) return `${mb.toFixed(0)} MB`;
+  return `${mb.toFixed(1)} MB`;
+};
 const pct = (b: number, a: number) => `${Math.round((1 - a / b) * 100)}%`;
 
 function Hero() {
@@ -75,7 +80,7 @@ function BatchChart() {
     >
       <div className={styles.chartHead}>
         <div className={styles.chartHeadLeft}>
-          <span className={styles.chartHeadKbd}>./asset-pack/</span>
+          <span className={styles.chartHeadKbd}>./adventurers/</span>
           <span className={styles.chartHeadSub}>{heroTotal.count} models · one command</span>
         </div>
         <div className={styles.chartLegend}>
@@ -224,8 +229,9 @@ function ComponentShowcase() {
                 ▣
               </span>
               <div>
+                {/* data: Quaternius RPG Asset Pack (May 2017), KnightHelmet, measured 2026-05-16 */}
                 <div className={styles.fileChipName}>KnightHelmet.fbx</div>
-                <div className={styles.fileChipMeta}>31.2 MB · 14k tris</div>
+                <div className={styles.fileChipMeta}>32 KB · low-poly</div>
               </div>
             </div>
             <div className={styles.fileChip}>
