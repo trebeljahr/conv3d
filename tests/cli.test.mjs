@@ -98,6 +98,31 @@ test("single --dry-run --json plans the output without writing", () => {
   }
 });
 
+test("bulk --json exits 2 on partial failure while converting valid models", () => {
+  const { dir, cleanup } = makeTmp("bulk-partial");
+  try {
+    writeFileSync(path.join(dir, "good.obj"), OBJ_BODY);
+    writeFileSync(path.join(dir, "broken.gltf"), "{ invalid json");
+    const r = run(["bulk", dir, "-m", "ALL", "--no-tsx", "--no-optimize", "-y", "--json"]);
+    assert.equal(r.status, 2, `stderr: ${r.stderr}`);
+    const parsed = JSON.parse(r.stdout);
+    assert.equal(parsed.command, "bulk");
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.converted.length, 1);
+    assert.match(parsed.converted[0], /good\.glb$/);
+    assert.ok(parsed.errors.length > 0);
+    for (const error of parsed.errors) {
+      assert.equal(typeof error.file, "string");
+      assert.notEqual(error.file.length, 0);
+      assert.equal(typeof error.message, "string");
+      assert.notEqual(error.message.length, 0);
+    }
+    assert.ok(parsed.errors.some((error) => /broken\.gltf$/.test(error.file)));
+  } finally {
+    cleanup();
+  }
+});
+
 test("bulk with glob expands matches and defaults modelType to ALL", () => {
   const { dir, cleanup } = makeTmp("glob");
   try {
