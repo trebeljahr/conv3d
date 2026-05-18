@@ -149,3 +149,460 @@ echo "$result" | jq '.converted | length' # how many succeeded
 - **File-exists conflicts default to `skip`** in non-interactive mode. Pass `--overwrite=replace` (or `-f`) when you want idempotent reruns.
 - **`--dry-run` never writes** — not even the output directory tree.
 - **`figlet` and `lolcatjs` are optional**. `npm install --omit=optional` still gives you a working CLI, just without the rainbow banner.
+
+## Tool definitions for AI coding agents
+
+These snippets define one narrow tool: bulk-convert models through the CLI, returning conv3d's JSON result. Keep `dryRun` enabled for the first call, inspect the planned `converted`, `tsx`, `glbOptimized`, `skipped`, and `errors` arrays, then call the same tool with `dryRun: false` only when the plan is correct.
+
+The implementation behind each schema should build the command from the arguments, never from a free-form shell string:
+
+```bash
+conv3d bulk "$input" -m "$modelType" --yes --json --dry-run
+```
+
+Add the optional flags requested by the arguments (`--recursive`, `--tsx` / `--no-tsx`, `--optimize` / `--no-optimize`, `--overwrite`, `--outputDir`, `--flat`, `--glb-dir`, `--tsx-dir`, `--optimized-dir`, `--concurrency`, `--resolution`, `--keep-materials`). When `dryRun` is `false`, omit only `--dry-run`; keep `--yes` and `--json`.
+
+### Cursor
+
+Cursor's current extension point for custom callable tools is MCP. Paste this tool definition into the `tools/list` response for a local MCP server, then implement `tools/call` by spawning `conv3d` with an argument array.
+
+```json
+{
+  "name": "conv3d_bulk",
+  "description": "Convert every supported 3D model in a directory or every file matching a glob. Always call first with dryRun=true; returns conv3d's single JSON result object.",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["input", "modelType", "tsx", "optimize"],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Directory, file, or glob pattern to convert, matching conv3d bulk [input]. Examples: ./models, ./assets/**/*.fbx."
+      },
+      "modelType": {
+        "type": "string",
+        "enum": ["GLTF", "FBX", "OBJ", "ALL"],
+        "description": "Model type for directory mode. In glob mode ALL is the conv3d default, but pass it explicitly for agents."
+      },
+      "recursive": {
+        "type": "boolean",
+        "default": false,
+        "description": "Recurse into subdirectories in directory mode. Globs choose their own scope."
+      },
+      "tsx": {
+        "type": "boolean",
+        "description": "Whether to generate React Three Fiber .tsx components. Maps to --tsx or --no-tsx."
+      },
+      "optimize": {
+        "type": "boolean",
+        "description": "Whether to emit web-optimized .glb files. Maps to --optimize or --no-optimize."
+      },
+      "outputDir": {
+        "type": "string",
+        "description": "Where to write outputs. Defaults to <inputDir>/_convert-3d-for-web."
+      },
+      "flat": {
+        "type": "boolean",
+        "default": false,
+        "description": "Write every output file directly into outputDir instead of glb, tsx, and glb-for-web subdirectories."
+      },
+      "glbDir": {
+        "type": "string",
+        "description": "Override where converted .glb files go."
+      },
+      "tsxDir": {
+        "type": "string",
+        "description": "Override where .tsx component files go."
+      },
+      "optimizedDir": {
+        "type": "string",
+        "description": "Override where optimized .glb files go."
+      },
+      "overwrite": {
+        "type": "string",
+        "enum": ["skip", "replace", "ask"],
+        "default": "skip",
+        "description": "What to do when an output file already exists. Use replace for idempotent reruns; ask is not recommended for agents."
+      },
+      "concurrency": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Convert N files in parallel. conv3d defaults to min(cpus, 4), or 1 in interactive ask-mode."
+      },
+      "resolution": {
+        "type": "integer",
+        "minimum": 1,
+        "default": 1024,
+        "description": "Max texture resolution during optimization. Normal maps use at least max(resolution, 2048)."
+      },
+      "keepMaterials": {
+        "type": "boolean",
+        "default": false,
+        "description": "Skip the palette step during optimization and preserve original materials."
+      },
+      "dryRun": {
+        "type": "boolean",
+        "default": true,
+        "description": "Preview the plan without creating or modifying anything. Agents should call with true first, then false only after checking the JSON result."
+      }
+    }
+  }
+}
+```
+
+### Claude Code
+
+Claude Code can use the same operation through MCP, and Claude Agent SDK custom tools use the same argument shape. For API-style tool arrays, use Anthropic's `input_schema` field:
+
+```json
+{
+  "name": "conv3d_bulk",
+  "description": "Convert every supported 3D model in a directory or every file matching a glob by calling conv3d bulk. Always dry-run first and return the parsed JSON stdout plus the process exit code.",
+  "input_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["input", "modelType", "tsx", "optimize"],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Directory, file, or glob pattern to convert, matching conv3d bulk [input]. Examples: ./models, ./assets/**/*.fbx."
+      },
+      "modelType": {
+        "type": "string",
+        "enum": ["GLTF", "FBX", "OBJ", "ALL"],
+        "description": "Model type for directory mode. In glob mode ALL is the conv3d default, but pass it explicitly for agents."
+      },
+      "recursive": {
+        "type": "boolean",
+        "default": false,
+        "description": "Recurse into subdirectories in directory mode. Globs choose their own scope."
+      },
+      "tsx": {
+        "type": "boolean",
+        "description": "Whether to generate React Three Fiber .tsx components. Maps to --tsx or --no-tsx."
+      },
+      "optimize": {
+        "type": "boolean",
+        "description": "Whether to emit web-optimized .glb files. Maps to --optimize or --no-optimize."
+      },
+      "outputDir": {
+        "type": "string",
+        "description": "Where to write outputs. Defaults to <inputDir>/_convert-3d-for-web."
+      },
+      "flat": {
+        "type": "boolean",
+        "default": false,
+        "description": "Write every output file directly into outputDir instead of glb, tsx, and glb-for-web subdirectories."
+      },
+      "glbDir": {
+        "type": "string",
+        "description": "Override where converted .glb files go."
+      },
+      "tsxDir": {
+        "type": "string",
+        "description": "Override where .tsx component files go."
+      },
+      "optimizedDir": {
+        "type": "string",
+        "description": "Override where optimized .glb files go."
+      },
+      "overwrite": {
+        "type": "string",
+        "enum": ["skip", "replace", "ask"],
+        "default": "skip",
+        "description": "What to do when an output file already exists. Use replace for idempotent reruns; ask is not recommended for agents."
+      },
+      "concurrency": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Convert N files in parallel. conv3d defaults to min(cpus, 4), or 1 in interactive ask-mode."
+      },
+      "resolution": {
+        "type": "integer",
+        "minimum": 1,
+        "default": 1024,
+        "description": "Max texture resolution during optimization. Normal maps use at least max(resolution, 2048)."
+      },
+      "keepMaterials": {
+        "type": "boolean",
+        "default": false,
+        "description": "Skip the palette step during optimization and preserve original materials."
+      },
+      "dryRun": {
+        "type": "boolean",
+        "default": true,
+        "description": "Preview the plan without creating or modifying anything. Agents should call with true first, then false only after checking the JSON result."
+      }
+    }
+  }
+}
+```
+
+### Cline
+
+Cline supports MCP servers and Cline SDK custom tools. For MCP, expose this object from `tools/list`; for the SDK, use the same JSON Schema as the `inputSchema`.
+
+```json
+{
+  "name": "conv3d_bulk",
+  "description": "Run conv3d bulk safely for agent workflows. The handler must pass --yes and --json, must pass --dry-run when dryRun is true, and must return stdout JSON with the exit code.",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["input", "modelType", "tsx", "optimize"],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Directory, file, or glob pattern to convert, matching conv3d bulk [input]. Examples: ./models, ./assets/**/*.fbx."
+      },
+      "modelType": {
+        "type": "string",
+        "enum": ["GLTF", "FBX", "OBJ", "ALL"],
+        "description": "Model type for directory mode. In glob mode ALL is the conv3d default, but pass it explicitly for agents."
+      },
+      "recursive": {
+        "type": "boolean",
+        "default": false,
+        "description": "Recurse into subdirectories in directory mode. Globs choose their own scope."
+      },
+      "tsx": {
+        "type": "boolean",
+        "description": "Whether to generate React Three Fiber .tsx components. Maps to --tsx or --no-tsx."
+      },
+      "optimize": {
+        "type": "boolean",
+        "description": "Whether to emit web-optimized .glb files. Maps to --optimize or --no-optimize."
+      },
+      "outputDir": {
+        "type": "string",
+        "description": "Where to write outputs. Defaults to <inputDir>/_convert-3d-for-web."
+      },
+      "flat": {
+        "type": "boolean",
+        "default": false,
+        "description": "Write every output file directly into outputDir instead of glb, tsx, and glb-for-web subdirectories."
+      },
+      "glbDir": {
+        "type": "string",
+        "description": "Override where converted .glb files go."
+      },
+      "tsxDir": {
+        "type": "string",
+        "description": "Override where .tsx component files go."
+      },
+      "optimizedDir": {
+        "type": "string",
+        "description": "Override where optimized .glb files go."
+      },
+      "overwrite": {
+        "type": "string",
+        "enum": ["skip", "replace", "ask"],
+        "default": "skip",
+        "description": "What to do when an output file already exists. Use replace for idempotent reruns; ask is not recommended for agents."
+      },
+      "concurrency": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Convert N files in parallel. conv3d defaults to min(cpus, 4), or 1 in interactive ask-mode."
+      },
+      "resolution": {
+        "type": "integer",
+        "minimum": 1,
+        "default": 1024,
+        "description": "Max texture resolution during optimization. Normal maps use at least max(resolution, 2048)."
+      },
+      "keepMaterials": {
+        "type": "boolean",
+        "default": false,
+        "description": "Skip the palette step during optimization and preserve original materials."
+      },
+      "dryRun": {
+        "type": "boolean",
+        "default": true,
+        "description": "Preview the plan without creating or modifying anything. Agents should call with true first, then false only after checking the JSON result."
+      }
+    }
+  }
+}
+```
+
+### Handler sketch
+
+This is the command builder each MCP or SDK wrapper should use. It avoids shell interpolation, so glob strings and paths stay data, not executable code.
+
+```ts
+import { spawn } from "node:child_process";
+
+type Conv3dBulkArgs = {
+  input: string;
+  modelType: "GLTF" | "FBX" | "OBJ" | "ALL";
+  recursive?: boolean;
+  tsx: boolean;
+  optimize: boolean;
+  outputDir?: string;
+  flat?: boolean;
+  glbDir?: string;
+  tsxDir?: string;
+  optimizedDir?: string;
+  overwrite?: "skip" | "replace" | "ask";
+  concurrency?: number;
+  resolution?: number;
+  keepMaterials?: boolean;
+  dryRun?: boolean;
+};
+
+export function buildConv3dBulkArgs(args: Conv3dBulkArgs): string[] {
+  const command = ["bulk", args.input, "-m", args.modelType, "--yes", "--json"];
+
+  if (args.recursive) command.push("--recursive");
+  command.push(args.tsx ? "--tsx" : "--no-tsx");
+  command.push(args.optimize ? "--optimize" : "--no-optimize");
+  if (args.outputDir) command.push("--outputDir", args.outputDir);
+  if (args.flat) command.push("--flat");
+  if (args.glbDir) command.push("--glb-dir", args.glbDir);
+  if (args.tsxDir) command.push("--tsx-dir", args.tsxDir);
+  if (args.optimizedDir) command.push("--optimized-dir", args.optimizedDir);
+  if (args.overwrite) command.push("--overwrite", args.overwrite);
+  if (args.concurrency) command.push("--concurrency", String(args.concurrency));
+  if (args.resolution) command.push("--resolution", String(args.resolution));
+  if (args.keepMaterials) command.push("--keep-materials");
+  if (args.dryRun !== false) command.push("--dry-run");
+
+  return command;
+}
+
+export async function runConv3dBulk(args: Conv3dBulkArgs) {
+  const child = spawn("conv3d", buildConv3dBulkArgs(args), {
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+
+  const stdout: Buffer[] = [];
+  const stderr: Buffer[] = [];
+  child.stdout.on("data", (chunk) => stdout.push(chunk));
+  child.stderr.on("data", (chunk) => stderr.push(chunk));
+
+  const exitCode = await new Promise<number>((resolve) => {
+    child.on("close", (code) => resolve(code ?? 1));
+  });
+
+  return {
+    exitCode,
+    result: JSON.parse(Buffer.concat(stdout).toString("utf8")),
+    stderr: Buffer.concat(stderr).toString("utf8")
+  };
+}
+```
+
+### Worked dry-run then execute transcript
+
+An agent should make the dry-run explicit in its first call:
+
+```json
+{
+  "tool": "conv3d_bulk",
+  "arguments": {
+    "input": "./raw-assets/characters",
+    "modelType": "FBX",
+    "recursive": true,
+    "tsx": true,
+    "optimize": true,
+    "outputDir": "./public/models",
+    "flat": true,
+    "overwrite": "skip",
+    "dryRun": true
+  }
+}
+```
+
+The wrapper runs:
+
+```bash
+conv3d bulk ./raw-assets/characters -m FBX --yes --json --recursive --tsx --optimize --outputDir ./public/models --flat --overwrite skip --dry-run
+```
+
+The tool returns the parsed JSON and exit code:
+
+```json
+{
+  "exitCode": 0,
+  "result": {
+    "command": "bulk",
+    "ok": true,
+    "inputDir": "/repo/raw-assets/characters",
+    "outputDir": "/repo/public/models",
+    "dryRun": true,
+    "modelType": "FBX",
+    "converted": [
+      "/repo/public/models/Knight.glb",
+      "/repo/public/models/Wizard.glb"
+    ],
+    "tsx": [
+      "/repo/public/models/Knight.tsx",
+      "/repo/public/models/Wizard.tsx"
+    ],
+    "glbOptimized": [
+      "/repo/public/models/Knight-transformed.glb",
+      "/repo/public/models/Wizard-transformed.glb"
+    ],
+    "skipped": [],
+    "errors": []
+  },
+  "stderr": ""
+}
+```
+
+Because `exitCode` is `0`, `ok` is `true`, and `errors` is empty, the agent can execute the same request with `dryRun: false`:
+
+```json
+{
+  "tool": "conv3d_bulk",
+  "arguments": {
+    "input": "./raw-assets/characters",
+    "modelType": "FBX",
+    "recursive": true,
+    "tsx": true,
+    "optimize": true,
+    "outputDir": "./public/models",
+    "flat": true,
+    "overwrite": "skip",
+    "dryRun": false
+  }
+}
+```
+
+The wrapper runs the same command without `--dry-run`:
+
+```bash
+conv3d bulk ./raw-assets/characters -m FBX --yes --json --recursive --tsx --optimize --outputDir ./public/models --flat --overwrite skip
+```
+
+A successful execute response has `dryRun: false`; callers should use `converted`, `tsx`, and `glbOptimized` as the created-file manifest:
+
+```json
+{
+  "exitCode": 0,
+  "result": {
+    "command": "bulk",
+    "ok": true,
+    "inputDir": "/repo/raw-assets/characters",
+    "outputDir": "/repo/public/models",
+    "dryRun": false,
+    "modelType": "FBX",
+    "converted": [
+      "/repo/public/models/Knight.glb",
+      "/repo/public/models/Wizard.glb"
+    ],
+    "tsx": [
+      "/repo/public/models/Knight.tsx",
+      "/repo/public/models/Wizard.tsx"
+    ],
+    "glbOptimized": [
+      "/repo/public/models/Knight-transformed.glb",
+      "/repo/public/models/Wizard-transformed.glb"
+    ],
+    "skipped": [],
+    "errors": []
+  },
+  "stderr": ""
+}
+```
