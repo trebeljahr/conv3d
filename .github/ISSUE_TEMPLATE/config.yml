@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting docs
+    url: https://conv3d.trebeljahr.com/troubleshooting
+    about: Check known setup and conversion problems before filing a bug.

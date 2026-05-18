@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an improvement or new capability for conv3d.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Describe the workflow or problem in one paragraph.
+      placeholder: I want to use conv3d to...
+    validations:
+      required: true
+  - type: dropdown
+    id: agent-human-context
+    attributes:
+      label: Agent vs human context
+      description: Who primarily needs this feature?
+      options:
+        - Human using the CLI directly
+        - AI agent or automation invoking conv3d
+        - Both human and agent workflows
+        - Not sure yet
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-shape
+    attributes:
+      label: Proposed behavior
+      description: Describe the command, flag, output, or docs change you would expect.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Note any workarounds or existing tools you tried.
+    validations:
+      required: false

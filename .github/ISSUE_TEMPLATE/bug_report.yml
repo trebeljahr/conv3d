@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a reproducible problem with conv3d.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please include the exact command and diagnostic output so the issue can be reproduced.
+  - type: textarea
+    id: doctor-json
+    attributes:
+      label: "`conv3d doctor --json` output"
+      description: Paste the full JSON output from `conv3d doctor --json`.
+      placeholder: |
+        {
+          "version": "...",
+          "python": "...",
+          "environment": {}
+        }
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command run
+      description: Paste the full command, including flags and paths if applicable.
+      placeholder: conv3d input.glb output.usdz --format usdz
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect conv3d to do?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Include error output, logs, or screenshots if helpful.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: Include OS name and version.
+      placeholder: macOS 15.5, Ubuntu 24.04, Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: minimal-repro
+    attributes:
+      label: Minimal reproduction
+      description: If possible, list the smallest input file or steps that trigger the problem.
+    validations:
+      required: false
