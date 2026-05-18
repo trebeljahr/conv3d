@@ -2,7 +2,7 @@
   "name": "conv3d",
   "version": "1.0.5",
   "packageManager": "pnpm@10.33.2",
-  "description": "An interactive CLI tool for converting 3D models to GLB format and outputting React components to use with r3f. Supports FBX, OBJ, and glTF input formats.",
+  "description": "CLI that converts FBX/OBJ/glTF to GLB and generates typed React Three Fiber components. Interactive prompts or non-interactive (--yes --json --dry-run) for scripts, CI, and AI coding agents.",
   "bin": {
     "conv3d": "./dist/conv3d.js"
   },
@@ -61,7 +61,9 @@
     "react-three-fiber",
     "gltfjsx",
     "webgl",
-    "cli"
+    "cli",
+    "r3f",
+    "ai-agent"
   ],
   "author": "Rico Trebeljahr",
   "license": "MIT",
