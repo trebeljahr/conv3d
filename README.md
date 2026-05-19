@@ -263,6 +263,10 @@ After every FBX conversion, conv3d scans the output GLB for 1×1 placeholder PNG
 
 CLI polish: [commander](https://www.npmjs.com/package/commander), [inquirer](https://www.npmjs.com/package/inquirer), [chalk](https://www.npmjs.com/package/chalk), [ora](https://www.npmjs.com/package/ora), [figlet](https://www.npmjs.com/package/figlet), [lolcatjs](https://www.npmjs.com/package/lolcatjs).
 
+## Project scope
+
+conv3d is and will remain a local-first CLI; there is no hosted or paid tier.
+
 ## License
 
 MIT

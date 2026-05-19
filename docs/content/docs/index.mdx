@@ -34,6 +34,10 @@ conv3d folds the whole pipeline into one command, on top of the best-of-breed op
 - **Texture recovery for FBX.** When `fbx2gltf` bakes a 1×1 magenta placeholder (because the FBX referenced a Windows path), conv3d swaps in the matching texture from the FBX's own directory.
 - **Stable contract for agents.** `--json` on stdout, errors on stderr, exit codes `0` / `1` / `2`, and `--dry-run` that never touches the filesystem.
 
+## Project scope
+
+conv3d is and will remain a local-first CLI; there is no hosted or paid tier.
+
 ## Next steps
 
 - [Getting Started](./getting-started) — install and convert your first model.
