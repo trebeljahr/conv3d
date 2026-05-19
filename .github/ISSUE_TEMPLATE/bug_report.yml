@@ -9,17 +9,20 @@ body:
       value: |
         Thanks for taking the time to report a bug. Please include the exact command and diagnostic output so the issue can be reproduced.
   - type: textarea
-    id: doctor-json
+    id: doctor-markdown
     attributes:
-      label: "`conv3d doctor --json` output"
-      description: Paste the full JSON output from `conv3d doctor --json`.
+      label: "`conv3d doctor --markdown` output"
+      description: Paste the full fenced output from `conv3d doctor --markdown`.
       placeholder: |
-        {
-          "version": "...",
-          "python": "...",
-          "environment": {}
-        }
-      render: json
+        ```text
+        conv3d doctor
+        conv3d: 1.0.5
+        node: v24.4.0
+        os/arch: darwin-arm64
+
+        bundled libraries:
+        - obj2gltf: declared ^3.1.6; installed 3.1.6
+        ```
     validations:
       required: true
   - type: textarea

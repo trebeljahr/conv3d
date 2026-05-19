@@ -52,6 +52,18 @@ test("doctor --json emits valid JSON with expected fields", () => {
   assert.ok(parsed.dependencies.length > 0);
 });
 
+test("doctor --markdown emits a paste-ready fenced report", () => {
+  const r = run(["doctor", "--markdown"]);
+  assert.equal(r.status, 0);
+  const version = JSON.parse(readFileSync(path.resolve(__dirname, "..", "package.json"), "utf8")).version;
+  assert.ok(r.stdout.startsWith("```"), r.stdout);
+  assert.match(r.stdout, new RegExp(`conv3d: ${version.replaceAll(".", "\\.")}`));
+  assert.match(r.stdout, /node: v\d+\.\d+\.\d+/);
+  assert.match(r.stdout, /os\/arch: \w+-\w+/);
+  assert.match(r.stdout, /bundled libraries:/);
+  assert.match(r.stdout, /obj2gltf: declared .+; (installed|not found)/);
+});
+
 test("bulk on empty dir exits 0 with empty JSON result", () => {
   const { dir, cleanup } = makeTmp("empty");
   try {

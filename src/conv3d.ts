@@ -14,7 +14,16 @@ const { argv: normalizedArgv, deprecatedForceOverwrite } = preprocessArgv(proces
 function shouldShowBanner(args: string[]): boolean {
   if (!process.stdout.isTTY) return false;
   if (args.length === 0) return true;
-  const suppressFlags = ["-h", "--help", "-V", "--version", "--json", "-q", "--quiet"];
+  const suppressFlags = [
+    "-h",
+    "--help",
+    "-V",
+    "--version",
+    "--json",
+    "--markdown",
+    "-q",
+    "--quiet",
+  ];
   if (args.some((a) => suppressFlags.includes(a))) return false;
   return true;
 }

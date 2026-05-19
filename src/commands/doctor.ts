@@ -17,6 +17,15 @@ type DependencyReport = {
   installed: string | null;
 };
 
+type DoctorReport = {
+  conv3d: string;
+  node: string;
+  platform: string;
+  cwd: string;
+  installRoot: string;
+  dependencies: DependencyReport[];
+};
+
 const TRACKED_DEPS = [
   "obj2gltf",
   "gltf-pipeline",
@@ -46,6 +55,26 @@ function readInstalledVersion(name: string, fromDir: string): string | null {
   return null;
 }
 
+function formatMarkdownReport(report: DoctorReport): string {
+  const lines = [
+    "```text",
+    "conv3d doctor",
+    `conv3d: ${report.conv3d}`,
+    `node: ${report.node}`,
+    `os/arch: ${report.platform}`,
+    "",
+    "bundled libraries:",
+  ];
+
+  for (const d of report.dependencies) {
+    const status = d.installed ? `installed ${d.installed}` : "not found";
+    lines.push(`- ${d.name}: declared ${d.declared}; ${status}`);
+  }
+
+  lines.push("```");
+  return `${lines.join("\n")}\n`;
+}
+
 program
   .command("doctor")
   .summary("Print environment + dependency diagnostics")
@@ -59,9 +88,11 @@ needs to know whether the install is healthy.`,
     `
 Examples:
   $ conv3d doctor
-  $ conv3d doctor --json`,
+  $ conv3d doctor --json
+  $ conv3d doctor --markdown`,
   )
-  .action(async () => {
+  .option("--markdown", "Emit a fenced text block suitable for pasting into GitHub issues.")
+  .action(async (opts: { markdown?: boolean }) => {
     const pkg = readPackageUpSync({ cwd: __dirname, normalize: false });
     const conv3dVersion = pkg?.packageJson.version ?? "unknown";
     const conv3dRoot = pkg?.path ? path.dirname(pkg.path) : __dirname;
@@ -76,7 +107,7 @@ Examples:
       installed: readInstalledVersion(name, conv3dRoot),
     }));
 
-    const report = {
+    const report: DoctorReport = {
       conv3d: conv3dVersion,
       node: process.version,
       platform: `${process.platform}-${process.arch}`,
@@ -87,6 +118,11 @@ Examples:
 
     if (isJson()) {
       process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+      return;
+    }
+
+    if (opts.markdown) {
+      process.stdout.write(formatMarkdownReport(report));
       return;
     }
 
