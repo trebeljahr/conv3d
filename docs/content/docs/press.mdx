@@ -1,0 +1,143 @@
+---
+title: Press
+description: Fact sheet, descriptions, story hooks, engineering notes, and contact details for conv3d coverage.
+---
+
+A press kit for journalists, newsletter editors, maintainers, and developers writing about conv3d.
+
+For live package data, check [npm](https://www.npmjs.com/package/conv3d), [GitHub](https://github.com/trebeljahr/conv3d), and the current docs before publishing fixed version or download numbers.
+
+## Fact Sheet
+
+| Field | Details |
+| --- | --- |
+| Project | conv3d |
+| URL | [https://conv3d.trebeljahr.com](https://conv3d.trebeljahr.com) |
+| Package | [npm: conv3d](https://www.npmjs.com/package/conv3d) |
+| Repository | [github.com/trebeljahr/conv3d](https://github.com/trebeljahr/conv3d) |
+| Maker | Rico Trebeljahr, solo, no company |
+| Location | Berlin, Germany |
+| Release | Initial public release in 2025; ongoing iteration. Marketing launch in 2026. |
+| License | MIT |
+| Price | Free, open source |
+| Platforms | macOS and Linux. Node.js 22 or newer. Windows is not supported today because of the bundled `fbx2gltf` binary. |
+| Install | `npm install -g conv3d` |
+| Inputs | `.fbx`, `.obj`, `.gltf` - directories, files, or globs |
+| Outputs | `.glb` always; `.tsx` React Three Fiber components and web-optimized `.glb` optionally |
+| Used by | Gamedev Asset Library, an approximately 11K-model public 3D asset catalog whose pipeline was baked with conv3d. |
+| Press contact | [hello@trebeljahr.com](mailto:hello@trebeljahr.com) |
+
+Weekly npm download counts and the current version change over time. Pull live values from npm rather than copying a fixed number from this page.
+
+## One Sentence
+
+conv3d is a command-line tool that converts 3D models (FBX, OBJ, glTF) into web-ready GLB and matching typed React Three Fiber components, in a single command, with a non-interactive mode designed for scripts, CI, and AI coding agents.
+
+## Three Description Tiers
+
+### Short
+
+conv3d is an open-source CLI that converts FBX, OBJ, and glTF 3D models into GLB and matching typed React Three Fiber components, in one step. It works interactively with prompts, or fully non-interactively (`--yes --json`) for scripts, CI, and AI coding agents.
+
+### Medium
+
+conv3d is a command-line tool for shipping 3D models into a react-three-fiber / three.js project without a round trip through Blender. It converts `.fbx`, `.obj`, and `.gltf` files to web-ready `.glb`, optionally emits a typed React Three Fiber `.tsx` component, and runs a web-optimization pass. The same binary serves humans through interactive prompts and AI agents through `--yes --json --dry-run`, stable exit codes, and a single JSON object on stdout. It is MIT-licensed and built by one developer in Berlin.
+
+### Long
+
+conv3d is an open-source CLI by Rico Trebeljahr that folds the "convert this 3D model into something my react-three-fiber app can use" chore into a single command. It accepts `.fbx`, `.obj`, and `.gltf` inputs - files, directories, or glob patterns - and produces web-ready `.glb` plus, optionally, a typed React Three Fiber `.tsx` component and a web-optimized `.glb`. Under the hood it composes tools such as `obj2gltf`, `gltf-pipeline`, `fbx2gltf`, and `gltfjsx` with a consistent CLI surface, parallel conversion, and an FBX-specific texture-recovery pass that rescues textures lost when asset packs record Windows paths. A non-interactive mode (`--yes`, `--json`, `--dry-run`, stable exit codes) makes the same binary safe to drive from build scripts, CI jobs, and AI coding agents. It is MIT-licensed and runs on macOS and Linux.
+
+## Hooks
+
+- **The missing CLI between Blender and react-three-fiber.** A one-person fix to a five-tool chore that many solo three.js developers hit.
+- **A CLI that AI coding agents can call.** Non-interactive mode by design: `--yes`, `--json` on stdout, errors on stderr, exit codes `0` / `1` / `2`, and `--dry-run` that never touches disk.
+- **Rescuing textures from FBX asset packs.** conv3d automatically fixes a common FBX-to-glTF failure where free asset packs arrive with missing textures because the FBX recorded absolute Windows paths.
+- **Dogfooded at scale.** The same CLI baked the Gamedev Asset Library, a public catalog of approximately 11,000 models.
+
+## Features
+
+- **One command per pipeline.** `conv3d single <file>` for a single model; `conv3d bulk <dir-or-glob>` for many at once; `conv3d tsx-gen <dir>` to retro-generate components on pre-existing `.glb` files; `conv3d doctor` for environment and dependency diagnostics.
+- **Glob input.** Pass `"./assets/**/*.fbx"` and conv3d converts every match without enumerating directories.
+- **TSX component generation.** `--tsx` emits a typed React Three Fiber component for each model via `gltfjsx`.
+- **Web optimization.** `--optimize` produces a `.glb` variant with reduced texture resolution and palette baking, suitable for serving to browsers.
+- **Parallel conversion.** Default `min(cpus, 4)`; tune with `--concurrency <n>`.
+- **Predictable output layout.** Default `<inputDir>/_convert-3d-for-web/` with `glb/`, `tsx/`, and `glb-for-web/` subdirectories. Override with `-o`, `--flat`, or per-bucket directory flags.
+- **Interactive prompts.** First-time users get guided prompts instead of needing to memorize flags.
+- **Non-interactive mode.** `--yes` / `--non-interactive` skip every prompt. Non-interactive mode is also inferred automatically when stdin is not a TTY.
+- **JSON output.** `--json` emits a single JSON object on stdout with `converted[]`, `tsx[]`, `glbOptimized[]`, `skipped[]`, and `errors[]`. Errors stay on stderr.
+- **Stable exit codes.** `0` means success, including "no matching files"; `1` means fatal error; `2` means partial success with per-file errors in `errors[]`.
+- **Dry-run mode.** `--dry-run` prints the plan and exits without creating or modifying files.
+- **FBX texture recovery.** conv3d scans output GLBs for 1x1 placeholder textures and replaces them with matching textures from the FBX directory, fixing a common KAYKIT / Kenney asset-pack issue.
+- **Overwrite control.** `--overwrite skip|replace|ask` for idempotent reruns; `-f` is a shortcut for `replace`.
+- **Diagnostics.** `conv3d doctor`, `conv3d doctor --markdown`, and `conv3d doctor --json` print versions, platform, and bundled-library status for bug reports and install checks.
+
+## Engineering Fact Sheet
+
+- **Stack:** TypeScript CLI compiled to `./dist/conv3d.js`. Node.js 22 or newer. macOS and Linux.
+- **Composition:** wraps `obj2gltf`, `gltf-pipeline`, `fbx2gltf`, `gltfjsx`, and `fast-glob`.
+- **CLI polish:** uses `commander`, `inquirer`, `chalk`, `ora`, `figlet`, and `lolcatjs`. `figlet` and `lolcatjs` are optional dependencies, so `npm install --omit=optional` still gives a working CLI without the banner.
+- **Banner suppression:** the ASCII banner is suppressed automatically when stdout is not a TTY, or when `--help`, `--version`, `--quiet`, or `--json` is passed.
+- **Streams:** progress on stdout in interactive mode; warnings and errors on stderr. In `--json` / `--quiet`, stdout is exactly the JSON object or empty.
+- **JSON contract:** success returns `{ "command": "bulk", "ok": true, "converted": [], "tsx": [], "glbOptimized": [], "skipped": [], "errors": [] }` with command-specific input and output fields. Fatal errors return `{ "command": "...", "ok": false, "error": "..." }` with exit code `1`.
+- **Texture recovery:** after every FBX-to-GLB pass, conv3d scans the output GLB for 1x1 placeholder PNGs and replaces them with the best-matching image file found next to the source FBX.
+- **Release process:** release scripts bump, build, test, publish to npm, push the tag to GitHub, and reinstall conv3d globally.
+
+## FAQ
+
+### Is there a Node API I can import?
+
+No. conv3d is a CLI only. The supported way to call it from another program is shelling out with `--json` and `--yes`, then parsing the exit code and JSON.
+
+### Why no Windows support?
+
+The bundled `fbx2gltf` binary does not currently ship a Windows build that conv3d uses. macOS and Linux work. Windows support is demand-driven; see the GitHub issues.
+
+### Is this just a wrapper around gltfjsx?
+
+No. `gltfjsx` handles `.glb` to React component generation and the web-optimization pass. conv3d composes it with FBX and OBJ conversion, parallel batch processing, interactive prompts, an agent-friendly non-interactive mode, JSON output, and FBX texture recovery. Credit to the `gltfjsx` authors is in the README and on this page.
+
+### Is the AI-agent support just marketing?
+
+No. `--yes`, `--json`, `--dry-run`, and the exit-code contract are implemented behavior, documented in [Scripts & agents](./agents), and intended for any tool that can safely call a shell command.
+
+### Will the JSON schema change?
+
+Treat the schema as a public API. Additive changes are allowed; breaking changes will be flagged in the changelog and major version.
+
+### What does the texture-recovery feature do?
+
+Many freely distributed FBX packs record texture paths as absolute Windows paths. When `fbx2gltf` bakes a placeholder because it cannot resolve those paths, conv3d scans the output GLB and replaces the placeholder with a matching texture from the FBX directory.
+
+### Can I use conv3d in commercial or closed-source work?
+
+Yes. conv3d is MIT-licensed.
+
+### Is there a paid hosted version?
+
+conv3d is and will remain a local-first CLI; there is no hosted or paid tier.
+
+## Acknowledgements
+
+conv3d is connective tissue around tools that do the real work:
+
+- [obj2gltf](https://www.npmjs.com/package/obj2gltf) - OBJ to glTF.
+- [gltf-pipeline](https://www.npmjs.com/package/gltf-pipeline) - glTF to GLB.
+- [fbx2gltf](https://www.npmjs.com/package/fbx2gltf) - FBX to glTF.
+- [gltfjsx](https://www.npmjs.com/package/gltfjsx) - `.glb` to typed React component and web optimization.
+- [fast-glob](https://www.npmjs.com/package/fast-glob) - glob expansion.
+
+If you write about conv3d, please credit `gltfjsx` and pmndrs in the same paragraph when discussing React component generation.
+
+## Image and Video Kit
+
+Coming soon. Until image and video assets exist, link to [the docs home](/) or contact [hello@trebeljahr.com](mailto:hello@trebeljahr.com) for current screenshots and usage guidance.
+
+## Press Contact
+
+Email: [hello@trebeljahr.com](mailto:hello@trebeljahr.com)
+
+Response window: typically same-day during European business hours. For interviews or longer features, include the format and outlet in the subject line; written Q&A is usually fastest to turn around.
+
+## Boilerplate About
+
+conv3d is an open-source command-line tool by Rico Trebeljahr that converts 3D models (FBX, OBJ, glTF) into web-ready GLB and matching typed React Three Fiber components in a single step. It is designed to be safe to drive from both humans and AI coding agents, with interactive prompts plus non-interactive `--yes --json --dry-run` mode, stable exit codes, and JSON output. It is MIT-licensed, runs on macOS and Linux, and is available at [conv3d.trebeljahr.com](https://conv3d.trebeljahr.com) and on npm as `conv3d`.
