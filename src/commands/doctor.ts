@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { readPackageUpSync } from "read-package-up";
 import { isJson } from "../log.js";
-import { program } from "../program.js";
+import { isDryRun, program } from "../program.js";
 
 const { green, yellow, gray } = chalk;
 
@@ -18,11 +18,14 @@ type DependencyReport = {
 };
 
 type DoctorReport = {
+  command: "doctor";
+  ok: true;
   conv3d: string;
   node: string;
   platform: string;
   cwd: string;
   installRoot: string;
+  dryRun: boolean;
   dependencies: DependencyReport[];
 };
 
@@ -108,11 +111,14 @@ Examples:
     }));
 
     const report: DoctorReport = {
+      command: "doctor",
+      ok: true,
       conv3d: conv3dVersion,
       node: process.version,
       platform: `${process.platform}-${process.arch}`,
       cwd: process.cwd(),
       installRoot: conv3dRoot,
+      dryRun: !!isDryRun(),
       dependencies: deps,
     };
 

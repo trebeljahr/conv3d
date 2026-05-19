@@ -46,7 +46,8 @@
     "release:major": "node scripts/release-prep.mjs && npm version major -m \"chore: release v%s\" && pnpm run _release:finish",
     "_release:finish": "pnpm run build && pnpm test && npm publish --access public && git push --follow-tags && npm install -g .",
     "prepare": "husky",
-    "test": "npm run build && node --test \"tests/**/*.test.mjs\"",
+    "audit:schema": "node scripts/audit-json-schema.mjs",
+    "test": "npm run build && node --test \"tests/**/*.test.mjs\" && pnpm run audit:schema",
     "format": "biome format --write .",
     "lint": "biome lint .",
     "check": "biome check --write ."

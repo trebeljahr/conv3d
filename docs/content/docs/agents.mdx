@@ -29,27 +29,80 @@ That's it. Stdout is a single JSON object; stderr has any human-readable errors;
 
 ## JSON output schema
 
-On success, stdout is a single JSON object:
+On success, stdout is a single JSON object. These schemas are audited against
+runtime output in CI, so key drift fails the build.
 
-```jsonc
+### `single`
+
+```jsonc audit-schema:single
 {
-  "command": "bulk",                  // "single" | "bulk" | "tsx-gen" | "doctor"
-  "ok": true,                         // false when errors[] is non-empty
-  "inputDir": "/abs/path/models",     // single uses "inputPath"
+  "command": "single",
+  "ok": true,
+  "inputPath": "/abs/path/model.obj",
+  "outputDir": "/abs/path/_convert-3d-for-web",
+  "dryRun": false,
+  "modelType": "OBJ",
+  "converted": ["/abs/.../glb/model.glb"],
+  "tsx": [],
+  "glbOptimized": [],
+  "skipped": [],
+  "errors": []
+}
+```
+
+### `bulk`
+
+```jsonc audit-schema:bulk
+{
+  "command": "bulk",
+  "ok": true,
+  "inputDir": "/abs/path/models",
   "outputDir": "/abs/path/models/_convert-3d-for-web",
   "dryRun": false,
-  "modelType": "ALL",                 // null/unset when n/a
-  "converted": [                      // .glb paths (or planned in --dry-run)
-    "/abs/.../glb/a.glb"
-  ],
-  "tsx": [                            // .tsx paths (empty when --no-tsx)
-    "/abs/.../tsx/A.tsx"
-  ],
-  "glbOptimized": [                   // web-optimized paths (empty when --no-optimize)
-    "/abs/.../glb-for-web/a-transformed.glb"
-  ],
-  "skipped": [],                      // outputs skipped because they already existed
-  "errors": []                        // { file, message } entries for per-file failures
+  "modelType": "ALL",
+  "converted": ["/abs/.../glb/a.glb"],
+  "tsx": [],
+  "glbOptimized": [],
+  "skipped": [],
+  "errors": []
+}
+```
+
+### `tsx-gen`
+
+```jsonc audit-schema:tsx-gen
+{
+  "command": "tsx-gen",
+  "ok": true,
+  "inputDir": "/abs/path/models",
+  "outputDir": "/abs/path/models/_convert-3d-for-web",
+  "dryRun": false,
+  "tsx": ["/abs/.../tsx/A.tsx"],
+  "glbOptimized": [],
+  "skipped": [],
+  "errors": []
+}
+```
+
+### `doctor`
+
+```jsonc audit-schema:doctor
+{
+  "command": "doctor",
+  "ok": true,
+  "conv3d": "1.0.5",
+  "node": "v24.0.0",
+  "platform": "darwin-arm64",
+  "cwd": "/abs/path/project",
+  "installRoot": "/abs/path/conv3d",
+  "dryRun": false,
+  "dependencies": [
+    {
+      "name": "commander",
+      "declared": "^14.0.3",
+      "installed": "14.0.3"
+    }
+  ]
 }
 ```
 

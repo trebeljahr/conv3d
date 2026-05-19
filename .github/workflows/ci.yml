@@ -38,3 +38,6 @@ jobs:
 
       - name: Test
         run: node --test "tests/**/*.test.mjs"
+
+      - name: Audit JSON schema
+        run: pnpm run audit:schema
