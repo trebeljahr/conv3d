@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const cli = path.resolve(root, "dist", "conv3d.js");
 const docsPath = path.resolve(root, "docs", "content", "docs", "agents.mdx");
-const commands = ["single", "bulk", "tsx-gen", "doctor"];
+const commands = ["init", "single", "bulk", "tsx-gen", "doctor"];
 
 function stripJsonComments(jsonc) {
   return jsonc
@@ -96,6 +96,8 @@ function commandArgs(command, fixturesDir) {
   switch (command) {
     case "single":
       return [path.join(fixturesDir, "triangle.obj"), ...common];
+    case "init":
+      return [path.join(fixturesDir, "init-target"), ...common];
     case "bulk":
       return [fixturesDir, "-m", "ALL", ...common];
     case "tsx-gen":

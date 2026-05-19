@@ -1,12 +1,13 @@
 ---
 title: Commands
-description: Reference for every conv3d command — single, bulk, tsx-gen, doctor — and the global flags they share.
+description: Reference for every conv3d command — init, single, bulk, tsx-gen, doctor — and the global flags they share.
 ---
 
 Every conv3d command supports `--help` and respects the [global flags](#global-options). For task-shaped invocations rather than flag-by-flag reference, see [Recipes](./recipes).
 
 | Command | What it does |
 |---|---|
+| [`init`](#conv3d-init-target) | Scaffold a `models/` to `public/models/` conversion workspace. |
 | [`single`](#conv3d-single-path) | Convert one `.fbx` / `.obj` / `.gltf` file to `.glb`. |
 | [`bulk`](#conv3d-bulk-input) | Convert every supported model in a directory or matching a glob. |
 | [`tsx-gen`](#conv3d-tsx-gen-dir) | Run `gltfjsx` over `.glb` files that already exist. |
@@ -51,6 +52,30 @@ These flags apply to every command.
 | `-h, --help` | Show help. Pass it to any subcommand for topic-specific help. |
 
 > `--forceOverwrite` (camelCase) still works but is deprecated — prefer `--force-overwrite`, `-f`, or `--overwrite=replace`.
+
+---
+
+## `conv3d init [target]`
+
+Create a starter model pipeline in a target directory:
+
+- `models/` for source `.fbx`, `.obj`, or `.gltf` files.
+- `public/models/` for web-ready `.glb` output.
+- `useGltfModel.ts` with a minimal React Three Fiber `useGLTF` hook.
+- `README.md` with the matching `conv3d bulk` command.
+
+```bash
+conv3d init ./my-app
+conv3d init --yes ./my-app
+conv3d init ./my-app --json
+```
+
+| Flag | Effect |
+|---|---|
+| `[target]` (positional) | Directory to scaffold. Created if missing. |
+| `-t, --targetDir <path>` | Same as positional form. |
+
+Existing files prompt before overwrite in interactive mode. Use `--yes` to accept overwrites without prompts, or `--overwrite=skip` / `--overwrite=replace` for explicit behavior. JSON output includes `created[]` and `skipped[]`.
 
 ---
 

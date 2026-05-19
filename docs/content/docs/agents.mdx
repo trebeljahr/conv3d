@@ -32,6 +32,21 @@ That's it. Stdout is a single JSON object; stderr has any human-readable errors;
 On success, stdout is a single JSON object. These schemas are audited against
 runtime output in CI, so key drift fails the build.
 
+### `init`
+
+```jsonc audit-schema:init
+{
+  "command": "init",
+  "ok": true,
+  "targetDir": "/abs/path/my-app",
+  "dryRun": false,
+  "directories": ["/abs/path/my-app/models", "/abs/path/my-app/public/models"],
+  "created": ["/abs/path/my-app/useGltfModel.ts", "/abs/path/my-app/README.md"],
+  "skipped": [],
+  "errors": []
+}
+```
+
 ### `single`
 
 ```jsonc audit-schema:single

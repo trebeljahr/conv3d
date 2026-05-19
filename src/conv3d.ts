@@ -5,6 +5,7 @@ import { preprocessArgv, program } from "./program.js";
 import "./commands/bulk.js";
 import "./commands/single.js";
 import "./commands/tsxGen.js";
+import "./commands/init.js";
 import "./commands/doctor.js";
 
 const { red, yellow } = chalk;

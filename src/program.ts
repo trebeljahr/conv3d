@@ -45,7 +45,7 @@ program
     `${description}
 
 Workflow:
-  1. Pick a command: bulk (directory / glob), single (one file), tsx-gen (existing .glb → .tsx), doctor (env info).
+  1. Pick a command: init (scaffold), bulk (directory / glob), single (one file), tsx-gen (existing .glb → .tsx), doctor (env info).
   2. Point it at your input — pass a path or glob positionally, or use -i.
   3. Optionally pass --tsx / --optimize to skip interactive prompts.
   4. Pass -y / --yes for fully non-interactive use (safe for scripts and AI agents).
@@ -151,6 +151,7 @@ program.addHelpText(
   `
 Examples:
   $ conv3d single ./model.fbx --tsx --optimize -y
+  $ conv3d init ./my-app -y
   $ conv3d bulk ./models/ --recursive -m FBX --tsx --optimize -y
   $ conv3d bulk "./assets/**/*.fbx" -o ./public/models --tsx --optimize -y
   $ conv3d tsx-gen ./models/ --recursive -y

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -33,6 +33,7 @@ test("--help exits 0 and mentions core commands", () => {
   assert.match(r.stdout, /single/);
   assert.match(r.stdout, /bulk/);
   assert.match(r.stdout, /tsx-gen/);
+  assert.match(r.stdout, /init/);
   assert.match(r.stdout, /doctor/);
 });
 
@@ -62,6 +63,31 @@ test("doctor --markdown emits a paste-ready fenced report", () => {
   assert.match(r.stdout, /os\/arch: \w+-\w+/);
   assert.match(r.stdout, /bundled libraries:/);
   assert.match(r.stdout, /obj2gltf: declared .+; (installed|not found)/);
+});
+
+test("init --yes scaffolds a model pipeline and reports created files", () => {
+  const { dir, cleanup } = makeTmp("init");
+  try {
+    const target = path.join(dir, "tmp-init-target");
+    const r = run(["init", "--yes", target, "--json"]);
+    assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+    const parsed = JSON.parse(r.stdout);
+    assert.equal(parsed.command, "init");
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.targetDir, target);
+    assert.deepEqual(parsed.skipped, []);
+    assert.ok(existsSync(path.join(target, "models")));
+    assert.ok(existsSync(path.join(target, "public", "models")));
+    assert.ok(existsSync(path.join(target, "useGltfModel.ts")));
+    assert.ok(existsSync(path.join(target, "README.md")));
+    assert.deepEqual(
+      parsed.created.toSorted(),
+      [path.join(target, "README.md"), path.join(target, "useGltfModel.ts")].toSorted(),
+    );
+    assert.match(readFileSync(path.join(target, "README.md"), "utf8"), /conv3d bulk \.\/models/);
+  } finally {
+    cleanup();
+  }
 });
 
 test("bulk on empty dir exits 0 with empty JSON result", () => {
