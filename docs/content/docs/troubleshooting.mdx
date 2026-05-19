@@ -57,7 +57,7 @@ conv3d doctor --json | jq '.dependencies[] | select(.installed == null)'
 
 ## Node version mismatch
 
-conv3d requires **Node.js 24 or newer**. The `engines` field in `package.json` is `>=24`, and `fbx2gltf` needs a modern runtime.
+conv3d requires **Node.js 22 or newer**. The `engines` field in `package.json` is `>=22`; local validation passes on both Node 22.20.0 and Node 24.14.1.
 
 **Symptom**
 
@@ -65,8 +65,8 @@ conv3d requires **Node.js 24 or newer**. The `engines` field in `package.json` i
 
 ```text
 npm WARN EBADENGINE Unsupported engine
-npm WARN EBADENGINE   required: { node: '>=24' }
-npm WARN EBADENGINE   current: { node: 'v22.x.x', npm: '...' }
+npm WARN EBADENGINE   required: { node: '>=22' }
+npm WARN EBADENGINE   current: { node: 'v20.x.x', npm: '...' }
 ```
 
 If the package is already on disk, the CLI may also exit immediately with a Node syntax/runtime error before any conv3d output appears.

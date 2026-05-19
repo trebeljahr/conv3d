@@ -20,7 +20,7 @@
   },
   "homepage": "https://conv3d.trebeljahr.com",
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   },
   "os": [
     "darwin",

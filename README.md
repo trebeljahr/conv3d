@@ -17,6 +17,8 @@ A command-line tool for converting 3D models (GLTF, FBX, OBJ) into GLB and gener
 npm install -g conv3d
 ```
 
+Requirements: Node.js 22 or newer, on macOS or Linux.
+
 ## Quick start
 
 ```bash

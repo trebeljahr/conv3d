@@ -1,5 +1,9 @@
 # Dev URL setup (`https://conv3d.local.ricoslabs.com/`)
 
+## Node engines finding
+
+conv3d can support Node.js 22 as its runtime floor. On this machine, `nvm` ran `pnpm install` and `pnpm test` successfully under Node 22.20.0 and Node 24.14.1; the Node 22 run reported only the old `>=24` engine warning before the floor was lowered. A source audit also found no required Node 24-only APIs such as `import.meta.dirname`, `using`, `node:test --test-isolation`, or specialized transferable `structuredClone` usage in the CLI/test paths, so `package.json` now declares `engines.node` as `>=22` and CI covers both Node 22 and Node 24.
+
 This project ships with the **hatchkit local-dev** integration: when you run
 `pnpm dev`, the dev server is reachable from any Tailscale peer (phone,
 tablet, other laptop) at:
