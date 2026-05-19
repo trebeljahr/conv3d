@@ -160,3 +160,47 @@ conv3d bulk ./models -m ALL --tsx --optimize -y -c 2
 ```
 
 Default is `min(cpus, 4)`. Conversions hold full meshes in memory — drop to `1` or `2` when you're running near the OOM line.
+
+## Asset packs
+
+### KAYKIT (Kenney)
+
+```bash
+conv3d bulk ./raw-assets/kaykit -m FBX -r --tsx --optimize \
+  --textures-dir ./raw-assets/kaykit/textures -y
+```
+
+- KAYKIT FBXs are the canonical [texture recovery](./textures) case: Windows-style texture paths can turn into 1x1 magenta placeholders.
+- Keep each pack's texture folder near its FBXs, or point `--textures-dir` at the extracted texture folder when it is shared.
+- Best-effort from Kenney docs: GLB is often distributed and recommended, but this recipe is for teams standardizing FBX sources.
+
+### Synty
+
+```bash
+conv3d bulk "./Assets/Synty/**/Meshes/**/*.fbx" -o ./public/models/synty \
+  --tsx --optimize --keep-materials -y
+```
+
+- Best-effort from public Synty docs: packs are built for Unity and Unreal first, so source trees may be engine-shaped.
+- Use the narrow `Meshes` glob when importing from a Unity package so prefabs, scenes, and examples stay out of the conversion pass.
+- Keep `--keep-materials` on atlas-heavy low-poly packs unless you have checked that palette merging preserves the intended look.
+
+### Quaternius
+
+```bash
+conv3d bulk ./raw-assets/quaternius -m ALL -r --tsx --optimize --keep-materials -y
+```
+
+- Best-effort from Quaternius pack pages: many packs ship FBX, OBJ, Blend, and sometimes glTF; `-m ALL` lets one extracted pack convert in one pass.
+- Prefer bundled glTF files when they exist, but leave FBX/OBJ enabled for older packs that did not include glTF.
+- Keep `--keep-materials` for color-driven low-poly assets; if an older FBX has sibling textures, recovery will still scan common texture folders.
+
+### Mixamo
+
+```bash
+conv3d bulk ./raw-assets/mixamo -m FBX -r --tsx --optimize --keep-materials -y
+```
+
+- Best-effort from Adobe Mixamo docs: FBX is the normal interchange path; uploaded textured FBXs need embedded media before Mixamo sees the textures.
+- Download the skinned character FBX when you need a mesh; animation-only downloads are useful for retargeting, not standalone model output.
+- conv3d converts each FBX independently; combine or retarget multiple Mixamo clips in a DCC tool before expecting one GLB with a unified animation set.
