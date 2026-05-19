@@ -59,12 +59,25 @@ conv3d doctor --json | jq '.dependencies[] | select(.installed == null)'
 
 conv3d requires **Node.js 24 or newer**. The `engines` field in `package.json` is `>=24`, and `fbx2gltf` needs a modern runtime.
 
-Symptoms:
+**Symptom**
 
-- `npm install -g conv3d` refuses with an `EBADENGINE` warning.
-- The CLI exits immediately with a syntax error from Node.
+`npm install -g conv3d` warns or refuses with an engines error:
 
-Check your version:
+```text
+npm WARN EBADENGINE Unsupported engine
+npm WARN EBADENGINE   required: { node: '>=24' }
+npm WARN EBADENGINE   current: { node: 'v22.x.x', npm: '...' }
+```
+
+If the package is already on disk, the CLI may also exit immediately with a Node syntax/runtime error before any conv3d output appears.
+
+**Cause**
+
+Your active `node` binary is older than the runtime conv3d declares in `package.json`.
+
+**Fix**
+
+Check your active version:
 
 ```bash
 node --version
@@ -72,33 +85,106 @@ node --version
 
 Upgrade with `nvm`, `fnm`, Homebrew, or whatever you use, then reinstall conv3d.
 
+```bash
+npm install -g conv3d
+```
+
 ## Windows is unsupported
 
 conv3d's `package.json` declares `"os": ["darwin", "linux"]`. The blocker is `fbx2gltf` — its native binaries don't ship for Windows.
 
 If you must run conv3d on a Windows host, use WSL2 (Ubuntu / Debian) and install conv3d inside the Linux environment, not on the Windows side.
 
+## Apple Silicon needs Rosetta for FBX
+
+`fbx2gltf` ships an Intel macOS binary. On Apple Silicon Macs, macOS runs that binary through Rosetta 2.
+
+**Symptom**
+
+OBJ and glTF inputs work, but FBX conversion fails on `darwin-arm64` with a native-binary launch error such as:
+
+```text
+Bad CPU type in executable
+```
+
+or:
+
+```text
+spawn .../node_modules/fbx2gltf/bin/Darwin/FBX2glTF Unknown system error -86
+```
+
+**Cause**
+
+The bundled `fbx2gltf` executable is `x86_64`, not `arm64`, and Rosetta is not installed or not available to the process.
+
+**Fix**
+
+Install Rosetta once, then rerun the same conv3d command:
+
+```bash
+softwareupdate --install-rosetta --agree-to-license
+```
+
+No conv3d reinstall is usually needed. Confirm the platform line with:
+
+```bash
+conv3d doctor
+```
+
+## Linux glibc / libstdc++ mismatch
+
+The Linux `fbx2gltf` binary is an x86-64 glibc binary. It is not a musl/Alpine binary.
+
+**Symptom**
+
+FBX conversion fails before `fbx2gltf` can print normal converter output. On older glibc images, the error names a missing symbol version:
+
+```text
+.../node_modules/fbx2gltf/bin/Linux/FBX2glTF: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.15' not found
+```
+
+The same binary also requires a recent enough C++ runtime. Older distributions can report:
+
+```text
+.../node_modules/fbx2gltf/bin/Linux/FBX2glTF: /usr/lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.21' not found
+```
+
+On musl-based images such as Alpine, the dynamic loader is missing instead; Node often surfaces that as:
+
+```text
+Error: spawn .../node_modules/fbx2gltf/bin/Linux/FBX2glTF ENOENT
+```
+
+**Cause**
+
+The packaged converter is dynamically linked against glibc. The binary advertises `/lib64/ld-linux-x86-64.so.2` as its loader and needs at least `GLIBC_2.15` plus `GLIBCXX_3.4.21` from `libstdc++`.
+
+**Fix**
+
+Run conv3d in a glibc-based Linux environment with a new enough runtime. Debian 8+, Ubuntu 14.04+, current GitHub Actions Ubuntu images, and current Debian/Ubuntu containers are fine. Avoid Alpine for FBX conversion unless you provide a compatible glibc layer and matching `libstdc++`.
+
+Check your host:
+
+```bash
+ldd --version
+strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep GLIBCXX_3.4.21
+```
+
+If those checks fail, switch base images or upgrade the OS package that provides glibc/libstdc++.
+
 ## FBX → magenta 1×1 placeholder
 
-You convert an FBX, load the `.glb` in three.js, and the mesh is solid pink. This is the FBX texture path problem — `fbx2gltf` bakes a 1×1 magenta PNG when it can't resolve a texture path baked into the source FBX (often an absolute Windows path).
+**Symptom**
 
-conv3d already runs a recovery pass after every FBX conversion. You'll see:
+You convert an FBX, load the `.glb` in three.js, and the mesh is solid pink or uses a 1×1 magenta placeholder texture.
 
-```
-✨ <file>: N placeholder textures recovered
-```
+**Cause**
 
-If you don't see that line and the model is still magenta:
+The FBX referenced texture paths that `fbx2gltf` could not resolve.
 
-- The textures aren't next to the FBX or in the usual sibling folders (`Textures/`, `textures/`, `tex/`, `Materials/`). Point conv3d at them explicitly:
+**Fix**
 
-  ```bash
-  conv3d bulk ./models -m FBX --textures-dir ./shared-textures -y
-  ```
-
-- The recovery pass was disabled. Make sure you didn't pass `--no-recover-textures`.
-
-For the full mechanism, see [FBX texture recovery](./textures).
+conv3d already runs a recovery pass after every FBX conversion. For the full symptom, cause, and recovery flow, see [FBX texture recovery](./textures) instead of duplicating it here.
 
 ## Glob matched zero files
 
@@ -154,9 +240,26 @@ Interactive mode defaults to `ask` (prompts for each conflict). To make a script
 
 ## Banner gone — optional deps missing
 
-The rainbow `conv3d` banner needs two `optionalDependencies`: [`figlet`](https://www.npmjs.com/package/figlet) and [`lolcatjs`](https://www.npmjs.com/package/lolcatjs). If you installed with `--omit=optional` (or your platform skipped them), conv3d silently skips the banner. The CLI still works — only the cosmetic intro disappears.
+The rainbow `conv3d` banner needs two `optionalDependencies`: [`figlet`](https://www.npmjs.com/package/figlet) and [`lolcatjs`](https://www.npmjs.com/package/lolcatjs).
 
-To get the banner back:
+**Symptom**
+
+`conv3d` runs normally, but the large rainbow banner is gone. If you inspect the global install, the optional banner packages are missing:
+
+```text
+figlet@^1.5.2 missing
+lolcatjs@^2.4.3 missing
+```
+
+**Cause**
+
+You installed with `--omit=optional`, set npm to omit optional dependencies, or your package manager skipped optional packages. conv3d treats the banner as cosmetic and suppresses it when those modules are unavailable.
+
+**Fix**
+
+The CLI is still working. No fix is required for scripts, CI, agent runs, `--json`, or conversions.
+
+To get the banner back, reinstall with optional dependencies enabled:
 
 ```bash
 npm install -g conv3d   # default includes optionals
