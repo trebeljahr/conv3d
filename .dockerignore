@@ -1,0 +1,11 @@
+# Env & secrets — keep keys out of build context.
+# Excludes everything matching .env / .env.*, then re-includes the
+# encrypted .env.production blob (safe to ship) and .env.example.
+# Added by security sweep: prevents .env.keys from being copied via
+# Dockerfile `COPY . .` into intermediate build layers, GHA caches,
+# or local docker builds.
+.env
+.env.*
+.env.keys
+!.env.example
+!.env.production
