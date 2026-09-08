@@ -3,7 +3,7 @@ import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { readPackageUpSync } from "read-package-up";
-import { isJson } from "../log.js";
+import { emitJson, isJson } from "../log.js";
 import { isDryRun, program } from "../program.js";
 
 const { green, yellow, gray } = chalk;
@@ -39,11 +39,14 @@ const TRACKED_DEPS = [
   "fast-glob",
 ];
 
+// Deepest node_modules nesting we walk up before giving up locating a package.
+const MAX_NODE_MODULES_WALK = 10;
+
 function readInstalledVersion(name: string, fromDir: string): string | null {
   let dir = fromDir;
   // Walk up looking for a node_modules/<name>/package.json — handles both
   // the local dev case and the globally-installed case.
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < MAX_NODE_MODULES_WALK; i++) {
     const candidate = path.resolve(dir, "node_modules", name, "package.json");
     try {
       const pkg = JSON.parse(readFileSync(candidate, "utf8"));
@@ -123,7 +126,7 @@ Examples:
     };
 
     if (isJson()) {
-      process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+      emitJson(report);
       return;
     }
 

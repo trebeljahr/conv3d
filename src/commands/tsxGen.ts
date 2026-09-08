@@ -3,7 +3,7 @@ import path from "node:path";
 import { exit } from "node:process";
 import chalk from "chalk";
 import { convertModels } from "../converters.js";
-import { err, info, isJson, warn } from "../log.js";
+import { emitJsonIfRequested, err, info, warn } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { globalOptions, isDryRun, program } from "../program.js";
 import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
@@ -66,25 +66,17 @@ Examples:
 
       if (glbFiles.length === 0) {
         warn(yellow(`⚠️ No .glb models found in ${resolvedInputDir}`));
-        if (isJson()) {
-          process.stdout.write(
-            JSON.stringify(
-              {
-                command: "tsx-gen",
-                ok: true,
-                inputDir: resolvedInputDir,
-                outputDir: dirs.base,
-                dryRun: !!isDryRun(),
-                tsx: [],
-                glbOptimized: [],
-                skipped: [],
-                errors: [],
-              },
-              null,
-              2,
-            ) + "\n",
-          );
-        }
+        emitJsonIfRequested({
+          command: "tsx-gen",
+          ok: true,
+          inputDir: resolvedInputDir,
+          outputDir: dirs.base,
+          dryRun: !!isDryRun(),
+          tsx: [],
+          glbOptimized: [],
+          skipped: [],
+          errors: [],
+        });
         exit(0);
       }
 
@@ -113,18 +105,12 @@ Examples:
         errors: r.errors,
       };
 
-      if (isJson()) {
-        process.stdout.write(JSON.stringify(result, null, 2) + "\n");
-      }
+      emitJsonIfRequested(result);
 
       if (r.errors.length > 0) exit(2);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      if (isJson()) {
-        process.stdout.write(
-          JSON.stringify({ command: "tsx-gen", ok: false, error: errorMsg }, null, 2) + "\n",
-        );
-      }
+      emitJsonIfRequested({ command: "tsx-gen", ok: false, error: errorMsg });
       err(red("🚨 TSX generation failed!"));
       err(red("🚨 " + errorMsg));
       exit(1);

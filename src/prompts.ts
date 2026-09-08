@@ -47,39 +47,24 @@ export async function promptForModelType({
   return modelType;
 }
 
-export async function promptForTsxOutput() {
-  if (isNonInteractive()) return true;
-  const { tsx } = await prompt([
-    {
-      type: "confirm",
-      name: "tsx",
-      message: "Generate .tsx files?",
-    },
-  ]);
-  return tsx;
+async function promptForBoolean(
+  name: string,
+  message: string,
+  nonInteractiveDefault: boolean,
+): Promise<boolean> {
+  if (isNonInteractive()) return nonInteractiveDefault;
+  const answer = (await prompt([{ type: "confirm", name, message }])) as Record<string, boolean>;
+  return !!answer[name];
 }
 
-export async function promptForOptimizedGlbOutput() {
-  if (isNonInteractive()) return true;
-  const { optimize } = await prompt([
-    {
-      type: "confirm",
-      name: "optimize",
-      message: "Optimize output GLB files for web? (recommended)",
-    },
-  ]);
-
-  return optimize;
+export function promptForTsxOutput(): Promise<boolean> {
+  return promptForBoolean("tsx", "Generate .tsx files?", true);
 }
 
-export async function askForFileOverwrite(filePath: string) {
-  if (isNonInteractive()) return false;
-  const { overwrite } = await prompt([
-    {
-      type: "confirm",
-      name: "overwrite",
-      message: "Overwrite the file?" + " " + filePath,
-    },
-  ]);
-  return overwrite;
+export function promptForOptimizedGlbOutput(): Promise<boolean> {
+  return promptForBoolean("optimize", "Optimize output GLB files for web? (recommended)", true);
+}
+
+export function askForFileOverwrite(filePath: string): Promise<boolean> {
+  return promptForBoolean("overwrite", `Overwrite the file? ${filePath}`, false);
 }

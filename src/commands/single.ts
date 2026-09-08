@@ -1,18 +1,12 @@
 import path from "node:path";
 import { exit } from "node:process";
 import chalk from "chalk";
-import {
-  converters,
-  convertModels,
-  convertSingleFbx,
-  convertSingleGltf,
-  convertSingleObj,
-} from "../converters.js";
-import { err, info, isJson } from "../log.js";
+import { converters, inferModelType } from "../converters.js";
+import { emitJsonIfRequested, err, info } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { globalOptions, isDryRun, program } from "../program.js";
-import { promptForOptimizedGlbOutput, promptForTsxOutput } from "../prompts.js";
 import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
+import { resolveOutputChoices, runGlbStep } from "./shared.js";
 
 const { red } = chalk;
 
@@ -62,19 +56,11 @@ Examples:
 
       info("🚀 Starting conversion process...");
 
-      globalOptions.tsx =
-        globalOptions.tsx === undefined ? await promptForTsxOutput() : globalOptions.tsx;
+      await resolveOutputChoices();
 
-      globalOptions.optimize =
-        globalOptions.optimize === undefined
-          ? await promptForOptimizedGlbOutput()
-          : globalOptions.optimize;
-
-      const extension = path.extname(resolvedInputPath);
-      const inferredModelType = extension.toUpperCase().replace(".", "");
-
-      if (!Object.keys(converters).includes(inferredModelType)) {
-        err(red("🚨 Invalid input file type: " + inferredModelType));
+      const inferredModelType = inferModelType(resolvedInputPath);
+      if (!inferredModelType) {
+        err(red("🚨 Invalid input file type: " + path.extname(resolvedInputPath)));
         err("ℹ️ Please provide a .fbx, .obj, or .gltf file");
         exit(1);
       }
@@ -87,7 +73,7 @@ Examples:
 
       const outputPath = path.resolve(
         dirs.glb,
-        path.basename(resolvedInputPath).replace(extension, ".glb"),
+        path.basename(resolvedInputPath).replace(path.extname(resolvedInputPath), ".glb"),
       );
 
       const result = {
@@ -110,9 +96,7 @@ Examples:
       } else {
         info("ℹ️ Generating .glb files...");
         try {
-          if (inferredModelType === "GLTF") await convertSingleGltf(resolvedInputPath, outputPath);
-          if (inferredModelType === "FBX") await convertSingleFbx(resolvedInputPath, outputPath);
-          if (inferredModelType === "OBJ") await convertSingleObj(resolvedInputPath, outputPath);
+          await converters[inferredModelType](resolvedInputPath, outputPath);
           result.converted = [outputPath];
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
@@ -121,37 +105,15 @@ Examples:
         }
       }
 
-      if (globalOptions.tsx || globalOptions.optimize) {
-        const label =
-          globalOptions.tsx && globalOptions.optimize
-            ? ".tsx file and optimized .glb"
-            : globalOptions.tsx
-              ? ".tsx file"
-              : "optimized .glb";
-        info(`ℹ️ Generating ${label}...`);
-        const glbResult = await convertModels("GLB", result.converted, inputDir, dirs);
-        result.tsx = isDryRun() ? glbResult.planned : glbResult.converted;
-        result.glbOptimized = isDryRun() ? glbResult.plannedGlbOptimized : glbResult.glbOptimized;
-        result.skipped.push(...glbResult.skipped);
-        result.errors.push(...glbResult.errors);
-      } else {
-        info("ℹ️ Skipped .tsx and optimization steps, like instructed 🫡");
-      }
+      await runGlbStep(result.converted, inputDir, dirs, result, { plural: false });
 
       result.ok = result.errors.length === 0;
-
-      if (isJson()) {
-        process.stdout.write(JSON.stringify(result, null, 2) + "\n");
-      }
+      emitJsonIfRequested(result);
 
       if (result.errors.length > 0) exit(2);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      if (isJson()) {
-        process.stdout.write(
-          JSON.stringify({ command: "single", ok: false, error: errorMsg }, null, 2) + "\n",
-        );
-      }
+      emitJsonIfRequested({ command: "single", ok: false, error: errorMsg });
       err(red("🚨 Conversion process failed!"));
       err(red("🚨 " + errorMsg));
       exit(1);

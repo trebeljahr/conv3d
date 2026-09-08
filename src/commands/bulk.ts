@@ -3,12 +3,19 @@ import path from "node:path";
 import { exit } from "node:process";
 import chalk from "chalk";
 import fg from "fast-glob";
-import { collectFiles, converters, convertModels, type InputFormats } from "../converters.js";
-import { err, info, isJson, warn } from "../log.js";
+import {
+  collectFiles,
+  converters,
+  convertModels,
+  type InputFormats,
+  SOURCE_FORMATS,
+} from "../converters.js";
+import { emitJsonIfRequested, err, info, warn } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { type GlobalOptions, globalOptions, isDryRun, program } from "../program.js";
-import { promptForModelType, promptForOptimizedGlbOutput, promptForTsxOutput } from "../prompts.js";
+import { promptForModelType } from "../prompts.js";
 import { home, isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
+import { resolveOutputChoices, runGlbStep } from "./shared.js";
 
 const { green, red, yellow } = chalk;
 
@@ -23,6 +30,26 @@ type OptionsBulkCommand = SubOptionsBulkCommand & GlobalOptions;
 
 function looksLikeGlob(s: string): boolean {
   return /[*?[\]{}]/.test(s);
+}
+
+function emitEmptyBulkResult(args: {
+  inputDir: string;
+  outputDir: string | null;
+  modelType: string | null;
+}): void {
+  emitJsonIfRequested({
+    command: "bulk",
+    ok: true,
+    inputDir: args.inputDir,
+    outputDir: args.outputDir,
+    dryRun: !!isDryRun(),
+    modelType: args.modelType,
+    converted: [],
+    tsx: [],
+    glbOptimized: [],
+    skipped: [],
+    errors: [],
+  });
 }
 
 function commonParent(paths: string[]): string {
@@ -95,27 +122,7 @@ Examples:
 
         if (matches.length === 0) {
           warn(yellow(`⚠️ Glob matched no files: ${rawInput}`));
-          if (isJson()) {
-            process.stdout.write(
-              JSON.stringify(
-                {
-                  command: "bulk",
-                  ok: true,
-                  inputDir: process.cwd(),
-                  outputDir: null,
-                  dryRun: !!isDryRun(),
-                  modelType: null,
-                  converted: [],
-                  tsx: [],
-                  glbOptimized: [],
-                  skipped: [],
-                  errors: [],
-                },
-                null,
-                2,
-              ) + "\n",
-            );
-          }
+          emitEmptyBulkResult({ inputDir: process.cwd(), outputDir: null, modelType: null });
           exit(0);
         }
 
@@ -136,11 +143,13 @@ Examples:
       const outputDirBase = subOptions.outputDir || path.resolve(inputDir, outDirPrefix);
       subOptions.outputDir = path.resolve(outputDirBase);
 
-      const formatMaps = {
-        GLTF: { files: await collectFiles(files, { modelType: "GLTF" }) },
-        FBX: { files: await collectFiles(files, { modelType: "FBX" }) },
-        OBJ: { files: await collectFiles(files, { modelType: "OBJ" }) },
-      };
+      const formatMaps = Object.fromEntries(
+        await Promise.all(
+          SOURCE_FORMATS.map(
+            async (fmt) => [fmt, { files: await collectFiles(files, { modelType: fmt }) }] as const,
+          ),
+        ),
+      ) as Record<(typeof SOURCE_FORMATS)[number], { files: string[] }>;
       const formats = Object.entries(formatMaps);
 
       const numGLTF = formatMaps.GLTF.files.length;
@@ -150,27 +159,11 @@ Examples:
 
       if (numAll === 0) {
         warn(yellow(`⚠️ No suitable models found in ${inputDir}`));
-        if (isJson()) {
-          process.stdout.write(
-            JSON.stringify(
-              {
-                command: "bulk",
-                ok: true,
-                inputDir,
-                outputDir: subOptions.outputDir,
-                dryRun: !!isDryRun(),
-                modelType: null,
-                converted: [],
-                tsx: [],
-                glbOptimized: [],
-                skipped: [],
-                errors: [],
-              },
-              null,
-              2,
-            ) + "\n",
-          );
-        }
+        emitEmptyBulkResult({
+          inputDir,
+          outputDir: subOptions.outputDir,
+          modelType: null,
+        });
         exit(0);
       }
 
@@ -180,13 +173,7 @@ Examples:
       subOptions.modelType =
         normalizedModelType || (await promptForModelType({ numGLTF, numFBX, numOBJ, numAll }));
 
-      globalOptions.tsx =
-        globalOptions.tsx === undefined ? await promptForTsxOutput() : globalOptions.tsx;
-
-      globalOptions.optimize =
-        globalOptions.optimize === undefined
-          ? await promptForOptimizedGlbOutput()
-          : globalOptions.optimize;
+      await resolveOutputChoices();
 
       if (
         !Object.keys(converters).includes(subOptions.modelType!) &&
@@ -208,27 +195,11 @@ Examples:
 
       if (numExpected === 0) {
         warn(yellow(`⚠️ No ${options.modelType} models found in ${inputDir}`));
-        if (isJson()) {
-          process.stdout.write(
-            JSON.stringify(
-              {
-                command: "bulk",
-                ok: true,
-                inputDir,
-                outputDir: subOptions.outputDir,
-                dryRun: !!isDryRun(),
-                modelType: options.modelType,
-                converted: [],
-                tsx: [],
-                glbOptimized: [],
-                skipped: [],
-                errors: [],
-              },
-              null,
-              2,
-            ) + "\n",
-          );
-        }
+        emitEmptyBulkResult({
+          inputDir,
+          outputDir: subOptions.outputDir,
+          modelType: options.modelType ?? null,
+        });
         exit(0);
       }
 
@@ -262,22 +233,7 @@ Examples:
         }
       }
 
-      if (options.tsx || options.optimize) {
-        const label =
-          options.tsx && options.optimize
-            ? ".tsx files and optimized .glb files"
-            : options.tsx
-              ? ".tsx files"
-              : "optimized .glb files";
-        info(`ℹ️ Generating ${label}...`);
-        const glbResult = await convertModels("GLB", allConverted, inputDir, dirs);
-        result.tsx = isDryRun() ? glbResult.planned : glbResult.converted;
-        result.glbOptimized = isDryRun() ? glbResult.plannedGlbOptimized : glbResult.glbOptimized;
-        result.skipped.push(...glbResult.skipped);
-        result.errors.push(...glbResult.errors);
-      } else {
-        info("ℹ️ Skipped .tsx and optimization steps, like instructed 🫡");
-      }
+      await runGlbStep(allConverted, inputDir, dirs, result, { plural: true });
 
       const inputDirDisplay = inputDir.replace(home, "~");
       const outputDirDisplay = subOptions.outputDir!.replace(home, "~");
@@ -291,19 +247,12 @@ Examples:
       info(`ℹ️ Output ${isDryRun() ? "would be saved" : "saved"} to "${outputDirDisplay}"`);
 
       result.ok = result.errors.length === 0;
-
-      if (isJson()) {
-        process.stdout.write(JSON.stringify(result, null, 2) + "\n");
-      }
+      emitJsonIfRequested(result);
 
       if (result.errors.length > 0) exit(2);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      if (isJson()) {
-        process.stdout.write(
-          JSON.stringify({ command: "bulk", ok: false, error: errorMsg }, null, 2) + "\n",
-        );
-      }
+      emitJsonIfRequested({ command: "bulk", ok: false, error: errorMsg });
       err(red("🚨 Conversion process failed!"));
       err(red("🚨 " + errorMsg));
       exit(1);

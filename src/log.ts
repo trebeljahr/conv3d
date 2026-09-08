@@ -32,6 +32,17 @@ export function err(...args: unknown[]) {
   console.error(...(args as [unknown, ...unknown[]]));
 }
 
+// Emit a JSON result object on stdout. Caller is expected to have built the
+// full result shape — this just centralizes the indent + trailing newline.
+export function emitJson(obj: unknown): void {
+  process.stdout.write(JSON.stringify(obj, null, 2) + "\n");
+}
+
+// Convenience: emit only when --json was passed.
+export function emitJsonIfRequested(obj: unknown): void {
+  if (isJson()) emitJson(obj);
+}
+
 type SpinnerLike = Pick<Ora, "start" | "stop" | "stopAndPersist"> & {
   text: string;
 };

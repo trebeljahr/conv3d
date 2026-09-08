@@ -7,7 +7,13 @@ import gltfjsx from "gltfjsx/src/gltfjsx.js";
 import obj2gltf from "obj2gltf";
 import { createSpinner, err, info, warn } from "./log.js";
 import type { OutputDirs } from "./outputDirs.js";
-import { globalOptions, isDryRun, resolveConcurrency, resolveOverwriteMode } from "./program.js";
+import {
+  globalOptions,
+  isDryRun,
+  type OverwriteMode,
+  resolveConcurrency,
+  resolveOverwriteMode,
+} from "./program.js";
 import { askForFileOverwrite } from "./prompts.js";
 import { type PostProcessOptions, postProcessGlb } from "./recovery.js";
 import { checkFileExists } from "./utils.js";
@@ -18,6 +24,10 @@ const { green, red, yellow } = chalk;
 const { gltfToGlb } = gltfPipeline;
 
 export type InputFormats = keyof typeof converters;
+// SourceFormat is the subset that represents real input model files (the
+// formats users feed into single/bulk). GLB is a post-processing pseudo-step
+// for tsx generation / web optimization.
+export type SourceFormat = "GLTF" | "FBX" | "OBJ";
 
 export const converters = {
   GLTF: convertSingleGltf,
@@ -25,6 +35,13 @@ export const converters = {
   OBJ: convertSingleObj,
   GLB: prepareGlbForWeb,
 };
+
+export const SOURCE_FORMATS: readonly SourceFormat[] = ["GLTF", "FBX", "OBJ"] as const;
+
+export function inferModelType(filePath: string): SourceFormat | null {
+  const ext = path.extname(filePath).toUpperCase().replace(".", "");
+  return (SOURCE_FORMATS as readonly string[]).includes(ext) ? (ext as SourceFormat) : null;
+}
 
 const getNew = (format: InputFormats) => {
   if (format === "GLB") return "TSX";
@@ -43,6 +60,45 @@ export type ConvertResult = {
 function optimizedGlbPathFor(tsxOutputPath: string, dirs: OutputDirs): string {
   const filename = path.basename(tsxOutputPath).replace(/\.tsx$/, "-transformed.glb");
   return path.resolve(dirs.optimized, filename);
+}
+
+function pluralize(count: number, singular: string, plural?: string): string {
+  return count === 1 ? singular : (plural ?? singular + "s");
+}
+
+type OverwriteDecision = { proceed: boolean; reason?: "skipped" };
+
+async function decideOverwrite(
+  outputPath: string,
+  mode: OverwriteMode,
+  pauseUi: () => void,
+  resumeUi: () => void,
+): Promise<OverwriteDecision> {
+  const exists = await checkFileExists(outputPath);
+  if (!exists) return { proceed: true };
+
+  if (mode === "replace") return { proceed: true };
+
+  if (mode === "skip") {
+    warn(yellow(`⚠️ ${path.basename(outputPath)} already exists — skipping`));
+    return { proceed: false, reason: "skipped" };
+  }
+
+  pauseUi();
+  warn(yellow(`⚠️ ${path.basename(outputPath)} already exists in the output directory`));
+  const proceed = await askForFileOverwrite(outputPath);
+  resumeUi();
+  return proceed ? { proceed: true } : { proceed: false, reason: "skipped" };
+}
+
+function resolvePrimaryOutputPath(
+  isGlbStep: boolean,
+  outputPath: string,
+  optimizedPath: string | null,
+): string | null {
+  if (!isGlbStep) return outputPath;
+  if (globalOptions.tsx) return outputPath;
+  return optimizedPath;
 }
 
 async function runPool<T>(
@@ -151,34 +207,20 @@ export async function convertModels(
     }
 
     // Overwrite check — on the file the user would actually keep.
-    const primaryOutputPath = isGlbStep
-      ? globalOptions.tsx
-        ? outputPath
-        : optimizedPath
-      : outputPath;
+    const primaryOutputPath = resolvePrimaryOutputPath(isGlbStep, outputPath, optimizedPath);
 
     if (primaryOutputPath) {
-      const exists = await checkFileExists(primaryOutputPath);
-      if (exists) {
-        let proceed: boolean;
-        if (overwriteMode === "replace") proceed = true;
-        else if (overwriteMode === "skip") {
-          proceed = false;
-          warn(yellow(`⚠️ ${path.basename(primaryOutputPath)} already exists — skipping`));
-        } else {
-          spinner.stopAndPersist({ symbol: "ℹ️" });
-          warn(
-            yellow(`⚠️ ${path.basename(primaryOutputPath)} already exists in the output directory`),
-          );
-          proceed = await askForFileOverwrite(primaryOutputPath);
-          spinner.start();
-        }
-        if (!proceed) {
-          result.skipped.push(primaryOutputPath);
-          done += 1;
-          spinner.text = `${spinnerLabel} (${done}/${total}) ${file}`;
-          return;
-        }
+      const decision = await decideOverwrite(
+        primaryOutputPath,
+        overwriteMode,
+        () => spinner.stopAndPersist({ symbol: "ℹ️" }),
+        () => spinner.start(),
+      );
+      if (!decision.proceed) {
+        result.skipped.push(primaryOutputPath);
+        done += 1;
+        spinner.text = `${spinnerLabel} (${done}/${total}) ${file}`;
+        return;
       }
     }
 
@@ -196,8 +238,12 @@ export async function convertModels(
           if (source !== target) {
             try {
               await rename(source, target);
-            } catch {
-              // gltfjsx may not have produced the file; ignore.
+            } catch (renameError) {
+              // gltfjsx may not have produced the file when optimize off the
+              // happy path; log so the user can investigate without failing
+              // the whole batch.
+              const msg = renameError instanceof Error ? renameError.message : String(renameError);
+              warn(yellow(`⚠️ Could not move optimized .glb to ${target}: ${msg}`));
             }
           }
           result.glbOptimized.push(target);
@@ -296,9 +342,6 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
   try {
     await convertFbxToGlb(inputPath, outputPath, ["--binary", "--pbr-metallic-roughness"]);
     await runPostProcess(outputPath, inputPath);
-  } catch (error) {
-    await cleanup();
-    throw error;
   } finally {
     await cleanup();
   }
@@ -323,34 +366,13 @@ async function runPostProcess(glbPath: string, sourcePath: string): Promise<void
   const result = await postProcessGlb(glbPath, sourcePath, opts);
   const base = path.basename(sourcePath);
   const messages: string[] = [];
-  if (result.placeholdersRecovered > 0) {
-    messages.push(
-      `${result.placeholdersRecovered} placeholder texture${
-        result.placeholdersRecovered === 1 ? "" : "s"
-      } recovered`,
-    );
-  }
-  if (result.texturesSeeded > 0) {
-    messages.push(
-      `${result.texturesSeeded} missing texture${
-        result.texturesSeeded === 1 ? "" : "s"
-      } seeded from sibling files`,
-    );
-  }
-  if (result.foliageHinted > 0) {
-    messages.push(
-      `${result.foliageHinted} foliage material${
-        result.foliageHinted === 1 ? "" : "s"
-      } set to alpha-mask`,
-    );
-  }
-  if (result.colorsApplied > 0) {
-    messages.push(
-      `${result.colorsApplied} material color${
-        result.colorsApplied === 1 ? "" : "s"
-      } applied from manifest`,
-    );
-  }
+  const push = (count: number, singular: string, plural: string, action: string) => {
+    if (count > 0) messages.push(`${count} ${pluralize(count, singular, plural)} ${action}`);
+  };
+  push(result.placeholdersRecovered, "placeholder texture", "placeholder textures", "recovered");
+  push(result.texturesSeeded, "missing texture", "missing textures", "seeded from sibling files");
+  push(result.foliageHinted, "foliage material", "foliage materials", "set to alpha-mask");
+  push(result.colorsApplied, "material color", "material colors", "applied from manifest");
   if (messages.length > 0) {
     info(green(`✨ ${base}: ${messages.join(", ")}`));
   }
