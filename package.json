@@ -19,6 +19,7 @@
     "url": "https://github.com/trebeljahr/conv3d/issues"
   },
   "homepage": "https://conv3d.trebeljahr.com",
+  "funding": "https://ricos.site/donate?from=conv3d",
   "engines": {
     "node": ">=22"
   },
