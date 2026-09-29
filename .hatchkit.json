@@ -17,5 +17,9 @@
   "surfaces": "client-only",
   "localDev": {
     "slug": "conv3d"
+  },
+  "coolifyRuntime": "image",
+  "containerPorts": {
+    "app": 80
   }
 }
