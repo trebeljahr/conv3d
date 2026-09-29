@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { ProjectDonateLink } from "./project-donate-link";
 import styles from "./site-footer.module.css";
 
 const REPO_URL = "https://github.com/trebeljahr/conv3d";
 const NPM_URL = "https://www.npmjs.com/package/conv3d";
 const ISSUES_URL = "https://github.com/trebeljahr/conv3d/issues";
-const DONATE_URL = "https://ricos.site/donate?from=conv3d";
+const DONATE_URL = "https://ricos.site/donate/conv3d";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -37,7 +38,7 @@ export function SiteFooter() {
           <a href={ISSUES_URL} target="_blank" rel="noreferrer noopener">
             Issues
           </a>
-          <a href={DONATE_URL}>Donate</a>
+          <ProjectDonateLink href={DONATE_URL}>Donate</ProjectDonateLink>
         </nav>
       </div>
     </footer>
