@@ -101,5 +101,11 @@
     "*.{js,jsx,ts,tsx,json,jsonc,css}": [
       "biome check --write --no-errors-on-unmatched"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "gltfjsx>sharp": "0.35.4",
+      "ndarray-pixels>sharp": "0.35.4"
+    }
   }
 }
