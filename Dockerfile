@@ -14,10 +14,8 @@
 # fallback index.html in that case → the "Welcome to nginx" banner.
 #
 # Built by .github/workflows/deploy.yml, pushed to GHCR, pulled by
-# Coolify via docker-compose.yml. The deploy workflow still mounts the
-# dotenvx_private_key BuildKit secret, but the docs build itself doesn't
-# read .env.production today (no NEXT_PUBLIC_* values needed). Re-add
-# the dotenvx wrapper if that changes.
+# Coolify's Docker Image application. The docs build requires no secrets;
+# its public release identity is supplied as a build argument.
 ARG NODE_VERSION=24
 
 FROM node:${NODE_VERSION}-alpine AS build
@@ -37,8 +35,20 @@ RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 # trick and copy everything first.
 COPY docs/ ./
 RUN pnpm install --frozen-lockfile
+ARG RELEASE_SHA
+ENV NEXT_PUBLIC_BUILD_COMMIT=${RELEASE_SHA}
 RUN pnpm build
+COPY scripts/write-version.mjs /tmp/write-version.mjs
+RUN node /tmp/write-version.mjs out "$RELEASE_SHA"
 
 FROM nginx:alpine AS runner
 COPY --from=build /app/docs/out /usr/share/nginx/html
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY deploy/drain-entrypoint.sh /usr/local/bin/drain-entrypoint
+RUN chmod +x /usr/local/bin/drain-entrypoint
 EXPOSE 80
+HEALTHCHECK --interval=2s --timeout=5s --start-period=15s --retries=5 \
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["/usr/local/bin/drain-entrypoint"]
+CMD ["nginx", "-g", "daemon off;"]

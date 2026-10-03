@@ -26,6 +26,7 @@ const plausibleScriptUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  other: { "build-sha": process.env.NEXT_PUBLIC_BUILD_COMMIT ?? "development" },
   title: {
     default: SITE_NAME,
     template: `%s · ${SITE_NAME}`,
