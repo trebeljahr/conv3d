@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash, createHmac } from "node:crypto";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { APP, queuedDeployment, rollingRelease, safeFailure } from "./lib/rolling-release.mjs";
 
 const OLD = "a".repeat(40);
@@ -406,4 +407,16 @@ test("untrusted failure details never enter release artifacts or user-facing err
   });
   assert.equal(JSON.stringify(p.reports).includes(raw), false);
   assert.equal(safeFailure(new SyntaxError(raw)), "Release operation failed.");
+});
+
+test("build, verify and deploy workflow gates all name the fixed source repository", () => {
+  const workflow = readFileSync(
+    new URL("../.github/workflows/deploy.yml", import.meta.url),
+    "utf8",
+  );
+  const repositories = [...workflow.matchAll(/github\.repository == '([^']+)'/g)].map(
+    (match) => match[1],
+  );
+  assert.ok(repositories.length >= 3);
+  assert.deepEqual([...new Set(repositories)], [APP.repository]);
 });
