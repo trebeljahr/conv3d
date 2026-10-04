@@ -10,36 +10,36 @@
  * the two-step setup.
  */
 
-import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const docsDir = resolve(repoRoot, 'docs');
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const docsDir = resolve(repoRoot, "docs");
 
 function run(cmd, args) {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(cmd, args, {
       cwd: docsDir,
-      stdio: 'inherit',
-      shell: process.platform === 'win32',
+      stdio: "inherit",
+      shell: process.platform === "win32",
     });
-    child.on('exit', (code, signal) => {
+    child.on("exit", (code, signal) => {
       if (signal) {
         process.kill(process.pid, signal);
         return;
       }
       if (code === 0) resolvePromise();
-      else reject(new Error(`${cmd} ${args.join(' ')} exited with code ${code}`));
+      else reject(new Error(`${cmd} ${args.join(" ")} exited with code ${code}`));
     });
-    child.on('error', reject);
+    child.on("error", reject);
   });
 }
 
-if (!existsSync(resolve(docsDir, 'node_modules'))) {
-  console.log('[docs-dev] installing docs dependencies (first run)…');
-  await run('pnpm', ['install']);
+if (!existsSync(resolve(docsDir, "node_modules"))) {
+  console.log("[docs-dev] installing docs dependencies (first run)…");
+  await run("pnpm", ["install"]);
 }
 
-await run('pnpm', ['dev']);
+await run("pnpm", ["dev"]);

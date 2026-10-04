@@ -1,3 +1,4 @@
+import { prepareDocsBuild, buildBaselineProof, INITIAL_ADOPTION } from "./prepare-docs-build.mjs";
 import assert from "node:assert/strict";
 import { createHash, createHmac } from "node:crypto";
 import test from "node:test";
@@ -34,7 +35,19 @@ function platform(options = {}) {
         os: "linux",
         architecture: "amd64",
         config: {
-          Labels: { "org.opencontainers.image.revision": sha },
+          Labels: {
+            "org.opencontainers.image.revision": sha,
+            ...(sha === NEW
+              ? {
+                  "io.conv3d.docs.parent-digest": options.wrongParent
+                    ? "sha256:" + "0".repeat(64)
+                    : tags.get(OLD),
+                  "io.conv3d.docs.parent-sha": OLD,
+                  "io.conv3d.docs.retention": "3",
+                  "io.conv3d.docs.storage": options.wrongStorage ? "local-only" : "shared-v1",
+                }
+              : {}),
+          },
         },
       }),
     );
@@ -419,4 +432,73 @@ test("build, verify and deploy workflow gates all name the fixed source reposito
   );
   assert.ok(repositories.length >= 3);
   assert.deepEqual([...new Set(repositories)], [APP.repository]);
+});
+
+test("candidate ancestry and shared-storage contract must match before promotion", async () => {
+  for (const options of [{ wrongParent: true }, { wrongStorage: true }]) {
+    const p = platform(options);
+    await assert.rejects(rollingRelease(config, p.release, p.deps), /exact current image/);
+    assert.equal(writes(p).length, 0);
+  }
+});
+
+test("build ancestry pins the verified image and rejects SHA rebuilds or baseline drift", async () => {
+  const p = platform({ initialized: true });
+  await assert.rejects(prepareDocsBuild(config, NEW, p.deps), /already exists/);
+  p.tags.delete(NEW);
+  const result = await prepareDocsBuild(config, NEW, p.deps);
+  assert.equal(result.previousDigest, p.release.expectedCurrentDigest);
+  assert.equal(result.baselineProof, "verified-journal");
+  assert.equal(writes(p).length, 0);
+  const drift = platform({ initialized: true, driftDuringBaseline: true });
+  drift.tags.delete(NEW);
+  await assert.rejects(prepareDocsBuild(config, NEW, drift.deps), /exact verified/);
+  const partial = platform({ initialized: true });
+  partial.tags.delete(NEW);
+  partial.tags.delete("rolling-started");
+  await assert.rejects(prepareDocsBuild(config, NEW, partial.deps), /journal/);
+});
+test("first adoption exception requires exact reviewed A and both journal markers absent", () => {
+  const { sha, digest } = INITIAL_ADOPTION;
+  assert.equal(buildBaselineProof(digest, sha, null, null), "initial-adoption");
+  assert.throws(() => buildBaselineProof(digest, OLD, null, null), /journal/);
+  assert.throws(() => buildBaselineProof(digest, sha, { digest }, null), /journal/);
+  assert.throws(() => buildBaselineProof("sha256:" + "0".repeat(64), sha, null, null), /journal/);
+});
+
+test("initial adoption verifies the exact legacy homepage bytes, not version.json", async () => {
+  const { createHash } = await import("node:crypto");
+  const { verifyLegacyBaseline } = await import("./prepare-docs-build.mjs");
+  const legacy = "<html>legacy</html>";
+  const pinned = {
+    ...INITIAL_ADOPTION,
+    indexSha256: createHash("sha256").update(legacy).digest("hex"),
+  };
+  assert.equal(pinned.sha, INITIAL_ADOPTION.sha);
+  const serve = (body) => async () => new Response(body);
+  let reads = 0;
+  await verifyLegacyBaseline({
+    fetch: async (url) => {
+      reads++;
+      assert.equal(new URL(url).pathname, "/");
+      return new Response(legacy);
+    },
+    sleep: async () => {},
+    samples: 3,
+    expected: pinned.indexSha256,
+  });
+  assert.equal(reads, 3);
+  // The real pin must reject anything that is not the reviewed legacy page.
+  await assert.rejects(
+    verifyLegacyBaseline({ fetch: serve(legacy), sleep: async () => {}, samples: 2 }),
+    /legacy baseline/,
+  );
+  await assert.rejects(
+    verifyLegacyBaseline({
+      fetch: async () => new Response("", { status: 503 }),
+      sleep: async () => {},
+      samples: 1,
+    }),
+    /legacy baseline/,
+  );
 });

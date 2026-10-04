@@ -17,6 +17,11 @@
 # Coolify's Docker Image application. The docs build requires no secrets;
 # its public release identity is supplied as a build argument.
 ARG NODE_VERSION=24
+ARG PREVIOUS_IMAGE
+
+# The exact verified serving image. Its export supplies retained releases and
+# the fixed legacy asset baseline; see scripts/RETAINED-DOCS.md.
+FROM ${PREVIOUS_IMAGE} AS previous
 
 FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app/docs
@@ -40,12 +45,27 @@ ENV NEXT_PUBLIC_BUILD_COMMIT=${RELEASE_SHA}
 RUN pnpm build
 COPY scripts/write-version.mjs /tmp/write-version.mjs
 RUN node /tmp/write-version.mjs out "$RELEASE_SHA"
+COPY --from=previous /usr/share/nginx/html /previous-export
+COPY scripts/retain-docs-releases.mjs scripts/docs-bootstrap.mjs /tmp/
+ARG PREVIOUS_SHA
+ARG PREVIOUS_DIGEST
+RUN node /tmp/retain-docs-releases.mjs out /previous-export /retained-out "$RELEASE_SHA" "$PREVIOUS_SHA" "$PREVIOUS_DIGEST"
 
 FROM nginx:alpine AS runner
-COPY --from=build /app/docs/out /usr/share/nginx/html
+# Startup seeds the shared release volume before nginx serves; see the entrypoint.
+RUN apk add --no-cache nodejs
+COPY scripts/shared-docs-releases.mjs scripts/retain-docs-releases.mjs scripts/docs-bootstrap.mjs /usr/local/lib/docs/
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /retained-out /usr/share/nginx/html
+ARG PREVIOUS_SHA
+ARG PREVIOUS_DIGEST
+LABEL io.conv3d.docs.parent-sha=$PREVIOUS_SHA \
+      io.conv3d.docs.parent-digest=$PREVIOUS_DIGEST \
+      io.conv3d.docs.retention="3" \
+      io.conv3d.docs.storage="shared-v1"
 COPY deploy/drain-entrypoint.sh /usr/local/bin/drain-entrypoint
 RUN chmod +x /usr/local/bin/drain-entrypoint
+ENV SHUTDOWN_DRAIN_SECONDS=20
 EXPOSE 80
 HEALTHCHECK --interval=2s --timeout=5s --start-period=15s --retries=5 \
   CMD wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1

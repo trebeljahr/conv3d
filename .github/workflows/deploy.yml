@@ -49,13 +49,20 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: node --test scripts/release.test.mjs scripts/rolling-release.test.mjs
+      - run: node --test scripts/release.test.mjs scripts/rolling-release.test.mjs scripts/retained-docs.test.mjs scripts/shared-docs-releases.test.mjs
+      - name: Test shared release routing with nginx
+        run: RUN_DOCKER_TESTS=1 node --test --test-concurrency=1 scripts/shared-docs-http.test.mjs
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - id: baseline
+        name: Pin the verified serving image and reject SHA rebuilds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/prepare-docs-build.mjs
       - id: meta
         uses: docker/metadata-action@v5
         with:
@@ -76,6 +83,9 @@ jobs:
           platforms: linux/amd64
           build-args: |
             RELEASE_SHA=${{ github.sha }}
+            PREVIOUS_IMAGE=${{ steps.baseline.outputs.previous_image }}
+            PREVIOUS_SHA=${{ steps.baseline.outputs.previous_sha }}
+            PREVIOUS_DIGEST=${{ steps.baseline.outputs.previous_digest }}
 
       - name: Record immutable release identity
         env:
@@ -83,15 +93,19 @@ jobs:
           IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
         run: |
           node --input-type=module <<'NODE'
-          import { writeFileSync } from 'node:fs';
+          import { readFileSync, writeFileSync } from 'node:fs';
           const { GITHUB_SHA: commit, IMAGE: image, IMAGE_DIGEST: digest } = process.env;
           if (!/^[a-f0-9]{40}$/.test(commit) || !/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error('Missing full release identity.');
-          writeFileSync('release.json', JSON.stringify({ commit, image, digest, reference: `${image}@${digest}` }, null, 2) + '\n');
+          const ancestry = JSON.parse(readFileSync('build-inputs.json', 'utf8'));
+          if (ancestry.commit !== commit) throw new Error('Build ancestry does not match source.');
+          writeFileSync('release.json', JSON.stringify({ ...ancestry, commit, image, digest, reference: `${image}@${digest}` }, null, 2) + '\n');
           NODE
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: release.json
+          path: |
+            release.json
+            build-inputs.json
           if-no-files-found: error
 
   verify:

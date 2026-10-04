@@ -10,6 +10,7 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   output: 'export',
+  deploymentId: process.env.NEXT_PUBLIC_BUILD_COMMIT,
   images: { unoptimized: true },
   turbopack: {
     root: __dirname,

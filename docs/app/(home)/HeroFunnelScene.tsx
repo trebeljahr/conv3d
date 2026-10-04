@@ -33,6 +33,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { releaseAsset } from "@/lib/release-asset";
 import styles from "./page.module.css";
 
 type ModelAsset = {
@@ -69,7 +70,7 @@ type MaterialShape = Material & {
   vertexColors?: boolean;
 };
 
-const MODEL_ROOT = "/models/conv3d-funnel/";
+const MODEL_ROOT = releaseAsset("/models/conv3d-funnel/");
 const STREAM_CENTER = new Vector3(3.55, 0.62, 0);
 const GATE = new Vector3(3.55, 0.06, 0);
 
@@ -592,7 +593,7 @@ export function HeroFunnelScene() {
     });
 
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath("/draco/");
+    dracoLoader.setDecoderPath(releaseAsset("/draco/"));
     dracoLoader.setDecoderConfig({ type: "wasm" });
     const gltfLoader = new GLTFLoader();
     gltfLoader.setDRACOLoader(dracoLoader);

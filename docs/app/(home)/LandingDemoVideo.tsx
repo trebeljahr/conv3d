@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { releaseAsset } from "@/lib/release-asset";
 import styles from "./page.module.css";
 
 /**
@@ -51,16 +52,16 @@ export function LandingDemoVideo(): React.ReactElement {
       playsInline
       preload="metadata"
       controls={reduceMotion}
-      poster="/media/landing-demo-poster.png"
+      poster={releaseAsset("/media/landing-demo-poster.png")}
       aria-label="Terminal recording: conv3d doctor reports a healthy install, then conv3d bulk converts 13 FBX files in one command and prints the count via jq"
     >
-      <source src="/media/landing-demo.webm" type="video/webm" />
-      <source src="/media/landing-demo.mp4" type="video/mp4" />
+      <source src={releaseAsset("/media/landing-demo.webm")} type="video/webm" />
+      <source src={releaseAsset("/media/landing-demo.mp4")} type="video/mp4" />
       {/* Last-ditch fallback for browsers that can't play either codec — the
           animated GIF is a self-contained substitute, no JS or video stack
           required, so we deliberately bypass next/image here. */}
       {/* biome-ignore lint/performance/noImgElement: <video> fallback must be a raw img */}
-      <img src="/media/landing-demo.gif" alt="" width={960} height={540} />
+      <img src={releaseAsset("/media/landing-demo.gif")} alt="" width={960} height={540} />
     </video>
   );
 }

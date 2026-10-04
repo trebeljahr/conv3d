@@ -4,8 +4,9 @@ import { Center, OrbitControls, useGLTF } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo } from "react";
 import { Box3, Vector3 } from "three";
+import { releaseAsset } from "@/lib/release-asset";
 
-const MODEL_URL = "/models/conv3d-funnel/KnightHelmet.glb";
+const MODEL_URL = releaseAsset("/models/conv3d-funnel/KnightHelmet.glb");
 const TARGET_SIZE = 1.6;
 
 function KnightModel() {

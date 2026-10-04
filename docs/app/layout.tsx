@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
+import { ReleaseLifetime } from "@/components/release-lifetime";
 import { SiteFooter } from "@/components/site-footer";
 import { SupportedParam } from "@/components/supported-param";
 import {
@@ -13,6 +14,7 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo";
+import { releaseAsset } from "@/lib/release-asset";
 
 const inter = Inter({ subsets: ["latin"] });
 const plausibleDomain =
@@ -79,7 +81,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               })();
             `}
         </Script>
-        <RootProvider search={{ options: { type: "static" } }}>
+        <RootProvider search={{ options: { type: "static", api: releaseAsset("/api/search") } }}>
+          <ReleaseLifetime />
           {children}
           <SiteFooter />
           <SupportedParam />

@@ -92,89 +92,7 @@ export async function rollingRelease(config, release, dependencies = {}) {
   };
   save("preflight");
 
-  const authUrl = new URL("https://ghcr.io/token");
-  authUrl.searchParams.set("service", "ghcr.io");
-  authUrl.searchParams.set("scope", `repository:${APP.registryRepository}:pull,push`);
-  const auth = await request(authUrl.href, {
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${config.actor}:${config.token}`).toString("base64")}`,
-    },
-    redirect: "error",
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!auth.ok) throw new ReleaseError(`Registry authentication failed (${auth.status}).`);
-  const tokenBody = await auth.json();
-  const token = tokenBody.token ?? tokenBody.access_token;
-  if (typeof token !== "string" || !token) throw new ReleaseError("Registry token is missing.");
-
-  const registry = async (path, options = {}) => {
-    const response = await request(`https://ghcr.io/v2/${APP.registryRepository}/${path}`, {
-      ...options,
-      redirect: options.redirect ?? "error",
-      signal: AbortSignal.timeout(15000),
-      headers: { Authorization: `Bearer ${token}`, Accept: TYPES.join(", "), ...options.headers },
-    });
-    return response;
-  };
-  const manifest = async (reference, optional = false) => {
-    const response = await registry(`manifests/${reference}`);
-    if (optional && response.status === 404) return null;
-    if (!response.ok) throw new ReleaseError(`Registry manifest read failed (${response.status}).`);
-    const bytes = Buffer.from(await response.arrayBuffer());
-    const digest = hash(bytes);
-    const reported = response.headers.get("docker-content-digest");
-    if ((reported && reported !== digest) || (isDigest(reference) && reference !== digest)) {
-      throw new ReleaseError("Registry manifest digest does not match its bytes.");
-    }
-    const body = JSON.parse(bytes.toString("utf8"));
-    const type = response.headers.get("content-type")?.split(";")[0] || body.mediaType;
-    if (!TYPES.includes(type)) throw new ReleaseError("Unsupported registry manifest type.");
-    return { bytes, digest, type, body };
-  };
-  const revision = async (image) => {
-    let selected = image;
-    if (image.body.manifests) {
-      const linux = image.body.manifests.filter(
-        (item) => item.platform?.os === "linux" && item.platform?.architecture === "amd64",
-      );
-      if (linux.length !== 1 || !isDigest(linux[0].digest))
-        throw new ReleaseError("Image must contain one linux/amd64 manifest.");
-      selected = await manifest(linux[0].digest);
-    }
-    const digest = selected.body.config?.digest;
-    if (!isDigest(digest)) throw new ReleaseError("Image config digest is missing.");
-    let response = await registry(`blobs/${digest}`, { redirect: "manual" });
-    if ([302, 307].includes(response.status)) {
-      const location = new URL(response.headers.get("location") ?? "", "https://ghcr.io");
-      if (
-        location.protocol !== "https:" ||
-        location.hostname !== "pkg-containers.githubusercontent.com" ||
-        location.username ||
-        location.password ||
-        location.port
-      ) {
-        throw new ReleaseError("Untrusted registry blob redirect.");
-      }
-      // GHCR redirects blobs to a signed download URL. Never forward registry
-      // authorization to that host, nor print the signed URL in reports.
-      response = await request(location.href, {
-        redirect: "error",
-        signal: AbortSignal.timeout(15000),
-      });
-    }
-    if (!response.ok) throw new ReleaseError(`Image config read failed (${response.status}).`);
-    const bytes = Buffer.from(await response.arrayBuffer());
-    if (hash(bytes) !== digest)
-      throw new ReleaseError("Image config digest does not match its bytes.");
-    const body = JSON.parse(bytes.toString("utf8"));
-    const sha = body.config?.Labels?.["org.opencontainers.image.revision"];
-    if (body.os !== "linux" || body.architecture !== "amd64" || !isSha(sha)) {
-      throw new ReleaseError(
-        "Image config must identify a linux/amd64 build and full source commit.",
-      );
-    }
-    return sha;
-  };
+  const { registry, manifest, revision, identity } = await openRegistry(config, dependencies);
   const point = async (tag, image) => {
     const response = await registry(`manifests/${tag}`, {
       method: "PUT",
@@ -212,7 +130,8 @@ export async function rollingRelease(config, release, dependencies = {}) {
   };
 
   const target = await manifest(release.digest);
-  if ((await revision(target)) !== release.sha)
+  const targetIdentity = await identity(target);
+  if (targetIdentity.sha !== release.sha)
     throw new ReleaseError("Target image revision differs from the requested commit.");
   if ((await manifest(release.sha)).digest !== release.digest)
     throw new ReleaseError("SHA tag differs from the reviewed image digest.");
@@ -221,6 +140,14 @@ export async function rollingRelease(config, release, dependencies = {}) {
     throw new ReleaseError("Current latest differs from the reviewed baseline.");
   }
   const previousSha = await revision(previous);
+  if (
+    target.digest !== previous.digest &&
+    (targetIdentity.labels["io.conv3d.docs.parent-digest"] !== previous.digest ||
+      targetIdentity.labels["io.conv3d.docs.parent-sha"] !== previousSha ||
+      targetIdentity.labels["io.conv3d.docs.retention"] !== "3" ||
+      targetIdentity.labels["io.conv3d.docs.storage"] !== "shared-v1")
+  )
+    throw new ReleaseError("Target retained assets were not built from the exact current image.");
   report.previousSha = previousSha;
   report.previousDigest = previous.digest;
   save("baseline");
@@ -294,4 +221,94 @@ export async function rollingRelease(config, release, dependencies = {}) {
     save("recovery-required");
     throw new ReleaseError(`${report.error} ${report.rollback}`);
   }
+}
+
+// Shared byte-verified registry reads for build ancestry and deployment.
+export async function openRegistry(config, dependencies = {}) {
+  const request = dependencies.fetch ?? fetch;
+  const authUrl = new URL("https://ghcr.io/token");
+  authUrl.searchParams.set("service", "ghcr.io");
+  authUrl.searchParams.set("scope", `repository:${APP.registryRepository}:pull,push`);
+  const auth = await request(authUrl.href, {
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${config.actor}:${config.token}`).toString("base64")}`,
+    },
+    redirect: "error",
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!auth.ok) throw new ReleaseError(`Registry authentication failed (${auth.status}).`);
+  const tokenBody = await auth.json();
+  const token = tokenBody.token ?? tokenBody.access_token;
+  if (typeof token !== "string" || !token) throw new ReleaseError("Registry token is missing.");
+
+  const registry = async (path, options = {}) => {
+    const response = await request(`https://ghcr.io/v2/${APP.registryRepository}/${path}`, {
+      ...options,
+      redirect: options.redirect ?? "error",
+      signal: AbortSignal.timeout(15000),
+      headers: { Authorization: `Bearer ${token}`, Accept: TYPES.join(", "), ...options.headers },
+    });
+    return response;
+  };
+  const manifest = async (reference, optional = false) => {
+    const response = await registry(`manifests/${reference}`);
+    if (optional && response.status === 404) return null;
+    if (!response.ok) throw new ReleaseError(`Registry manifest read failed (${response.status}).`);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const digest = hash(bytes);
+    const reported = response.headers.get("docker-content-digest");
+    if ((reported && reported !== digest) || (isDigest(reference) && reference !== digest)) {
+      throw new ReleaseError("Registry manifest digest does not match its bytes.");
+    }
+    const body = JSON.parse(bytes.toString("utf8"));
+    const type = response.headers.get("content-type")?.split(";")[0] || body.mediaType;
+    if (!TYPES.includes(type)) throw new ReleaseError("Unsupported registry manifest type.");
+    return { bytes, digest, type, body };
+  };
+  const identity = async (image) => {
+    let selected = image;
+    if (image.body.manifests) {
+      const linux = image.body.manifests.filter(
+        (item) => item.platform?.os === "linux" && item.platform?.architecture === "amd64",
+      );
+      if (linux.length !== 1 || !isDigest(linux[0].digest))
+        throw new ReleaseError("Image must contain one linux/amd64 manifest.");
+      selected = await manifest(linux[0].digest);
+    }
+    const digest = selected.body.config?.digest;
+    if (!isDigest(digest)) throw new ReleaseError("Image config digest is missing.");
+    let response = await registry(`blobs/${digest}`, { redirect: "manual" });
+    if ([302, 307].includes(response.status)) {
+      const location = new URL(response.headers.get("location") ?? "", "https://ghcr.io");
+      if (
+        location.protocol !== "https:" ||
+        location.hostname !== "pkg-containers.githubusercontent.com" ||
+        location.username ||
+        location.password ||
+        location.port
+      ) {
+        throw new ReleaseError("Untrusted registry blob redirect.");
+      }
+      // GHCR redirects blobs to a signed download URL. Never forward registry
+      // authorization to that host, nor print the signed URL in reports.
+      response = await request(location.href, {
+        redirect: "error",
+        signal: AbortSignal.timeout(15000),
+      });
+    }
+    if (!response.ok) throw new ReleaseError(`Image config read failed (${response.status}).`);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (hash(bytes) !== digest)
+      throw new ReleaseError("Image config digest does not match its bytes.");
+    const body = JSON.parse(bytes.toString("utf8"));
+    const sha = body.config?.Labels?.["org.opencontainers.image.revision"];
+    if (body.os !== "linux" || body.architecture !== "amd64" || !isSha(sha)) {
+      throw new ReleaseError(
+        "Image config must identify a linux/amd64 build and full source commit.",
+      );
+    }
+    return { sha, labels: body.config.Labels };
+  };
+  const revision = async (image) => (await identity(image)).sha;
+  return { registry, manifest, revision, identity };
 }
