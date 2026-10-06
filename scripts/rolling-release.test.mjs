@@ -502,3 +502,12 @@ test("initial adoption verifies the exact legacy homepage bytes, not version.jso
     /legacy baseline/,
   );
 });
+
+test("only the pinned legacy parent is checked by its short tag", async () => {
+  const { baselineTags } = await import("./prepare-docs-build.mjs");
+  assert.deepEqual(baselineTags(INITIAL_ADOPTION.sha), [
+    "latest",
+    `sha-${INITIAL_ADOPTION.sha.slice(0, 7)}`,
+  ]);
+  assert.deepEqual(baselineTags(NEW), ["latest", NEW]);
+});

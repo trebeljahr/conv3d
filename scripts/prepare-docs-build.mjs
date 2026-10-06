@@ -33,7 +33,7 @@ export async function verifyLegacyBaseline({
         redirect: "manual",
         cache: "no-store",
         headers: { "Cache-Control": "no-cache, no-store" },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(15000),
       });
       const bytes = Buffer.from(await response.arrayBuffer());
       if (response.status !== 200 || createHash("sha256").update(bytes).digest("hex") !== expected)
@@ -42,6 +42,13 @@ export async function verifyLegacyBaseline({
     if (sample + 1 < samples) await sleep(2000);
   }
 }
+
+// The pinned legacy image was published before full-SHA tags; it only has
+// `sha-<7 hex>`. Every later image carries its full commit tag.
+export const baselineTags = (previousSha) =>
+  previousSha === INITIAL_ADOPTION.sha
+    ? ["latest", `sha-${previousSha.slice(0, 7)}`]
+    : ["latest", previousSha];
 
 export async function prepareDocsBuild(config, sha, dependencies = {}) {
   if (!/^[a-f0-9]{40}$/.test(sha ?? "") || !config.actor || !config.token)
@@ -55,7 +62,7 @@ export async function prepareDocsBuild(config, sha, dependencies = {}) {
   const previous = await manifest("latest");
   const previousSha = await revision(previous);
   const check = async () => {
-    for (const tag of ["latest", previousSha]) {
+    for (const tag of baselineTags(previousSha)) {
       if ((await manifest(tag)).digest !== previous.digest)
         throw new ReleaseError("Build baseline is not the exact verified serving image.");
     }
