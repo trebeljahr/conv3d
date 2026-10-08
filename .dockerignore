@@ -9,3 +9,11 @@
 .env.keys
 !.env.example
 !.env.production
+
+# Host build output and installs. `COPY docs/ ./` would otherwise carry a
+# local docs/node_modules into the image, and pnpm aborts with
+# ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY when it finds one built for
+# another platform.
+**/node_modules
+docs/.next
+docs/out
