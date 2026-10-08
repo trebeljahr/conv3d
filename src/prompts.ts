@@ -1,15 +1,11 @@
-import { exit } from "node:process";
-import chalk from "chalk";
 import inquirer from "inquirer";
-import { err } from "./log.js";
 import { isNonInteractive } from "./program.js";
 
 const { prompt } = inquirer;
-const { red } = chalk;
 
 function bailNonInteractive(what: string, hint: string): never {
-  err(red(`🚨 Non-interactive mode: ${what} is required but was not provided.\n` + `ℹ️ ${hint}`));
-  exit(1);
+  // Thrown so the calling command's catch emits the `--json` fatal-error object.
+  throw new Error(`Non-interactive mode: ${what} is required but was not provided. ${hint}`);
 }
 
 export async function promptForModelType({

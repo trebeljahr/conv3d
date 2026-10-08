@@ -3,7 +3,7 @@ import path from "node:path";
 import { exit } from "node:process";
 import chalk from "chalk";
 import { convertModels } from "../converters.js";
-import { emitJsonIfRequested, err, info, warn } from "../log.js";
+import { emitJsonIfRequested, err, fail, info, warn } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { globalOptions, isDryRun, program } from "../program.js";
 import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
@@ -43,15 +43,13 @@ Examples:
 
       const inputDir = subOptions.inputDir ?? positional;
       if (!inputDir) {
-        err(red(`🚨 Please specify an input directory (positionally or with -i)`));
-        exit(1);
+        fail("tsx-gen", "Please specify an input directory (positionally or with -i)");
       }
 
       const resolvedInputDir = path.resolve(inputDir);
 
       if (!(await isDirectory(resolvedInputDir))) {
-        err(red("🚨 Invalid input directory: " + resolvedInputDir));
-        exit(1);
+        fail("tsx-gen", "Invalid input directory: " + resolvedInputDir);
       }
 
       const files = await readdir(resolvedInputDir, {

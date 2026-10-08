@@ -135,8 +135,8 @@ On a **partial** success (some files converted, some failed), the exit code is `
 
 | Code | Meaning | When to retry |
 |---|---|---|
-| `0` | Everything worked. Empty `converted[]` is still `0` if the glob matched nothing (intentional — empty agent globs shouldn't be errors). | Never. |
-| `1` | Fatal: bad arguments, missing input directory, unsupported model type. | After fixing the args. |
+| `0` | Everything worked. Empty `converted[]` is still `0` if the glob matched nothing or the directory holds no supported models (intentional — empty agent globs shouldn't be errors). | Never. |
+| `1` | Fatal: bad arguments, missing input directory, unsupported model type. A directory path that does not exist is fatal, not an empty match. | After fixing the args. |
 | `2` | Per-file failures. `converted[]` has the successes, `errors[]` has the failures. | Selectively, only the entries in `errors[]`. |
 
 ## stdout vs stderr

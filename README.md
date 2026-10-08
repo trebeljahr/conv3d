@@ -98,11 +98,11 @@ Override with `-o <outputDir>`. For a flat structure, use `--flat` (every output
 
 ## Exit codes
 
-| Code | Meaning                                                                     |
-| ---- | --------------------------------------------------------------------------- |
-| `0`  | Success (including "no matching files found" — safe for agent globs)        |
-| `1`  | Fatal error (invalid args, missing input, etc.) — nothing was converted     |
-| `2`  | Completed, but one or more files failed to convert — see `errors[]` in JSON |
+| Code | Meaning                                                                         |
+| ---- | ------------------------------------------------------------------------------- |
+| `0`  | Success (including "no matching files found" — safe for agent globs)            |
+| `1`  | Fatal error (invalid args, missing input path or directory) — nothing converted |
+| `2`  | Completed, but one or more files failed to convert — see `errors[]` in JSON     |
 
 ## Command reference
 

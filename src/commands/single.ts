@@ -2,7 +2,7 @@ import path from "node:path";
 import { exit } from "node:process";
 import chalk from "chalk";
 import { converters, inferModelType } from "../converters.js";
-import { emitJsonIfRequested, err, info } from "../log.js";
+import { emitJsonIfRequested, err, fail, info } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { globalOptions, isDryRun, program } from "../program.js";
 import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
@@ -43,15 +43,13 @@ Examples:
     try {
       const inputPath = subOptions.inputPath ?? positional;
       if (!inputPath) {
-        err(red("🚨 Please specify an input path (positionally or with -i)"));
-        exit(1);
+        fail("single", "Please specify an input path (positionally or with -i)");
       }
 
       const resolvedInputPath = path.resolve(inputPath);
 
       if (await isDirectory(resolvedInputPath)) {
-        err(red("🚨 Input path should point to a file."));
-        exit(1);
+        fail("single", "Input path should point to a file.");
       }
 
       info("🚀 Starting conversion process...");
@@ -60,9 +58,10 @@ Examples:
 
       const inferredModelType = inferModelType(resolvedInputPath);
       if (!inferredModelType) {
-        err(red("🚨 Invalid input file type: " + path.extname(resolvedInputPath)));
-        err("ℹ️ Please provide a .fbx, .obj, or .gltf file");
-        exit(1);
+        fail(
+          "single",
+          `Invalid input file type: ${path.extname(resolvedInputPath)} (expected .fbx, .obj, or .gltf)`,
+        );
       }
 
       const inputDir = path.resolve(path.dirname(resolvedInputPath));

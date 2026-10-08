@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import type { Ora } from "ora";
 import ora from "ora";
 import { program } from "./program.js";
@@ -41,6 +42,15 @@ export function emitJson(obj: unknown): void {
 // Convenience: emit only when --json was passed.
 export function emitJsonIfRequested(obj: unknown): void {
   if (isJson()) emitJson(obj);
+}
+
+// Fatal error: emit the documented `{ command, ok: false, error }` object when
+// --json was passed (so agents always get JSON on stdout), report on stderr,
+// and exit 1.
+export function fail(command: string, message: string): never {
+  emitJsonIfRequested({ command, ok: false, error: message });
+  err(chalk.red("🚨 " + message));
+  process.exit(1);
 }
 
 type SpinnerLike = Pick<Ora, "start" | "stop" | "stopAndPersist"> & {

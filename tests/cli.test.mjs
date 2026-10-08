@@ -104,7 +104,7 @@ test("bulk on empty dir exits 0 with empty JSON result", () => {
   }
 });
 
-test("bulk on missing dir exits 1", () => {
+test("bulk on missing dir exits 1 with fatal JSON", () => {
   const r = run([
     "bulk",
     "/does/not/exist/hopefully",
@@ -116,6 +116,10 @@ test("bulk on missing dir exits 1", () => {
     "--json",
   ]);
   assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.command, "bulk");
+  assert.equal(parsed.ok, false);
+  assert.match(parsed.error, /Invalid input directory/);
 });
 
 test("single --dry-run --json plans the output without writing", () => {

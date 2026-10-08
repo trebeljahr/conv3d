@@ -10,7 +10,7 @@ import {
   type InputFormats,
   SOURCE_FORMATS,
 } from "../converters.js";
-import { emitJsonIfRequested, err, info, warn } from "../log.js";
+import { emitJsonIfRequested, err, fail, info, warn } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { type GlobalOptions, globalOptions, isDryRun, program } from "../program.js";
 import { promptForModelType } from "../prompts.js";
@@ -104,8 +104,7 @@ Examples:
     try {
       const rawInput = subOptions.inputDir ?? positional;
       if (!rawInput) {
-        err(red("🚨 Please specify an input directory or glob (positionally or with -i)"));
-        exit(1);
+        fail("bulk", "Please specify an input directory or glob (positionally or with -i)");
       }
 
       // Glob mode when the input contains glob metacharacters.
@@ -133,8 +132,7 @@ Examples:
       } else {
         inputDir = path.resolve(rawInput);
         if (!(await isDirectory(inputDir))) {
-          err(red("🚨 Invalid input directory: " + inputDir));
-          exit(1);
+          fail("bulk", "Invalid input directory: " + inputDir);
         }
         files = await readdir(inputDir, { recursive: subOptions.recursive });
       }
@@ -179,8 +177,7 @@ Examples:
         !Object.keys(converters).includes(subOptions.modelType!) &&
         subOptions.modelType !== "ALL"
       ) {
-        err(red("🚨 Invalid model type: " + subOptions.modelType));
-        exit(1);
+        fail("bulk", "Invalid model type: " + subOptions.modelType);
       }
 
       const options: OptionsBulkCommand = { ...globalOptions, ...subOptions };

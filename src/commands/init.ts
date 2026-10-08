@@ -3,7 +3,7 @@ import path from "node:path";
 import { exit } from "node:process";
 import chalk from "chalk";
 import inquirer from "inquirer";
-import { err, info, isJson } from "../log.js";
+import { err, fail, info, isJson } from "../log.js";
 import { isDryRun, isNonInteractive, program } from "../program.js";
 import { checkFileExists, home } from "../utils.js";
 
@@ -106,8 +106,7 @@ Examples:
   .action(async (positional: string | undefined, subOptions: InitOptions) => {
     const target = subOptions.targetDir ?? positional;
     if (!target) {
-      err(red("🚨 Please specify a target directory (positionally or with -t)"));
-      exit(1);
+      fail("init", "Please specify a target directory (positionally or with -t)");
     }
 
     const opts = { ...program.opts<InitOptions>(), ...subOptions };
