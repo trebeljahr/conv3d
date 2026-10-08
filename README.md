@@ -39,12 +39,13 @@ conv3d bulk ./models -m ALL --tsx --optimize --dry-run --json
 
 | Command   | What it does                                                       |
 | --------- | ------------------------------------------------------------------ |
+| `init`    | Scaffold a `models/` → `public/models/` conversion workspace       |
 | `single`  | Convert a single `.fbx` / `.obj` / `.gltf` file to `.glb`          |
 | `bulk`    | Convert every supported model in a directory or matching a glob    |
 | `tsx-gen` | Run gltfjsx on existing `.glb` files to generate `.tsx` components |
 | `doctor`  | Print environment + dependency diagnostics                         |
 
-Each command (except `doctor`) accepts its input either **positionally** or via `-i`:
+Each conversion command accepts its input either **positionally** or via `-i`. `init` takes its target positionally or via `-t`:
 
 ```bash
 conv3d single ./model.fbx
@@ -83,6 +84,9 @@ Override with `-o <outputDir>`. For a flat structure, use `--flat` (every output
 | `-c, --concurrency <n>`           | Convert N files in parallel (default: `min(cpus, 4)`, or 1 in interactive ask-mode)         |
 | `--resolution <n>`                | Max texture resolution during `--optimize` (default `1024`; normals get `max(n, 2048)`)     |
 | `--keep-materials`                | Skip the palette step during `--optimize`, preserving original materials                    |
+| `--no-recover-textures`           | Turn off texture recovery after conversion (on by default)                                  |
+| `--textures-dir <path>`           | Extra directory to scan when conv3d seeds missing textures                                  |
+| `--material-colors <path>`        | JSON manifest of per-material `baseColorFactor` values, applied by material name            |
 | `--flat`                          | Write every output file directly into `outputDir` (no subdirectories)                       |
 | `--glb-dir <path>`                | Override where converted `.glb` files go                                                    |
 | `--tsx-dir <path>`                | Override where `.tsx` files go                                                              |
@@ -102,6 +106,28 @@ Override with `-o <outputDir>`. For a flat structure, use `--flat` (every output
 
 ## Command reference
 
+### `conv3d init [target]`
+
+Create a starter model pipeline in a target directory:
+
+- `models/` holds source `.fbx`, `.obj`, or `.gltf` files.
+- `public/models/` receives web-ready `.glb` output.
+- `useGltfModel.ts` is a minimal React Three Fiber `useGLTF` hook.
+- `README.md` contains the matching `conv3d bulk` command.
+
+```bash
+conv3d init ./my-app
+conv3d init --yes ./my-app
+conv3d init ./my-app --json
+```
+
+| Flag                     | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `[target]` (positional)  | Directory to scaffold. Created if missing. |
+| `-t, --targetDir <path>` | Same as positional form                    |
+
+In interactive mode, conv3d asks before it overwrites an existing file. `--yes` accepts every overwrite. `--overwrite=skip` and `--overwrite=replace` set the behavior explicitly. JSON output lists `created[]` and `skipped[]`.
+
 ### `conv3d single [path]`
 
 Convert one file. Format is inferred from the extension.
@@ -112,6 +138,11 @@ conv3d single ./model.fbx --tsx --optimize -y   # no prompts
 conv3d single ./model.obj --no-tsx -y           # glb only
 conv3d single ./model.fbx --tsx --dry-run --json
 ```
+
+| Flag                     | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `[path]` (positional)    | Path to the `.fbx` / `.obj` / `.gltf` file |
+| `-i, --inputPath <path>` | Same as positional form                    |
 
 ### `conv3d bulk [input]`
 
@@ -146,6 +177,12 @@ conv3d tsx-gen ./models -r --force-overwrite -y
 conv3d tsx-gen ./models --dry-run --json
 ```
 
+| Flag                    | Description                            |
+| ----------------------- | -------------------------------------- |
+| `[dir]` (positional)    | Directory that holds the `.glb` files  |
+| `-i, --inputDir <path>` | Same as positional form                |
+| `-r, --recursive`       | Recurse into subdirectories            |
+
 ### `conv3d doctor`
 
 Print the versions of `conv3d`, Node, the platform, and the bundled conversion libraries. Useful for bug reports and for agents verifying install health.
@@ -153,7 +190,12 @@ Print the versions of `conv3d`, Node, the platform, and the bundled conversion l
 ```bash
 conv3d doctor
 conv3d doctor --json
+conv3d doctor --markdown
 ```
+
+| Flag         | Description                                                          |
+| ------------ | -------------------------------------------------------------------- |
+| `--markdown` | Print the report as a fenced text block to paste into a GitHub issue |
 
 ## Using conv3d from a script or AI agent
 
