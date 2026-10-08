@@ -29,3 +29,14 @@ cd docs/scripts && vhs terminal-json.tape
 ```
 
 Writes `docs/public/press/terminal-json.png` (1920x1080): `conv3d bulk tests/fixtures -m ALL --tsx --optimize --dry-run --yes --json | jq`. `_json-shot-setup.sh` creates a scratch project in `/tmp/my-game` with one empty `.fbx`, `.obj` and `.gltf` in `tests/fixtures/`, because the repo has no `tests/fixtures/` folder.
+
+## Press screenshot: interactive bulk run
+
+`terminal-screenshot.tape` records an interactive `conv3d bulk ./models` run (answering the format, `.tsx`, optimize and confirm prompts) and saves the final screen as a lossless 1920x1080 PNG:
+
+```sh
+pnpm build
+cd docs/scripts && vhs terminal-screenshot.tape
+```
+
+Output: `docs/public/press/terminal-screenshot.png`. `_screenshot-setup.sh` unpacks a few `docs/public/models/conv3d-funnel/` GLBs into `.gltf` sources in a fresh `/tmp/conv3d.*` dir, so the run converts real geometry and writes nothing into the repo. The throwaway GIF goes to `/tmp` and takes a few minutes to encode at this size.
