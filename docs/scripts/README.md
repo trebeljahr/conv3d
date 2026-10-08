@@ -21,3 +21,11 @@ cd docs && pnpm press:hero
 ```
 
 `docs-hero.mjs` builds the static export, serves `out/` on a random free high port, waits for the hero's funnel models to load and animate, and writes a 1920x1080 `public/press/docs-hero.png`. It fails if a "loading model…" placeholder is visible. Set `BASE_URL` to capture from a server you already run, or `SETTLE_MS` to change the animation settle time.
+
+## Press screenshot: JSON output
+
+```sh
+cd docs/scripts && vhs terminal-json.tape
+```
+
+Writes `docs/public/press/terminal-json.png` (1920x1080): `conv3d bulk tests/fixtures -m ALL --tsx --optimize --dry-run --yes --json | jq`. `_json-shot-setup.sh` creates a scratch project in `/tmp/my-game` with one empty `.fbx`, `.obj` and `.gltf` in `tests/fixtures/`, because the repo has no `tests/fixtures/` folder.
