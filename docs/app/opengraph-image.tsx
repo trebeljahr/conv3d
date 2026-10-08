@@ -5,6 +5,14 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const dynamic = "force-static";
 
+// Verbatim lines (emoji prefixes dropped) from `conv3d tsx-gen models -y`
+// run against the 13 GLBs in public/models/conv3d-funnel.
+const terminalLines = [
+  "Starting TSX generation process...",
+  "Generating .tsx files... (13/13) Sofa.glb",
+  "GLB step completed",
+];
+
 export default function Image() {
   return new ImageResponse(
     <div
@@ -14,7 +22,7 @@ export default function Image() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: 72,
+        padding: 64,
         background:
           "radial-gradient(ellipse 1100px 700px at 88% 12%, rgba(20,184,166,0.32), transparent 60%), radial-gradient(ellipse 900px 600px at 8% 92%, rgba(13,148,136,0.22), transparent 65%), linear-gradient(135deg, #0a1014 0%, #0d1418 55%, #131c22 100%)",
         color: "#e6f4f1",
@@ -47,12 +55,12 @@ export default function Image() {
         </svg>
         conv3d docs
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div
           style={{
-            fontSize: 84,
+            fontSize: 68,
             fontWeight: 800,
-            lineHeight: 1.02,
+            lineHeight: 1.04,
             letterSpacing: -1,
             color: "#e6f4f1",
           }}
@@ -61,8 +69,8 @@ export default function Image() {
         </div>
         <div
           style={{
-            maxWidth: 940,
-            fontSize: 34,
+            maxWidth: 1000,
+            fontSize: 28,
             lineHeight: 1.25,
             color: "rgba(230,244,241,0.78)",
           }}
@@ -73,16 +81,25 @@ export default function Image() {
       <div
         style={{
           display: "flex",
-          gap: 16,
-          fontSize: 26,
-          color: "rgba(230,244,241,0.72)",
+          flexDirection: "column",
+          gap: 8,
+          padding: "20px 26px",
+          borderRadius: 14,
+          border: "1px solid rgba(45,212,191,0.35)",
+          background: "rgba(5,10,12,0.78)",
+          fontSize: 24,
+          color: "rgba(230,244,241,0.82)",
         }}
       >
-        <span>CLI</span>
-        <span style={{ color: "#2dd4bf" }}>/</span>
-        <span>React Three Fiber</span>
-        <span style={{ color: "#2dd4bf" }}>/</span>
-        <span>3D pipeline</span>
+        <div style={{ display: "flex", gap: 14 }}>
+          <span style={{ color: "#2dd4bf" }}>$</span>
+          <span style={{ color: "#e6f4f1" }}>conv3d tsx-gen models -y</span>
+        </div>
+        {terminalLines.map((line) => (
+          <div key={line} style={{ display: "flex", paddingLeft: 30 }}>
+            {line}
+          </div>
+        ))}
       </div>
     </div>,
     size,
