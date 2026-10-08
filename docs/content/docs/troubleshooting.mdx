@@ -110,7 +110,7 @@ Bad CPU type in executable
 or:
 
 ```text
-spawn .../node_modules/fbx2gltf/bin/Darwin/FBX2glTF Unknown system error -86
+🚨 spawn Unknown system error -86
 ```
 
 **Cause**
@@ -130,6 +130,33 @@ No conv3d reinstall is usually needed. Confirm the platform line with:
 ```bash
 conv3d doctor
 ```
+
+## Linux arm64 cannot convert FBX
+
+**Symptom**
+
+On an arm64 Linux host or container (for example the default `node:22` image on an Apple Silicon Docker host), FBX conversion fails with:
+
+```text
+🚨 Converter output:
+qemu-x86_64: Could not open '/lib64/ld-linux-x86-64.so.2': No such file or directory
+```
+
+or, without `qemu` binfmt support, `spawn ... ENOENT` / `Exec format error`.
+
+**Cause**
+
+`fbx2gltf` ships only an x86-64 Linux binary. There is no arm64 build.
+
+**Fix**
+
+Run FBX conversion on an x86-64 Linux machine, or force an x86-64 container:
+
+```bash
+docker run --rm --platform linux/amd64 node:22 bash -c "npm install -g conv3d && conv3d doctor"
+```
+
+OBJ and glTF inputs do not use `fbx2gltf` and work on arm64.
 
 ## Linux glibc / libstdc++ mismatch
 

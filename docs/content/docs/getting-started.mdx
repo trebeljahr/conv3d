@@ -18,6 +18,7 @@ Requirements:
 
 - **Node.js 22+** (older Node versions will refuse to install).
 - macOS or Linux. Windows is unsupported because of `fbx2gltf` native binaries.
+- FBX input needs an x86-64 converter binary. On Apple Silicon Macs, install Rosetta 2 once (`softwareupdate --install-rosetta --agree-to-license`). On Linux, use an x86-64 glibc machine or container; arm64 Linux cannot convert FBX. OBJ and glTF work everywhere. See [Troubleshooting](./troubleshooting#apple-silicon-needs-rosetta-for-fbx).
 
 Verify the install:
 
@@ -52,7 +53,7 @@ Outputs land beside the input under `_convert-3d-for-web/`:
 character.fbx
 _convert-3d-for-web/
 ├── glb/character.glb
-├── tsx/Character.tsx
+├── tsx/character.tsx
 └── glb-for-web/character-transformed.glb
 ```
 
