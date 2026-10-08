@@ -1,6 +1,6 @@
 {
   "name": "conv3d",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "packageManager": "pnpm@10.33.2",
   "description": "CLI that converts FBX/OBJ/glTF to GLB and generates typed React Three Fiber components. Interactive prompts or non-interactive (--yes --json --dry-run) for scripts, CI, and AI coding agents.",
   "bin": {
