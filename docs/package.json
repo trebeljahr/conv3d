@@ -10,7 +10,8 @@
     "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "press:hero": "next build && node scripts/docs-hero.mjs"
   },
   "dependencies": {
     "@hatchkit/dev-plugin-next": "^0.1.43",
