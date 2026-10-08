@@ -32,7 +32,7 @@ export async function promptForModelType({
 
   const { modelType } = await prompt<{ modelType: string }>([
     {
-      type: "list",
+      type: "select",
       name: "modelType",
       message: "Select the type of 3D models to convert:",
       choices: [
