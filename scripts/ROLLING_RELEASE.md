@@ -6,8 +6,6 @@ This controller manages only `u12da0bdw4lwueu6cc4gevpa` (Conv3d site), source `t
 
 The controller requires the app's generic hook bundle: `COOLIFY_BASE_URL`, `COOLIFY_RESOURCE_UUID`, `COOLIFY_DEPLOY_REPOSITORY`, `COOLIFY_DEPLOY_BRANCH`, and `COOLIFY_DEPLOY_SECRET`. Each value must name this fixed app and source repository; the secret must uniquely select it. It uses the built-in GitHub package token and never receives a Coolify API token.
 
-The existing docs GitHub Pages workflow also runs when `docs/**` changes. It is independent of Coolify and is unchanged by this controller. Account for that publication when pushing the first adoption commit.
-
 ## First adoption
 
 The existing image cannot acquire a drain period or public identity retroactively. An operator must preserve its current digest and safe configuration, deploy the first prepared image using an exact digest pin, inspect that exact Coolify deployment to terminal success, confirm the new running image digest, old-container retirement, and the public response checks. In Coolify 4.0.0-beta.469, the digest tag field is `sha256-<64 hex characters>`. No automatic first adoption or rollback is provided here.
