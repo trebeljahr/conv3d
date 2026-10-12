@@ -7,15 +7,26 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
 // Public HTTP proves the serving build. The rollout operator also verifies
 // Coolify's exact deployment UUID and the running container's image digest.
+// After the hook the old build keeps answering until the new image is pulled,
+// passes its start period and the old container has drained. The wait is nine
+// minutes, bounded by time so slow requests cannot extend it.
 export async function verifyRelease(
   commit,
-  { fetch: request = fetch, sleep = pause, attempts = 90, stableSamples = 16 } = {},
+  {
+    fetch: request = fetch,
+    sleep = pause,
+    now = Date.now,
+    attempts = 240,
+    budgetMs = 540000,
+    stableSamples = 16,
+  } = {},
 ) {
   if (!/^[a-f0-9]{40}$/.test(commit ?? ""))
     throw new Error("Expected a full lowercase Git commit SHA.");
   let consecutive = 0;
   let lastFailure = "No matching build observed.";
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
+  const started = now();
+  for (let attempt = 0; attempt < attempts && now() - started < budgetMs; attempt += 1) {
     try {
       for (const origin of ORIGINS) {
         const nonce = `${commit}-${attempt}-${Date.now()}`;

@@ -29,6 +29,7 @@ function platform(options = {}) {
   const reports = [];
   const hooks = [];
   const verified = [];
+  const lagging = new Map();
   for (const sha of [OLD, NEW, OTHER]) {
     const bytes = Buffer.from(
       JSON.stringify({
@@ -158,10 +159,17 @@ function platform(options = {}) {
       const ref = target.pathname.split("/manifests/")[1];
       if (init.method === "PUT") {
         images.set(hash(init.body), init.body);
-        tags.set(ref, hash(init.body));
+        if (options.staleReads && tags.has(ref))
+          lagging.set(ref, { digest: tags.get(ref), left: options.staleReads });
+        if (options.dropWrite !== ref) tags.set(ref, hash(init.body));
         if (options.crashMarker && ref === "rolling-started")
           throw new Error("Marker response lost.");
         return new Response(null, { status: 201 });
+      }
+      const lag = lagging.get(ref);
+      if (lag?.left > 0) {
+        lag.left -= 1;
+        return responseFor(images.get(lag.digest));
       }
       const bytes = images.get(tags.get(ref) ?? ref);
       if (!bytes) return new Response(null, { status: 404 });
@@ -303,6 +311,23 @@ test("lost marker response cannot queue a deployment and blocks next run", async
   await assert.rejects(rollingRelease(config, p.release, p.deps), /Release operation failed/);
   assert.equal(p.hooks.length, 0);
   await assert.rejects(rollingRelease(config, p.release, p.deps), /operator reconciliation/);
+});
+
+test("a tag read that lags its write is retried; a write that never shows fails before any hook", async () => {
+  const slow = platform({ staleReads: 2 });
+  slow.deps.sleep = async () => {};
+  assert.equal((await rollingRelease(config, slow.release, slow.deps)).stage, "http-verified");
+  assert.deepEqual(slow.hooks, [NEW]);
+  for (const tag of ["latest", "rolling-started", "rolling-verified"])
+    assert.equal(slow.tags.get(tag), slow.release.digest);
+
+  const lost = platform({ dropWrite: "latest" });
+  const waits = [];
+  lost.deps.sleep = async (ms) => waits.push(ms);
+  await assert.rejects(rollingRelease(config, lost.release, lost.deps), /did not persist/);
+  assert.deepEqual(waits, [1000, 1000, 1000, 1000]);
+  assert.equal(lost.hooks.length, 0);
+  assert.equal(lost.tags.get("latest"), lost.release.expectedCurrentDigest);
 });
 
 test("a concurrent external writer is never overwritten during recovery", async () => {

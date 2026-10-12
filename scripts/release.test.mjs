@@ -88,3 +88,22 @@ test("rejects stale, cached, wrong-site and invalid-SHA evidence", async () => {
     }),
   );
 });
+test("verification stops at its time budget when requests are slow", async () => {
+  let clock = 0;
+  let versions = 0;
+  const stale = transport(["b".repeat(40)]);
+  await assert.rejects(
+    verifyRelease(SHA, {
+      fetch: async (url) => {
+        if (new URL(url).pathname === "/version.json") versions += 1;
+        return stale(url);
+      },
+      sleep: async () => {
+        clock += 60000;
+      },
+      now: () => clock,
+    }),
+    /Release did not remain healthy/,
+  );
+  assert.equal(versions, 9);
+});

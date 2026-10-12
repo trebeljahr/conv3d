@@ -80,6 +80,7 @@ export async function rollingRelease(config, release, dependencies = {}) {
         ...(dependencies.sleep ? { sleep: dependencies.sleep } : {}),
       }));
   const record = dependencies.record ?? (() => {});
+  const pause = dependencies.sleep ?? ((ms) => new Promise((done) => setTimeout(done, ms)));
   const report = {
     appUuid: APP.uuid,
     targetSha: release.sha,
@@ -100,8 +101,12 @@ export async function rollingRelease(config, release, dependencies = {}) {
       headers: { "Content-Type": image.type },
     });
     if (!response.ok) throw new ReleaseError(`Registry ${tag} update failed (${response.status}).`);
-    if ((await manifest(tag)).digest !== image.digest)
-      throw new ReleaseError(`Registry ${tag} update did not persist.`);
+    // GHCR can answer a tag read with the previous manifest for a moment after
+    // a write. Only a tag that stays wrong counts as a lost write.
+    for (let attempt = 1; (await manifest(tag)).digest !== image.digest; attempt += 1) {
+      if (attempt === 5) throw new ReleaseError(`Registry ${tag} update did not persist.`);
+      await pause(1000);
+    }
   };
   const queue = async (sha) => {
     const body = JSON.stringify({
