@@ -9,6 +9,8 @@ tsconfig.tsbuildinfo
 docs/.next
 docs/out
 docs/.source
+docs/worker
+.wrangler
 
 # claude code
 .claude/settings.local.json

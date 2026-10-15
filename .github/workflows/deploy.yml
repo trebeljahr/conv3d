@@ -1,5 +1,7 @@
-# Candidate builds never move a live tag. Deployment requires explicit activation.
-# CONV3D_ROLLOUT_MODE: unset/off, manual, or automatic.
+# Builds the docs site, uploads it as a new version of the conv3d-docs
+# Cloudflare Worker and, when allowed, activates it. Uploading never changes
+# what visitors get; only the deploy job does. See scripts/WORKER-RELEASES.md.
+# CONV3D_ROLLOUT_MODE: unset/off or manual (build only), or automatic.
 name: Build & Release
 
 on:
@@ -8,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Build, deploy a reviewed image, or verify a release
+        description: Build, deploy an uploaded version, or verify a release
         type: choice
         options: [build, deploy, verify]
         default: build
@@ -16,12 +18,8 @@ on:
         description: Full commit SHA required for deploy or verify
         type: string
         required: false
-      image_digest:
-        description: Exact sha256 image digest from the build artifact (deploy only)
-        type: string
-        required: false
-      expected_current_digest:
-        description: Reviewed current latest digest (deploy only)
+      version_id:
+        description: Worker version ID from the build job's release.json (deploy only)
         type: string
         required: false
 
@@ -29,91 +27,71 @@ permissions:
   contents: read
 
 concurrency:
-  group: image-release-main
+  group: site-release-main
   cancel-in-progress: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  ORIGIN: https://conv3d.trebeljahr.com
+  WRANGLER: wrangler@4.145.0
 
 jobs:
   build:
     outputs:
-      digest: ${{ steps.image.outputs.digest }}
+      version_id: ${{ steps.upload.outputs.version_id }}
+      releases: ${{ steps.assemble.outputs.releases }}
     if: github.repository == 'trebeljahr/conv3d' && github.ref == 'refs/heads/main' && inputs.operation != 'verify' && inputs.operation != 'deploy'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: node --test scripts/release.test.mjs scripts/rolling-release.test.mjs scripts/retained-docs.test.mjs scripts/shared-docs-releases.test.mjs
-      - name: Test shared release routing with nginx
-        run: RUN_DOCKER_TESTS=1 node --test --test-concurrency=1 scripts/shared-docs-http.test.mjs
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: baseline
-        name: Pin the verified serving image and reject SHA rebuilds
+      - run: node --test scripts/worker-release.test.mjs
+      - name: Build the static export
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/prepare-docs-build.mjs
-      - id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/trebeljahr/conv3d
-          flavor: latest=false
-          tags: |
-            type=raw,value=${{ github.sha }}
-      - id: image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=site-release
-          cache-to: type=gha,mode=max,scope=site-release
-          platforms: linux/amd64
-          build-args: |
-            RELEASE_SHA=${{ github.sha }}
-            PREVIOUS_IMAGE=${{ steps.baseline.outputs.previous_image }}
-            PREVIOUS_SHA=${{ steps.baseline.outputs.previous_sha }}
-            PREVIOUS_DIGEST=${{ steps.baseline.outputs.previous_digest }}
-
-      - name: Record immutable release identity
-        env:
-          IMAGE: ghcr.io/trebeljahr/conv3d
-          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          NEXT_PUBLIC_BUILD_COMMIT: ${{ github.sha }}
         run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          const { GITHUB_SHA: commit, IMAGE: image, IMAGE_DIGEST: digest } = process.env;
-          if (!/^[a-f0-9]{40}$/.test(commit) || !/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error('Missing full release identity.');
-          const ancestry = JSON.parse(readFileSync('build-inputs.json', 'utf8'));
-          if (ancestry.commit !== commit) throw new Error('Build ancestry does not match source.');
-          writeFileSync('release.json', JSON.stringify({ ...ancestry, commit, image, digest, reference: `${image}@${digest}` }, null, 2) + '\n');
-          NODE
+          pnpm --dir docs install --frozen-lockfile
+          pnpm --dir docs build
+          node scripts/write-version.mjs docs/out "$GITHUB_SHA"
+      # Old tabs keep loading their own chunks and /_release/<sha>/ files: the
+      # live Worker lists them in /release-assets.json and this build carries
+      # them into the new version. A broken live manifest fails the build.
+      - name: Carry the live releases' assets
+        run: node scripts/worker-release.mjs fetch "$ORIGIN" docs/worker/carry
+      - id: assemble
+        name: Assemble the Worker assets
+        run: |
+          node scripts/worker-release.mjs assemble docs/out "$GITHUB_SHA" docs/worker/carry docs/worker/assets | tee assemble.json
+          echo "releases=$(node -p 'require("./assemble.json").releases.join(",")')" >> "$GITHUB_OUTPUT"
+      - id: upload
+        name: Upload a Worker version without activating it
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-output.ndjson
+        run: |
+          npx --yes "$WRANGLER" versions upload --tag "$GITHUB_SHA" --message "Build ${GITHUB_SHA::12} run $GITHUB_RUN_ID"
+          version_id=$(node -e '
+            const rows = require("fs").readFileSync(process.env.WRANGLER_OUTPUT_FILE_PATH, "utf8").trim().split("\n").map(JSON.parse);
+            const row = rows.find((entry) => entry.type === "version-upload");
+            if (!/^[0-9a-f-]{36}$/.test(row?.version_id ?? "")) throw new Error("Wrangler reported no version ID.");
+            console.log(row.version_id);')
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+          node -e 'require("fs").writeFileSync("release.json", JSON.stringify({ commit: process.env.GITHUB_SHA, versionId: process.argv[1], ...require("./assemble.json") }, null, 2) + "\n")' "$version_id"
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            release.json
-            build-inputs.json
+          path: release.json
           if-no-files-found: error
 
   verify:
     if: github.repository == 'trebeljahr/conv3d' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.operation == 'verify'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
@@ -132,31 +110,30 @@ jobs:
       ((github.event_name == 'push' && vars.CONV3D_ROLLOUT_MODE == 'automatic' && needs.build.result == 'success') ||
        (github.event_name == 'workflow_dispatch' && inputs.operation == 'deploy'))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: write
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Promote, queue this app, and verify the release
+      - name: Activate the uploaded version and verify it
         env:
-          ROLLOUT_MODE: ${{ vars.CONV3D_ROLLOUT_MODE }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PUSH: ${{ github.event_name == 'push' }}
           TARGET_SHA: ${{ github.event_name == 'push' && github.sha || inputs.target_sha }}
-          TARGET_DIGEST: ${{ github.event_name == 'push' && needs.build.outputs.digest || inputs.image_digest }}
-          EXPECTED_CURRENT_DIGEST: ${{ inputs.expected_current_digest }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COOLIFY_BASE_URL: ${{ secrets.COOLIFY_BASE_URL }}
-          COOLIFY_RESOURCE_UUID: ${{ secrets.COOLIFY_RESOURCE_UUID }}
-          COOLIFY_DEPLOY_SECRET: ${{ secrets.COOLIFY_DEPLOY_SECRET }}
-          COOLIFY_DEPLOY_REPOSITORY: ${{ secrets.COOLIFY_DEPLOY_REPOSITORY }}
-          COOLIFY_DEPLOY_BRANCH: ${{ secrets.COOLIFY_DEPLOY_BRANCH }}
-        run: node scripts/rolling-release.mjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: rollout-${{ github.run_id }}-${{ github.run_attempt }}
-          path: rollout.json
-          if-no-files-found: warn
+          VERSION_ID: ${{ github.event_name == 'push' && needs.build.outputs.version_id || inputs.version_id }}
+          CARRIED: ${{ needs.build.outputs.releases }}
+        run: |
+          [[ "$TARGET_SHA" =~ ^[a-f0-9]{40}$ && "$VERSION_ID" =~ ^[0-9a-f-]{36}$ ]] || { echo "A full SHA and a version ID are required."; exit 1; }
+          # wrangler reads wrangler.jsonc, which names an assets directory.
+          mkdir -p docs/worker/assets
+          tag=$(npx --yes "$WRANGLER" versions view "$VERSION_ID" --json | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).annotations?.["workers/tag"] ?? ""')
+          [ "$tag" = "$TARGET_SHA" ] || { echo "Version $VERSION_ID was built from '$tag', not $TARGET_SHA."; exit 1; }
+          if [ "$PUSH" = "true" ]; then
+            # A push deploy must keep the chunks of the release visitors have open.
+            live=$(curl -fsS --max-time 15 "$ORIGIN/releases.json?at=$(date +%s)" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).head')
+            [[ ",$CARRIED," == *",$live,"* ]] || { echo "Live release $live is not carried by $TARGET_SHA; rebuild."; exit 1; }
+          fi
+          npx --yes "$WRANGLER" versions deploy "$VERSION_ID@100%" --yes --message "Deploy ${TARGET_SHA::12} run $GITHUB_RUN_ID"
+          node scripts/verify-release.mjs "$TARGET_SHA"

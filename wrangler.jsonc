@@ -1,0 +1,24 @@
+// Cloudflare Worker that serves the docs site at conv3d.trebeljahr.com.
+//
+// Assets only: there is no `main`, so no request runs Worker code or counts
+// toward the Workers Free request cap. Do not add `main`, `run_worker_first`
+// or `cache`; each turns asset requests into billed requests.
+//
+// No `routes` key: the zone routes are managed outside Wrangler, so a deploy
+// never adds or removes them. conv3d.trebeljahr.com/* points at this Worker,
+// and conv3d.trebeljahr.com/.well-known/acme-challenge/* has no Worker so
+// Traefik on the origin can renew its certificate.
+//
+// scripts/worker-release.mjs assembles docs/worker/assets: the static export,
+// the carried files of earlier releases, _headers and the release manifests.
+{
+  "name": "conv3d-docs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./docs/worker/assets",
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

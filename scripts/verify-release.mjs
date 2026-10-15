@@ -5,11 +5,10 @@ export const ORIGINS = ["https://conv3d.trebeljahr.com"];
 export const PAGE_MARKER = "conv3d";
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
-// Public HTTP proves the serving build. The rollout operator also verifies
-// Coolify's exact deployment UUID and the running container's image digest.
-// After the hook the old build keeps answering until the new image is pulled,
-// passes its start period and the old container has drained. The wait is nine
-// minutes, bounded by time so slow requests cannot extend it.
+// Public HTTP proves the serving build. After `wrangler versions deploy` the
+// edge switches within seconds; the nine-minute budget dates from the Coolify
+// rollout, where the old container answered until the new image was healthy.
+// The wait is bounded by time so slow requests cannot extend it.
 export async function verifyRelease(
   commit,
   {

@@ -1,5 +1,7 @@
 # Retained site releases
 
+> Superseded on 2026-10-15: the site is served by the `conv3d-docs` Cloudflare Worker (see `WORKER-RELEASES.md`). CI no longer builds or deploys this image. This page stays until the Coolify app is retired.
+
 Ported from Hatchkit's shared documentation releases. Each image keeps its own
 static export and up to two prior exports under `__releases/<SHA>`, each with its
 own `version.json`. Those directories cannot be fetched directly. nginx selects

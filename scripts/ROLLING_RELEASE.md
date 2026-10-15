@@ -1,5 +1,7 @@
 # Rolling image release contract
 
+> Superseded on 2026-10-15: the site is served by the `conv3d-docs` Cloudflare Worker (see `WORKER-RELEASES.md`). CI no longer builds or deploys this image. This page stays until the Coolify app is retired.
+
 This controller manages only `u12da0bdw4lwueu6cc4gevpa` (Conv3d site), source `trebeljahr/conv3d` on `main`, image `ghcr.io/trebeljahr/conv3d`. Builds publish full-SHA candidate tags and a `release-<sha>-<run>-<attempt>` digest artifact. Building does not move `latest`.
 
 `CONV3D_ROLLOUT_MODE` defaults to unset/off. `manual` permits an explicit **Build & Release** dispatch with operation `deploy`, `target_sha`, `image_digest`, and `expected_current_digest`. `automatic` also releases successful future pushes. Repository/ref guards and a single workflow concurrency group serialize this controller. Keep the gate off until the operator completes first adoption and reviews the exact app settings below.

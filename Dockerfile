@@ -13,9 +13,10 @@
 # the CLI is compiled JavaScript, not a website; nginx serves its
 # fallback index.html in that case → the "Welcome to nginx" banner.
 #
-# Built by .github/workflows/deploy.yml, pushed to GHCR, pulled by
-# Coolify's Docker Image application. The docs build requires no secrets;
-# its public release identity is supplied as a build argument.
+# Was built by .github/workflows/deploy.yml, pushed to GHCR and pulled by
+# Coolify's Docker Image application. Since 2026-10-15 the site is served by
+# a Cloudflare Worker (scripts/WORKER-RELEASES.md) and CI no longer builds
+# this image; it stays until the Coolify app is retired.
 ARG NODE_VERSION=24
 ARG PREVIOUS_IMAGE
 
