@@ -39,7 +39,7 @@ jobs:
   build:
     outputs:
       version_id: ${{ steps.upload.outputs.version_id }}
-      releases: ${{ steps.assemble.outputs.releases }}
+      releases: ${{ steps.finish.outputs.releases }}
     if: github.repository == 'trebeljahr/conv3d' && github.ref == 'refs/heads/main' && inputs.operation != 'verify' && inputs.operation != 'deploy'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -57,16 +57,17 @@ jobs:
           pnpm --dir docs install --frozen-lockfile
           pnpm --dir docs build
           node scripts/write-version.mjs docs/out "$GITHUB_SHA"
+          node scripts/worker-release.mjs stage docs/out "$GITHUB_SHA"
       # Old tabs keep loading their own chunks and /_release/<sha>/ files: the
       # live Worker lists them in /release-assets.json and this build carries
-      # them into the new version. A broken live manifest fails the build.
-      - name: Carry the live releases' assets
-        run: node scripts/worker-release.mjs fetch "$ORIGIN" docs/worker/carry
-      - id: assemble
-        name: Assemble the Worker assets
+      # them into the new version. No live manifest fails the build.
+      - name: Carry the live releases' files
+        run: node scripts/carry-static.mjs --site "$ORIGIN" --out docs/out --release "$GITHUB_SHA" --dir _next/static --dir _release --require-previous
+      - id: finish
+        name: Write the release list and headers, check the Workers limits
         run: |
-          node scripts/worker-release.mjs assemble docs/out "$GITHUB_SHA" docs/worker/carry docs/worker/assets | tee assemble.json
-          echo "releases=$(node -p 'require("./assemble.json").releases.join(",")')" >> "$GITHUB_OUTPUT"
+          node scripts/worker-release.mjs finish docs/out "$GITHUB_SHA" | tee finish.json
+          echo "releases=$(node -p 'require("./finish.json").releases.join(",")')" >> "$GITHUB_OUTPUT"
       - id: upload
         name: Upload a Worker version without activating it
         env:
@@ -81,7 +82,7 @@ jobs:
             if (!/^[0-9a-f-]{36}$/.test(row?.version_id ?? "")) throw new Error("Wrangler reported no version ID.");
             console.log(row.version_id);')
           echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
-          node -e 'require("fs").writeFileSync("release.json", JSON.stringify({ commit: process.env.GITHUB_SHA, versionId: process.argv[1], ...require("./assemble.json") }, null, 2) + "\n")' "$version_id"
+          node -e 'require("fs").writeFileSync("release.json", JSON.stringify({ commit: process.env.GITHUB_SHA, versionId: process.argv[1], ...require("./finish.json") }, null, 2) + "\n")' "$version_id"
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -127,7 +128,7 @@ jobs:
         run: |
           [[ "$TARGET_SHA" =~ ^[a-f0-9]{40}$ && "$VERSION_ID" =~ ^[0-9a-f-]{36}$ ]] || { echo "A full SHA and a version ID are required."; exit 1; }
           # wrangler reads wrangler.jsonc, which names an assets directory.
-          mkdir -p docs/worker/assets
+          mkdir -p docs/out
           tag=$(npx --yes "$WRANGLER" versions view "$VERSION_ID" --json | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).annotations?.["workers/tag"] ?? ""')
           [ "$tag" = "$TARGET_SHA" ] || { echo "Version $VERSION_ID was built from '$tag', not $TARGET_SHA."; exit 1; }
           if [ "$PUSH" = "true" ]; then

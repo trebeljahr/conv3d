@@ -14,25 +14,25 @@ The Coolify app stays in place, unchanged, until it is retired.
 
 ## What one version contains
 
-`scripts/worker-release.mjs assemble` builds `docs/worker/assets`:
+`docs/out` after three steps:
 
-- the static export of this commit, with `version.json`;
-- this commit's runtime-fetched files under `/_release/<sha>/` (`models/`,
-  `draco/`, `media/`, `api/search`; see `docs/lib/release-asset.ts`);
-- the `/_next/static/` files and `/_release/<sha>/` files of the two releases
-  before it, plus the fixed legacy baseline from `docs-bootstrap.mjs`;
-- `releases.json` (`schema: 2`), which `ReleaseLifetime` polls. A tab whose
-  release is not listed reloads the same URL;
-- `release-assets.json`, the path, size and SHA-256 of every carried file;
-- `_headers`.
+1. `worker-release.mjs stage` copies this commit's runtime-fetched files under
+   `/_release/<sha>/` (`models/`, `draco/`, `media/`, `api/search`; see
+   `docs/lib/release-asset.ts`).
+2. `carry-static.mjs`, copied unchanged from hatchkit
+   (`cli/src/templates/client-host/scripts/`, 2006ddb), reads the live
+   `/release-assets.json`, downloads the `/_next/static/` and `/_release/`
+   files of the two releases before this one, checks each SHA-256, and writes
+   a new `release-assets.json` with this release first. It fails when one
+   hashed path holds different bytes in two releases; Next's per-build
+   manifests are the exception, and this build's copy wins.
+3. `worker-release.mjs finish` writes `releases.json` (`schema: 2`), which
+   `ReleaseLifetime` polls (a tab whose release is not listed reloads the same
+   URL), writes `_headers`, and checks the Workers Free limits.
 
-A Worker version serves only its own files. The next build reads the live
-`/release-assets.json`, downloads the listed files from the live site, checks
-each size and hash, and uploads them again. Uploads are content-addressed, so
-unchanged files are not sent twice. The build fails when one hashed path holds
-different bytes in two releases. Next's per-build manifests
-(`/_next/static/<buildId>/_*Manifest.js`) are the exception: deploymentId pins
-one build ID, so the current build's bytes win.
+A Worker version serves only its own files, which is why each upload carries
+the earlier ones. Uploads are content-addressed, so unchanged files are not
+sent twice.
 
 ## nginx behaviour and its Worker equivalent
 
@@ -58,16 +58,16 @@ build ID, so without the header every client navigation turns into a full page
 load.
 
 Limits on Workers Free: 20,000 files per version, 25 MiB per file, 100
-`_headers` rules. `assemble` checks all three. The first version had 274 files
-(19.9 MB) and 10 rules.
+`_headers` rules. `finish` checks all three. The first version had 274 files
+(19.9 MB) and 11 rules.
 
 ## Release flow
 
 `.github/workflows/deploy.yml`:
 
 1. **build**: export with `NEXT_PUBLIC_BUILD_COMMIT`, write `version.json`,
-   carry from the live site, assemble, then `wrangler versions upload --tag
-   <sha>`. Nothing changes for visitors. The artifact `release.json` records
+   stage, carry from the live site (`--require-previous`), finish, then
+   `wrangler versions upload --tag <sha>`. Nothing changes for visitors. The artifact `release.json` records
    the version ID.
 2. **deploy** (push with `CONV3D_ROLLOUT_MODE=automatic`, or a dispatch with
    `operation: deploy`, `target_sha` and `version_id`): checks that the
@@ -94,17 +94,24 @@ only) and `CLOUDFLARE_ACCOUNT_ID`.
 
 ## First adoption
 
-The first version was seeded from the last nginx image instead of the live
-site, because nginx publishes no `release-assets.json`:
+nginx publishes no `release-assets.json`, so the first version was seeded
+from the last nginx image instead of the live site:
 
 ```sh
-node scripts/worker-release.mjs seed-image <image>/usr/share/nginx/html docs/worker/carry
-node scripts/worker-release.mjs assemble <image>/usr/share/nginx/html/__releases/<sha> <sha> docs/worker/carry docs/worker/assets
+node scripts/worker-release.mjs seed-image <image>/usr/share/nginx/html docs/out
 ```
 
 `<image>` is the extracted `COPY /retained-out` layer of
-`ghcr.io/trebeljahr/conv3d:<sha>`. That version serves the same files as the
-image, so the cutover changed the server but not the content.
+`ghcr.io/trebeljahr/conv3d:<sha>`. `seed-image` copies that release's export,
+stages it, and runs `carry-static.mjs` against the image's retained exports
+and its legacy baseline (checked against the inventory hash in
+`docs-bootstrap.mjs`). The first version serves the same files as the image,
+so the cutover changed the server but not the content.
+
+The legacy baseline is carried as a fourth release in that first version
+only. The next build keeps two earlier releases, so the legacy chunks and the
+oldest nginx release drop out then. The shared manifest has no pinned
+entries, and the legacy tabs predate 5 October 2026.
 
 ## Local check
 
