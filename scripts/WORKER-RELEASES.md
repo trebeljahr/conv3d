@@ -51,7 +51,7 @@ sent twice.
 | Drain marker: `/` answers 503 to the Coolify probe | Not needed. |
 | `api/search`, `opengraph-image`, `twitter-image` sent as `application/octet-stream` | `_headers` sets `application/json` and `image/png`. |
 | `Range` requests | Answered with the full file, as the proxied nginx site was. |
-| `http://` redirected to `https://` by Traefik | Needs the zone's Always Use HTTPS or a redirect rule for the host. |
+| `http://` redirected to `https://` by Traefik (307) | hatchkit's Single Redirect rule `hatchkit_https_worker_hosts` on the zone lists the host: 301, path and query kept, `/.well-known/` excluded. Not the zone's Always Use HTTPS, which would also redirect ACME challenges. |
 
 The `x-nextjs-deployment-id` header is required. Exported Flight data has no
 build ID, so without the header every client navigation turns into a full page
