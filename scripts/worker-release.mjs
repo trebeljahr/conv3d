@@ -1,5 +1,5 @@
 // Conv3d's steps around scripts/carry-static.mjs (copied from hatchkit
-// cli/src/templates/client-host/scripts/, 2006ddb) for the conv3d-docs Worker.
+// cli/src/templates/client-host/scripts/, c70206f) for the conv3d-docs Worker.
 // See scripts/WORKER-RELEASES.md.
 //
 //   stage <export-dir> <sha>                  this release's /_release/<sha>/ files
@@ -87,7 +87,8 @@ export async function stage(exportDir, sha) {
   if (!isSha(sha) || (await exportCommit(exportDir)) !== sha)
     throw new Error("Export revision differs from the release SHA.");
   for (const name of RESERVED)
-    if (await exists(join(exportDir, name))) throw new Error(`The export must not contain ${name}.`);
+    if (await exists(join(exportDir, name)))
+      throw new Error(`The export must not contain ${name}.`);
   const files = await releaseFiles(exportDir, sha);
   for (const [path, source] of files) {
     const target = join(exportDir, path);
@@ -125,7 +126,8 @@ export function headersFile(sha, releases = [sha]) {
 
 export async function checkLimits(outDir) {
   const files = (await walk(outDir)).filter((file) => file !== "_headers");
-  if (files.length > LIMITS.files) throw new Error(`${files.length} files exceed the version limit.`);
+  if (files.length > LIMITS.files)
+    throw new Error(`${files.length} files exceed the version limit.`);
   let bytes = 0;
   let largest = { file: null, size: 0 };
   for (const file of files) {
@@ -146,7 +148,8 @@ export async function finish(exportDir, sha) {
   if (!isSha(sha) || (await exportCommit(exportDir)) !== sha)
     throw new Error("Export revision differs from the release SHA.");
   const manifest = JSON.parse(await readFile(join(exportDir, "release-assets.json"), "utf8"));
-  const releases = manifest?.releases?.map((release) => release.sha) ?? [];
+  // A re-run of the live commit carries the live copy under the same SHA.
+  const releases = [...new Set(manifest?.releases?.map((release) => release.sha) ?? [])];
   // ReleaseLifetime accepts one to six full SHAs.
   if (manifest.schema !== 1 || releases[0] !== sha || releases.length > 6 || !releases.every(isSha))
     throw new Error("Invalid release asset manifest.");
@@ -156,7 +159,8 @@ export async function finish(exportDir, sha) {
         throw new Error(`${path} is listed for release ${release.sha}.`);
   if (await exists(join(exportDir, "_release")))
     for (const entry of await readdir(join(exportDir, "_release")))
-      if (!releases.includes(entry)) throw new Error(`/_release/${entry} belongs to no listed release.`);
+      if (!releases.includes(entry))
+        throw new Error(`/_release/${entry} belongs to no listed release.`);
   // ReleaseLifetime reloads a tab whose release is no longer listed here.
   await writeFile(
     join(exportDir, "releases.json"),
@@ -189,7 +193,8 @@ export async function seedFromImage(imageRoot, outDir) {
   };
   for (const id of earlier) {
     const exportDir = join(imageRoot, "__releases", id);
-    if ((await exportCommit(exportDir)) !== id) throw new Error(`Export ${id} has another identity.`);
+    if ((await exportCommit(exportDir)) !== id)
+      throw new Error(`Export ${id} has another identity.`);
     const files = await releaseFiles(exportDir, id);
     for (const file of await walk(exportDir, "_next/static"))
       files.set(`/${file}`, join(exportDir, file));

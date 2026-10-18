@@ -15,7 +15,10 @@ async function exportFixture(root, id) {
   await mkdir(join(path, "models/funnel"), { recursive: true });
   await mkdir(join(path, "api"), { recursive: true });
   await writeFile(join(path, "version.json"), JSON.stringify({ commit: id }));
-  await writeFile(join(path, "index.html"), `<html><head><meta name="build-sha" content="${id}"></head></html>`);
+  await writeFile(
+    join(path, "index.html"),
+    `<html><head><meta name="build-sha" content="${id}"></head></html>`,
+  );
   await writeFile(join(path, chunk(id)), `window.fixture = '${id}';`);
   await writeFile(join(path, "_next/static/chunks/shared.js"), "shared");
   await writeFile(join(path, "models/funnel/Knight.glb"), `glb-${id}`);
@@ -35,7 +38,13 @@ const serve = (dir) => async (url) => {
 async function release(root, id, live) {
   const out = await exportFixture(root, id);
   await stage(out, id);
-  await carry({ site: "https://conv3d.test", out, release: id, dirs: CARRY_DIRS, fetch: serve(live ?? root) });
+  await carry({
+    site: "https://conv3d.test",
+    out,
+    release: id,
+    dirs: CARRY_DIRS,
+    fetch: serve(live ?? root),
+  });
   return { out, result: await finish(out, id) };
 }
 
@@ -48,8 +57,14 @@ test("each version carries two earlier releases' chunks and release files", asyn
     assert.deepEqual(releases, { schema: 2, head: ids[3], releases: [ids[3], ids[2], ids[1]] });
     for (const id of ids.slice(1)) {
       assert.equal(await readFile(join(live, chunk(id)), "utf8"), `window.fixture = '${id}';`);
-      assert.equal(await readFile(join(live, `_release/${id}/models/funnel/Knight.glb`), "utf8"), `glb-${id}`);
-      assert.equal(await readFile(join(live, `_release/${id}/api/search`), "utf8"), JSON.stringify({ id }));
+      assert.equal(
+        await readFile(join(live, `_release/${id}/models/funnel/Knight.glb`), "utf8"),
+        `glb-${id}`,
+      );
+      assert.equal(
+        await readFile(join(live, `_release/${id}/api/search`), "utf8"),
+        JSON.stringify({ id }),
+      );
     }
     await assert.rejects(readFile(join(live, chunk(ids[0]))), { code: "ENOENT" });
     await assert.rejects(readFile(join(live, `_release/${ids[0]}/api/search`)), { code: "ENOENT" });
@@ -59,8 +74,35 @@ test("each version carries two earlier releases' chunks and release files", asyn
     assert.match(headers, new RegExp(`^/\\*\\n {2}x-nextjs-deployment-id: ${ids[3]}$`, "m"));
     assert.match(headers, /^\/version\.json\n {2}Cache-Control: no-store$/m);
     assert.match(headers, /^\/release-assets\.json\n {2}Cache-Control: no-store$/m);
-    assert.match(headers, new RegExp(`^/_release/${ids[1]}/api/search\\n {2}Content-Type: application/json$`, "m"));
+    assert.match(
+      headers,
+      new RegExp(`^/_release/${ids[1]}/api/search\\n {2}Content-Type: application/json$`, "m"),
+    );
     assert.doesNotMatch(headers, /immutable/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("a re-run of the live commit lists it once", async () => {
+  const root = await mkdtemp(join(tmpdir(), "worker-release-"));
+  try {
+    const first = await release(root, ids[0]);
+    const { out: live } = await release(root, ids[1], first.out);
+    const rerun = await exportFixture(join(root, "rerun"), ids[1]);
+    await writeFile(join(rerun, "_next/static/chunks/rebuilt.js"), "other machine");
+    await stage(rerun, ids[1]);
+    await carry({
+      site: "https://conv3d.test",
+      out: rerun,
+      release: ids[1],
+      dirs: CARRY_DIRS,
+      fetch: serve(live),
+    });
+    const result = await finish(rerun, ids[1]);
+    assert.deepEqual(result.releases, [ids[1], ids[0]]);
+    const headers = await readFile(join(rerun, "_headers"), "utf8");
+    assert.equal(headers.split(`/_release/${ids[1]}/api/search`).length, 2);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -101,7 +143,13 @@ test("finish fails a file over the Workers per-file limit", async () => {
     const out = await exportFixture(root, ids[0]);
     await writeFile(join(out, "press-kit.zip"), Buffer.alloc(25 * 1024 * 1024 + 1));
     await stage(out, ids[0]);
-    await carry({ site: "https://conv3d.test", out, release: ids[0], dirs: CARRY_DIRS, fetch: serve(root) });
+    await carry({
+      site: "https://conv3d.test",
+      out,
+      release: ids[0],
+      dirs: CARRY_DIRS,
+      fetch: serve(root),
+    });
     await assert.rejects(finish(out, ids[0]), /per-file limit/);
   } finally {
     await rm(root, { recursive: true, force: true });

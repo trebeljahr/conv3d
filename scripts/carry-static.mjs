@@ -230,8 +230,11 @@ export async function carry(options) {
   const toFetch = new Map();
   for (const release of previous) {
     if (carried.length >= o.keep) break;
-    // A re-run of the same commit: its files are already this build's.
-    if (release.sha === o.release) continue;
+    // A live release with this build's own id is carried like any other:
+    // two builds of one commit are not byte-identical across machines (a
+    // seed uploaded from a laptop, then CI; seen on ricoslabs 2026-10-18,
+    // 5 of 28 chunks differed), and its tabs still need their chunks.
+    // Files this build has with the same bytes cost nothing.
     const kept = [];
     for (const file of release.files) {
       const seen = claimed.get(file.path);

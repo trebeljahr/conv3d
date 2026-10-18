@@ -20,7 +20,7 @@ The Coolify app stays in place, unchanged, until it is retired.
    `/_release/<sha>/` (`models/`, `draco/`, `media/`, `api/search`; see
    `docs/lib/release-asset.ts`).
 2. `carry-static.mjs`, copied unchanged from hatchkit
-   (`cli/src/templates/client-host/scripts/`, 2006ddb), reads the live
+   (`cli/src/templates/client-host/scripts/`, c70206f), reads the live
    `/release-assets.json`, downloads the `/_next/static/` and `/_release/`
    files of the two releases before this one, checks each SHA-256, and writes
    a new `release-assets.json` with this release first. It fails when one
