@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { HeroFunnelSceneLazy } from "./HeroFunnelSceneLazy";
 import { KnightShowcaseSceneLazy } from "./KnightShowcaseSceneLazy";
 import { LandingDemoVideo } from "./LandingDemoVideo";
-import { SocialProof } from "./SocialProof";
+import { ProjectFacts } from "./ProjectFacts";
 import styles from "./page.module.css";
 
 type FileRow = { name: string; before: number; after: number };
@@ -64,7 +64,7 @@ function Hero() {
               <strong>−{pct(heroTotal.before, heroTotal.after)}</strong> total bytes
             </span>
           </div>
-          <SocialProof />
+          <ProjectFacts />
         </div>
       </div>
     </header>
@@ -322,7 +322,7 @@ function FinalCta() {
             Read the docs →
           </Link>
           <Link className={styles.ctaSecondary} href={REPO_URL}>
-            Star on GitHub
+            Source on GitHub
           </Link>
         </div>
       </div>
