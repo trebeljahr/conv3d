@@ -44,6 +44,16 @@ describe("scrubText", () => {
     );
   });
 
+  it("keeps package paths that only look like addresses", () => {
+    const path =
+      "/app/node_modules/.pnpm/better-sqlite3@12.11.1/node_modules/better-sqlite3/build/Release/better_sqlite3.node";
+    assert.equal(
+      scrubText(`The module '${path}' was compiled`),
+      `The module '${path}' was compiled`,
+    );
+    assert.equal(scrubText("mailto:me@example.com"), "mailto:[email]");
+  });
+
   it("strips query strings from URLs and paths inside a message", () => {
     assert.equal(
       scrubText("fetch failed: https://conv3d.trebeljahr.com/api/search?query=robot.fbx (500)"),

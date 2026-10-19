@@ -30,7 +30,7 @@ const KEPT_CONTEXTS: ReadonlySet<string> = new Set(["browser", "os", "device", "
 /** The only breadcrumb categories a report keeps. */
 const KEPT_BREADCRUMBS: ReadonlySet<string> = new Set(["fetch", "xhr", "navigation"]);
 
-const EMAIL = /[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+\.[a-z]{2,}/gi;
+const EMAIL = /[^\s@<>"'(),;:/]+@[^\s@<>"'(),;:/]+\.[a-z]{2,}/gi;
 const BEARER = /\bBearer\s+[\w.~+/=-]+/gi;
 /** `?` or `#` and everything after it, inside a longer text. Stops at whitespace and quotes. */
 const QUERY_IN_TEXT = /[?#][^\s"'<>]*/g;
