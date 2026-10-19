@@ -50,7 +50,7 @@
     "audit:schema": "node scripts/audit-json-schema.mjs",
     "test": "npm run build && node --test \"tests/**/*.test.mjs\" && pnpm run audit:schema",
     "format": "biome format --write .",
-    "lint": "biome lint .",
+    "lint": "biome lint src scripts tests package.json README.md",
     "check": "biome check --write ."
   },
   "keywords": [
