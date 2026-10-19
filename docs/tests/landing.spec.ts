@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const REPO_URL = "https://github.com/trebeljahr/conv3d";
 
@@ -6,6 +6,19 @@ const IGNORED_CONSOLE = [/Download the React DevTools/i, /\[Fast Refresh\]/i, /W
 
 function isIgnored(text: string): boolean {
   return IGNORED_CONSOLE.some((re) => re.test(text));
+}
+
+// The first <header> is the Fumadocs nav bar; the hero is the one holding the h1.
+// With reduced motion the WebGL scene draws one still frame instead of a render
+// loop that starves requestAnimationFrame, so Playwright can see the hero settle.
+// The npm version changes every release, so the facts row is masked.
+async function expectHeroScreenshot(page: Page, name: string): Promise<void> {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(1500);
+  const hero = page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) });
+  await expect(hero).toHaveScreenshot(name, { mask: [page.getByLabel("Project facts")] });
 }
 
 test.describe("landing page", () => {
@@ -62,17 +75,11 @@ test.describe("landing page", () => {
   });
 
   test("visual regression: desktop hero", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(1500);
-    await expect(page.locator("header").first()).toHaveScreenshot("hero-desktop.png");
+    await expectHeroScreenshot(page, "hero-desktop.png");
   });
 
   test("visual regression: mobile hero", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(1500);
-    await expect(page.locator("header").first()).toHaveScreenshot("hero-mobile.png");
+    await expectHeroScreenshot(page, "hero-mobile.png");
   });
 });
