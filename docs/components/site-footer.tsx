@@ -29,6 +29,7 @@ export function SiteFooter() {
         <nav className={styles.links} aria-label="Footer">
           <Link href="/">Docs home</Link>
           <Link href="/press">Press</Link>
+          <Link href="/docs/privacy">Privacy</Link>
           <a href={REPO_URL} target="_blank" rel="noreferrer noopener">
             GitHub
           </a>

@@ -49,11 +49,16 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: node --test scripts/worker-release.test.mjs
+      - run: node --test scripts/worker-release.test.mjs docs/lib/error-reporting/scrub.test.mjs
       - name: Build the static export
         env:
           NEXT_PUBLIC_BUILD_COMMIT: ${{ github.sha }}
+          # A repository variable, not a secret: the DSN is in the shipped
+          # bundle either way. Empty builds a site that loads no SDK and
+          # reports nothing. See docs/lib/error-reporting/reporter.ts.
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
         run: |
+          [ -n "$NEXT_PUBLIC_SENTRY_DSN" ] || echo "::notice::NEXT_PUBLIC_SENTRY_DSN is empty; this build reports no errors."
           pnpm --dir docs install --frozen-lockfile
           pnpm --dir docs build
           node scripts/write-version.mjs docs/out "$GITHUB_SHA"

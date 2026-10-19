@@ -82,6 +82,24 @@ that a one-step `wrangler deploy` leaves.
 Secrets: `CLOUDFLARE_API_TOKEN` (Individual Workers Editor on `conv3d-docs`
 only) and `CLOUDFLARE_ACCOUNT_ID`.
 
+## Error reporting
+
+The build reads the repository variable `NEXT_PUBLIC_SENTRY_DSN` (a variable,
+not a secret: the DSN is in the shipped bundle either way). It points at the
+GlitchTip project `conv3d` on glitchtip.trebeljahr.com. Empty builds a site
+that loads no SDK, and the build log prints a notice.
+
+`docs/lib/error-reporting/` holds the reporter. The SDK loads after mount and
+only on conv3d.trebeljahr.com. `scrub.ts` decides what a report carries, and
+`/docs/privacy` says the same in plain words, so change both together. The
+privacy page says reporting is on, so the hosted build must keep the variable
+set. The CLI sends no reports.
+
+```sh
+gh variable list --json name --repo trebeljahr/conv3d
+node --test docs/lib/error-reporting/scrub.test.mjs
+```
+
 ## Rollback
 
 - To an earlier version: dispatch `operation: deploy` with its `version_id` and
