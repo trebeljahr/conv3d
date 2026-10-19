@@ -27,5 +27,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     ...docs,
+    {
+      url: absoluteUrl("/imprint"),
+      lastModified: lastModifiedForFile("app/(home)/imprint/page.tsx"),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
 }

@@ -30,6 +30,7 @@ export function SiteFooter() {
           <Link href="/">Docs home</Link>
           <Link href="/press">Press</Link>
           <Link href="/docs/privacy">Privacy</Link>
+          <Link href="/imprint">Imprint</Link>
           <a href={REPO_URL} target="_blank" rel="noreferrer noopener">
             GitHub
           </a>
