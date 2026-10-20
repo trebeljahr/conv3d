@@ -38,6 +38,12 @@ The search is heuristic-driven — it matches naming conventions like `*_color.p
 
 The result: your `.glb` ends up with the real textures embedded, and downstream tools (gltfjsx, the `--optimize` pass) see them and act accordingly.
 
+## Non-metallic Phong and Lambert materials
+
+Most free FBX packs use Phong, Blinn or Lambert materials, which have no metallic or roughness values. `fbx2gltf` guesses them: metallic `0.4` for Phong and Blinn, `0.2` for Lambert, and a low roughness for shiny Phong materials. In three.js that renders as polished metal.
+
+conv3d sets metallic to `0` on these materials. For Phong and Blinn it also turns the FBX shininess into roughness the way Blender's FBX importer does (`1 - √shininess / 10`). A typical shininess of 25 gives roughness `0.5`. True PBR materials, and materials with a metallic/roughness texture, are left as they are. The log shows `N FBX materials made non-metallic`.
+
 ## Foliage hints
 
 A common subset of "recovered" textures is the foliage / alpha-cut category. conv3d also seeds an `alphaMode: "MASK"` hint on materials whose recovered baseColor texture has substantial transparency — so three.js renders the leaves with proper alpha cutoff rather than as a flat opaque billboard.

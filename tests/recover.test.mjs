@@ -202,10 +202,7 @@ test("seedMissingTextures attaches sibling Textures/ images to materials by name
 
     // Sibling Textures/ folder with two of the three names matching.
     mkdirSync(path.join(dir, "Textures"));
-    writeFileSync(
-      path.join(dir, "Textures", "Banner.png"),
-      Buffer.from(REAL_PNG_B64, "base64"),
-    );
+    writeFileSync(path.join(dir, "Textures", "Banner.png"), Buffer.from(REAL_PNG_B64, "base64"));
     writeFileSync(
       path.join(dir, "Textures", "wood.png"), // case-insensitive match
       Buffer.from(REAL_PNG_B64, "base64"),
@@ -242,7 +239,10 @@ test("seedMissingTextures uses source-stem fallback to attach a per-file atlas",
     // SodaCan (alpha suffix, score 80). Pizza2 (digit suffix, score 30) is
     // not relevant here but pollutes the search dir.
     mkdirSync(path.join(dir, "Textures"));
-    writeFileSync(path.join(dir, "Textures", "SodaTexture.png"), Buffer.from(REAL_PNG_B64, "base64"));
+    writeFileSync(
+      path.join(dir, "Textures", "SodaTexture.png"),
+      Buffer.from(REAL_PNG_B64, "base64"),
+    );
     writeFileSync(path.join(dir, "Textures", "SodaCan.png"), Buffer.from(REAL_PNG_B64, "base64"));
     writeFileSync(path.join(dir, "Textures", "Pizza2.png"), Buffer.from(REAL_PNG_B64, "base64"));
 
@@ -308,10 +308,7 @@ test("seedMissingTextures uses single-image fallback as a shared atlas", async (
 
     // Sibling Textures/ folder with exactly one image — the shared atlas.
     mkdirSync(path.join(dir, "Textures"));
-    writeFileSync(
-      path.join(dir, "Textures", "atlas.png"),
-      Buffer.from(REAL_PNG_B64, "base64"),
-    );
+    writeFileSync(path.join(dir, "Textures", "atlas.png"), Buffer.from(REAL_PNG_B64, "base64"));
 
     const attached = await seedMissingTextures(glbPath, dir);
     assert.equal(attached, 3, "all three materials should get the lone atlas");
@@ -365,10 +362,7 @@ test("seedMissingTextures is a no-op when material already has baseColorTexture"
     writeFileSync(glbPath, glb);
 
     mkdirSync(path.join(dir, "Textures"));
-    writeFileSync(
-      path.join(dir, "Textures", "Banner.png"),
-      Buffer.from(REAL_PNG_B64, "base64"),
-    );
+    writeFileSync(path.join(dir, "Textures", "Banner.png"), Buffer.from(REAL_PNG_B64, "base64"));
 
     const before = readFileSync(glbPath);
     const attached = await seedMissingTextures(glbPath, dir);
@@ -520,5 +514,95 @@ test("applyMaterialColors accepts flat (no-stem) manifest shape", async () => {
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+function glbFromJson(gltf) {
+  let jsonBuf = Buffer.from(JSON.stringify(gltf), "utf8");
+  const pad = (4 - (jsonBuf.length % 4)) % 4;
+  if (pad) jsonBuf = Buffer.concat([jsonBuf, Buffer.alloc(pad, 0x20)]);
+  const glb = Buffer.alloc(20 + jsonBuf.length);
+  glb.writeUInt32LE(0x46546c67, 0);
+  glb.writeUInt32LE(2, 4);
+  glb.writeUInt32LE(glb.length, 8);
+  glb.writeUInt32LE(jsonBuf.length, 12);
+  glb.writeUInt32LE(0x4e4f534a, 16);
+  jsonBuf.copy(glb, 20);
+  return glb;
+}
+
+test("roughnessFromFbx2gltf maps FBX2glTF's Phong roughness to Blender's", async () => {
+  const { roughnessFromFbx2gltf } = await import(
+    path.resolve(__dirname, "..", "dist", "recovery.js")
+  );
+  // FBX2glTF: roughness = sqrt(2 / (2 + shininess)). Shininess 25 → 0.2722.
+  assert.ok(Math.abs(roughnessFromFbx2gltf(Math.sqrt(2 / 27)) - 0.5) < 1e-6);
+  assert.equal(roughnessFromFbx2gltf(1), 1); // shininess 0
+  assert.equal(roughnessFromFbx2gltf(Math.sqrt(2 / 102)), 0); // shininess 100
+  assert.equal(roughnessFromFbx2gltf(0.01), 0); // very high shininess clamps
+  assert.equal(roughnessFromFbx2gltf(0), 1);
+});
+
+test("applyTraditionalFbxPbr makes Phong and Lambert FBX materials non-metallic, once", async () => {
+  const { applyTraditionalFbxPbr } = await import(
+    path.resolve(__dirname, "..", "dist", "recovery.js")
+  );
+  const tmp = mkdtempSync(path.join(tmpdir(), "conv3d-test-traditional-pbr-"));
+  try {
+    const glbPath = path.join(tmp, "model.glb");
+    const phong = { shadingModel: "Phong", isTruePBR: false };
+    writeFileSync(
+      glbPath,
+      glbFromJson({
+        asset: { version: "2.0" },
+        materials: [
+          {
+            name: "phong",
+            extras: { fromFBX: phong },
+            pbrMetallicRoughness: { metallicFactor: 0.4, roughnessFactor: Math.sqrt(2 / 27) },
+          },
+          {
+            name: "lambert",
+            extras: { fromFBX: { shadingModel: "Lambert", isTruePBR: false } },
+            pbrMetallicRoughness: { metallicFactor: 0.2, roughnessFactor: 0.8 },
+          },
+          {
+            name: "true-pbr",
+            extras: { fromFBX: { shadingModel: "Unknown", isTruePBR: true } },
+            pbrMetallicRoughness: { metallicFactor: 1, roughnessFactor: 0.1 },
+          },
+          {
+            name: "textured",
+            extras: { fromFBX: phong },
+            pbrMetallicRoughness: {
+              metallicFactor: 0.4,
+              roughnessFactor: 0.3,
+              metallicRoughnessTexture: { index: 0 },
+            },
+          },
+          { name: "obj", pbrMetallicRoughness: { metallicFactor: 0.5, roughnessFactor: 0.5 } },
+        ],
+      }),
+    );
+
+    assert.equal(await applyTraditionalFbxPbr(glbPath), 2);
+    const [phongOut, lambertOut, truePbrOut, texturedOut, objOut] = parseGlbMinimal(
+      readFileSync(glbPath),
+    ).json.materials;
+    assert.equal(phongOut.pbrMetallicRoughness.metallicFactor, 0);
+    assert.ok(Math.abs(phongOut.pbrMetallicRoughness.roughnessFactor - 0.5) < 1e-6);
+    assert.equal(phongOut.extras.fromFBX.shadingModel, "Phong");
+    assert.equal(lambertOut.pbrMetallicRoughness.metallicFactor, 0);
+    assert.equal(lambertOut.pbrMetallicRoughness.roughnessFactor, 0.8);
+    assert.deepEqual(truePbrOut.pbrMetallicRoughness, { metallicFactor: 1, roughnessFactor: 0.1 });
+    assert.equal(texturedOut.pbrMetallicRoughness.metallicFactor, 0.4);
+    assert.deepEqual(objOut.pbrMetallicRoughness, { metallicFactor: 0.5, roughnessFactor: 0.5 });
+
+    // A second pass must not re-derive roughness from the already-converted value.
+    assert.equal(await applyTraditionalFbxPbr(glbPath), 0);
+    const again = parseGlbMinimal(readFileSync(glbPath)).json.materials[0];
+    assert.ok(Math.abs(again.pbrMetallicRoughness.roughnessFactor - 0.5) < 1e-6);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
   }
 });

@@ -378,6 +378,7 @@ async function runPostProcess(glbPath: string, sourcePath: string): Promise<void
   push(result.texturesSeeded, "missing texture", "missing textures", "seeded from sibling files");
   push(result.foliageHinted, "foliage material", "foliage materials", "set to alpha-mask");
   push(result.colorsApplied, "material color", "material colors", "applied from manifest");
+  push(result.traditionalPbr, "FBX material", "FBX materials", "made non-metallic");
   if (messages.length > 0) {
     info(green(`✨ ${base}: ${messages.join(", ")}`));
   }

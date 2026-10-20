@@ -19,14 +19,16 @@
 //   2. seedMissingTextures    — attach textures from sibling dirs by name. (textures)
 //   3. applyFoliageHints      — alphaMode=MASK + doubleSided for leaves.  (materials)
 //   4. applyMaterialColors    — apply baseColorFactor map from JSON.      (materials)
+//   5. applyTraditionalFbxPbr — non-metallic PBR for Phong/Lambert FBX.  (materials)
 //
-// `postProcessGlb` orchestrates all four.
+// `postProcessGlb` orchestrates all five.
 // ---------------------------------------------------------------------------
 
 import path from "node:path";
 import {
   applyFoliageHints,
   applyMaterialColors,
+  applyTraditionalFbxPbr,
   type ColorsManifest,
 } from "./recovery/materials.js";
 import { recoverFbxPlaceholders, seedMissingTextures } from "./recovery/textures.js";
@@ -36,7 +38,12 @@ export { parseGlbMinimal } from "./recovery/glb-binary.js";
 // against ./recovery.js.
 export type { GltfJson, TextureSlot } from "./recovery/gltf-types.js";
 export type { ColorEntry, ColorsManifest } from "./recovery/materials.js";
-export { applyFoliageHints, applyMaterialColors } from "./recovery/materials.js";
+export {
+  applyFoliageHints,
+  applyMaterialColors,
+  applyTraditionalFbxPbr,
+  roughnessFromFbx2gltf,
+} from "./recovery/materials.js";
 export {
   recoverFbxPlaceholders,
   recoverFbxTextures,
@@ -58,6 +65,7 @@ export type PostProcessResult = {
   texturesSeeded: number;
   foliageHinted: number;
   colorsApplied: number;
+  traditionalPbr: number;
 };
 
 export async function postProcessGlb(
@@ -72,6 +80,7 @@ export async function postProcessGlb(
     texturesSeeded: 0,
     foliageHinted: 0,
     colorsApplied: 0,
+    traditionalPbr: 0,
   };
 
   if (recoverTextures) {
@@ -89,6 +98,8 @@ export async function postProcessGlb(
   if (opts.materialColors) {
     result.colorsApplied = await applyMaterialColors(glbPath, opts.materialColors);
   }
+
+  result.traditionalPbr = await applyTraditionalFbxPbr(glbPath);
 
   return result;
 }

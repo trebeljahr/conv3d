@@ -24,8 +24,17 @@ export type GltfPbr = {
   roughnessFactor?: number;
 };
 
+// FBX2glTF records the source shading model; conv3d marks materials it has
+// already converted so a second post-process pass leaves them alone.
+export type GltfMaterialExtras = {
+  fromFBX?: { shadingModel?: string; isTruePBR?: boolean };
+  conv3d?: { traditionalPbr?: boolean };
+  [key: string]: unknown;
+};
+
 export type GltfMaterial = {
   name?: string;
+  extras?: GltfMaterialExtras;
   pbrMetallicRoughness?: GltfPbr;
   normalTexture?: GltfTextureRef;
   occlusionTexture?: GltfTextureRef;

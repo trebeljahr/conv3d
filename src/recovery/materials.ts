@@ -5,6 +5,8 @@
 //      materials so PNG cutouts render correctly instead of as opaque quads.
 //   4. applyMaterialColors — apply a baseColorFactor map (extracted from the
 //      original .blend) to materials that lost their diffuse color.
+//   5. applyTraditionalFbxPbr — undo FBX2glTF's metallic guess for Phong,
+//      Blinn and Lambert materials so they don't render as shiny metal.
 // ---------------------------------------------------------------------------
 
 import { readFile } from "node:fs/promises";
@@ -172,6 +174,66 @@ export async function applyMaterialColors(
     pbr.baseColorFactor = color;
     pbr.metallicFactor = pbr.metallicFactor ?? 0.0;
     pbr.roughnessFactor = pbr.roughnessFactor ?? 0.9;
+    changed++;
+  }
+  if (changed === 0) return 0;
+  await writeGlb(glbPath, gltf, bin);
+  return changed;
+}
+
+// ---------------------------------------------------------------------------
+// Stage 5: PBR values for traditional FBX materials
+//
+// FBX2glTF has no real metallic/roughness for Phong, Blinn or Lambert
+// materials (it marks them extras.fromFBX.isTruePBR = false) and guesses:
+// metallic 0.4 and roughness sqrt(2 / (2 + shininess)) for Phong/Blinn,
+// metallic 0.2 and roughness 0.8 for everything else. Hand-painted packs
+// then render as polished metal.
+//
+// None of these shading models describe a metal, so metallic becomes 0. For
+// Phong/Blinn the shininess is recovered from FBX2glTF's roughness and
+// mapped the way Blender's FBX importer does: roughness = 1 - sqrt(shininess) / 10.
+// Materials with a metallicRoughnessTexture are left alone, and each
+// material is marked so a second pass changes nothing.
+// ---------------------------------------------------------------------------
+
+const SPECULAR_MODELS = new Set(["phong", "blinn"]);
+
+/** Blender's roughness for the shininess that FBX2glTF turned into `roughness`. */
+export function roughnessFromFbx2gltf(roughness: number): number {
+  if (!(roughness > 0) || roughness >= 1) return 1;
+  const shininess = 2 / (roughness * roughness) - 2;
+  return Math.min(1, Math.max(0, 1 - Math.sqrt(shininess) / 10));
+}
+
+export async function applyTraditionalFbxPbr(glbPath: string): Promise<number> {
+  let buf: Buffer;
+  try {
+    buf = await readFile(glbPath);
+  } catch {
+    return 0;
+  }
+  let parsed: { json: GltfJson; bin: Buffer | null };
+  try {
+    parsed = parseGlbMinimal(buf);
+  } catch {
+    return 0;
+  }
+  const { json: gltf, bin } = parsed;
+
+  let changed = 0;
+  for (const m of gltf.materials ?? []) {
+    const fromFbx = m.extras?.fromFBX;
+    if (fromFbx?.isTruePBR !== false || m.extras?.conv3d?.traditionalPbr) continue;
+    const pbr = m.pbrMetallicRoughness;
+    if (!pbr || pbr.metallicRoughnessTexture) continue;
+
+    pbr.metallicFactor = 0;
+    const model = (fromFbx.shadingModel ?? "").toLowerCase();
+    if (SPECULAR_MODELS.has(model) && pbr.roughnessFactor !== undefined) {
+      pbr.roughnessFactor = roughnessFromFbx2gltf(pbr.roughnessFactor);
+    }
+    m.extras = { ...m.extras, conv3d: { ...m.extras?.conv3d, traditionalPbr: true } };
     changed++;
   }
   if (changed === 0) return 0;
