@@ -13,10 +13,10 @@ This page explains what that means and why it matters.
 
 ## The problem
 
-Lots of freely-distributed FBX packs (Kenney's KAYKIT, Synty bundles, archived Mixamo rigs) record their texture paths as absolute Windows paths:
+Lots of freely distributed FBX packs record their texture paths as absolute Windows paths:
 
 ```
-C:\Files\Work\KAYKIT\barbarian\textures\barbarian_color.png
+C:\Files\Work\pack\barbarian\textures\barbarian_color.png
 ```
 
 When you run `fbx2gltf` on Linux or macOS, the FBX SDK can't find that path. Worse, it doesn't fall back to looking for the basename (`barbarian_color.png`) **next to the FBX**. Instead, it silently bakes a **1×1 magenta placeholder** into the resulting `.glb` and moves on.

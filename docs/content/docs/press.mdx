@@ -24,7 +24,7 @@ For live package data, check [npm](https://www.npmjs.com/package/conv3d), [GitHu
 | Install | `npm install -g conv3d` |
 | Inputs | `.fbx`, `.obj`, `.gltf` - directories, files, or globs |
 | Outputs | `.glb` always; `.tsx` React Three Fiber components and web-optimized `.glb` optionally |
-| Used by | Gamedev Asset Library, an approximately 11K-model public 3D asset catalog whose pipeline was baked with conv3d. |
+| Used by | [Mesozoic Protocol](https://mesozoicprotocol.com) (its model scripts run conv3d); [Quaternius Showcase](https://quaternius.trebeljahr.com); the [ricos.site 3D playground](https://ricos.site/r3f); Gamedev Asset Library, an approximately 11K-model public 3D asset catalog whose pipeline was baked with conv3d. |
 | Press contact | [hello@trebeljahr.com](mailto:hello@trebeljahr.com) |
 
 Weekly npm download counts and the current version change over time. Pull live values from npm rather than copying a fixed number from this page.
@@ -67,7 +67,7 @@ conv3d is an open-source CLI by Rico Trebeljahr that folds the "convert this 3D 
 - **JSON output.** `--json` emits a single JSON object on stdout with `converted[]`, `tsx[]`, `glbOptimized[]`, `skipped[]`, and `errors[]`. Errors stay on stderr.
 - **Stable exit codes.** `0` means success, including "no matching files"; `1` means fatal error; `2` means partial success with per-file errors in `errors[]`.
 - **Dry-run mode.** `--dry-run` prints the plan and exits without creating or modifying files.
-- **FBX texture recovery.** conv3d scans output GLBs for 1x1 placeholder textures and replaces them with matching textures from the FBX directory, fixing a common KAYKIT / Kenney asset-pack issue.
+- **FBX texture recovery.** conv3d scans output GLBs for 1x1 placeholder textures and replaces them with matching textures from the FBX directory, fixing a common problem in free FBX asset packs.
 - **Overwrite control.** `--overwrite skip|replace|ask` for idempotent reruns; `-f` is a shortcut for `replace`.
 - **Diagnostics.** `conv3d doctor`, `conv3d doctor --markdown`, and `conv3d doctor --json` print versions, platform, and bundled-library status for bug reports and install checks.
 

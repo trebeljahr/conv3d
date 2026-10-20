@@ -163,16 +163,15 @@ Default is `min(cpus, 4)`. Conversions hold full meshes in memory — drop to `1
 
 ## Asset packs
 
-### KAYKIT (Kenney)
+### FBX packs with Windows texture paths
 
 ```bash
-conv3d bulk ./raw-assets/kaykit -m FBX -r --tsx --optimize \
-  --textures-dir ./raw-assets/kaykit/textures -y
+conv3d bulk ./raw-assets/fbx-pack -m FBX -r --tsx --optimize \
+  --textures-dir ./raw-assets/fbx-pack/textures -y
 ```
 
-- KAYKIT FBXs are the canonical [texture recovery](./textures) case: Windows-style texture paths can turn into 1x1 magenta placeholders.
+- These FBXs are the canonical [texture recovery](./textures) case: Windows-style texture paths can turn into 1x1 magenta placeholders.
 - Keep each pack's texture folder near its FBXs, or point `--textures-dir` at the extracted texture folder when it is shared.
-- Best-effort from Kenney docs: GLB is often distributed and recommended, but this recipe is for teams standardizing FBX sources.
 
 ### Synty
 

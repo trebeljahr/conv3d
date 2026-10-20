@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // GLB post-processing — texture and material recovery (public barrel).
 //
-// Many free 3D model packs (Quaternius, Kenney, KAYKIT, etc.) ship FBX/OBJ
+// Many free 3D model packs ship FBX/OBJ
 // files whose texture and per-material color bindings are broken or missing
 // once they reach a glTF/GLB output:
 //
