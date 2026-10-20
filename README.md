@@ -305,12 +305,13 @@ After every FBX conversion, conv3d scans the output GLB for 1×1 placeholder PNG
 
 CLI polish: [commander](https://www.npmjs.com/package/commander), [inquirer](https://www.npmjs.com/package/inquirer), [chalk](https://www.npmjs.com/package/chalk), [ora](https://www.npmjs.com/package/ora), [figlet](https://www.npmjs.com/package/figlet), [lolcatjs](https://www.npmjs.com/package/lolcatjs).
 
-## Used by
+## Used in
+
+conv3d converts the models in these projects by the same author:
 
 - [Mesozoic Protocol](https://mesozoicprotocol.com) — tower defense with a piloted mech; its model scripts run conv3d.
 - [Quaternius Showcase](https://quaternius.trebeljahr.com) — browse and download Quaternius's free low-poly packs as GLB files.
 - [ricos.site 3D playground](https://ricos.site/r3f) — React Three Fiber and Three.js demos.
-- [Gamedev Asset Library](https://gamedev.trebeljahr.com) — a public catalog of free game assets whose 3D pipeline was baked with conv3d.
 
 ## Project scope
 
