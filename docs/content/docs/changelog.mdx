@@ -18,7 +18,7 @@ Future changes will appear here before the next release.
 
 ### FBX materials
 
-- **Phong, Blinn and Lambert materials are no longer metallic.** `fbx2gltf` gives them metallic `0.4` (Phong, Blinn) or `0.2` (Lambert) and a low roughness, so hand-painted packs rendered like polished metal. conv3d now sets metallic to `0` and maps Phong shininess to roughness the way Blender's FBX importer does. A KayKit character now comes out at metallic `0` and roughness `0.5`, the same values as the pack's own glTF export. See [FBX texture recovery](/docs/textures#non-metallic-phong-and-lambert-materials).
+- **Phong, Blinn and Lambert materials are no longer metallic.** `fbx2gltf` gives them metallic `0.4` (Phong, Blinn) or `0.2` (Lambert) and a low roughness, so hand-painted packs rendered like polished metal. conv3d now sets metallic to `0` and maps Phong shininess to roughness the way Blender's FBX importer does. A hand-painted character tested before release now comes out at metallic `0` and roughness `0.5`, the same values as its pack's own glTF export. See [FBX texture recovery](/docs/textures#non-metallic-phong-and-lambert-materials).
 
 ### FBX on arm64
 
