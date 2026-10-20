@@ -235,7 +235,7 @@ function ComponentShowcase() {
                 ▣
               </span>
               <div>
-                {/* data: Quaternius RPG Essentials Pack (May 2017), KnightHelmet, measured 2026-05-16 */}
+                {/* data: Quaternius RPG Essentials Pack (May 2017), KnightHelmet, measured 2026-10-20 */}
                 <div className={styles.fileChipName}>KnightHelmet.fbx</div>
                 <div className={styles.fileChipMeta}>32 KB · low-poly</div>
               </div>
@@ -246,7 +246,7 @@ function ComponentShowcase() {
               </span>
               <div>
                 <div className={styles.fileChipName}>KnightHelmet.glb</div>
-                <div className={styles.fileChipMeta}>8.5 KB · web-optimized</div>
+                <div className={styles.fileChipMeta}>8.6 KB · web-optimized</div>
               </div>
             </div>
           </div>

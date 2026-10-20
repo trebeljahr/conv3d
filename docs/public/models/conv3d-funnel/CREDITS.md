@@ -22,8 +22,16 @@ Quaternius under the landing hero and under the KnightHelmet showcase.
 | `Plant.glb` | Furniture Pack (October 2017) | https://quaternius.com/packs/furniture.html |
 | `Sofa.glb` | Furniture Pack (October 2017) | https://quaternius.com/packs/furniture.html |
 
-Each file is byte-identical to the `<Name>-transformed.glb` that conv3d wrote
-for the same model in the author's local copy of these packs
-(`~/projects/gamedev/assets/glb-optimized-v2/quaternius/{rpg-asset-pack-may-2017,junk-food-pack-apr-2017,furniture-pack-oct-2017}`),
-served here under stable filenames for the hero scene. `SodaCan.glb` is not
-used by the hero today.
+Regenerated 2026-10-20 with conv3d 1a895cb, so Phong materials come out
+non-metallic (they were metallic 0.4 before). Per pack, from the FBX files in
+the author's local copy of these packs:
+
+```sh
+blender --background --python scripts/blender/extract-material-colors.py -- <pack blends dir> colors.json
+conv3d bulk <fbx dir> -m FBX --no-tsx --optimize --keep-materials \
+  --material-colors colors.json --textures-dir <pack textures dir> -y
+```
+
+The FBX files carry no diffuse colors, so the colors come from the pack's
+`.blend` files. Each `<Name>-transformed.glb` is served here as `<Name>.glb`.
+`SodaCan.glb` is not used by the hero today.
