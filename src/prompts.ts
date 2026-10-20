@@ -3,11 +3,6 @@ import { isNonInteractive } from "./program.js";
 
 const { prompt } = inquirer;
 
-function bailNonInteractive(what: string, hint: string): never {
-  // Thrown so the calling command's catch emits the `--json` fatal-error object.
-  throw new Error(`Non-interactive mode: ${what} is required but was not provided. ${hint}`);
-}
-
 export async function promptForModelType({
   numGLTF,
   numFBX,
@@ -19,12 +14,8 @@ export async function promptForModelType({
   numOBJ: number;
   numAll: number;
 }): Promise<string> {
-  if (isNonInteractive()) {
-    bailNonInteractive(
-      "--modelType / -m",
-      "Pass -m GLTF | FBX | OBJ | ALL to select which formats to convert.",
-    );
-  }
+  // Without a prompt, convert every format found, as glob input already does.
+  if (isNonInteractive()) return "ALL";
 
   const { modelType } = await prompt<{ modelType: string }>([
     {

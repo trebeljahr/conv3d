@@ -50,7 +50,7 @@ cd docs && pnpm press:walkthrough
 
 Writes `public/press/walkthrough.mp4`, `walkthrough.webm` and `walkthrough-poster.png`: about 30 seconds at 1920x1080, no sound, and the last frame matches the first, so it loops cleanly. Three parts, joined with ffmpeg crossfades:
 
-1. `walkthrough-terminal.tape` (vhs): a real `conv3d bulk ./models -m FBX --tsx --optimize -y` run. `_walkthrough-setup.sh` copies the KayKit Adventurers character FBXs and textures into `/tmp/conv3d-walkthrough/models`.
+1. `walkthrough-terminal.tape` (vhs): a real `conv3d bulk ./models --tsx --optimize -y` run. `_walkthrough-setup.sh` copies the KayKit Adventurers character FBXs and textures into `/tmp/conv3d-walkthrough/models`.
 2. The generated `tsx/Barbarian.tsx`, highlighted with shiki in an editor-style page, scrolled from the gltfjsx header to the JSX.
 3. `_press-r3f-page.tsx`: that component, unchanged, rendered in a react-three-fiber canvas. esbuild bundles it with the docs site's own three, r3f and drei; Playwright steps the turntable frame by frame.
 

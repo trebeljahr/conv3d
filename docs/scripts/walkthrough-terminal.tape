@@ -34,7 +34,7 @@ Sleep 200ms
 Enter
 Sleep 1600ms
 
-Type "conv3d bulk ./models -m FBX --tsx --optimize -y"
+Type "conv3d bulk ./models --tsx --optimize -y"
 Sleep 400ms
 Enter
 Wait+Line@60s /^\$ ?$/

@@ -79,8 +79,8 @@ and -m defaults to ALL.
 Output is written to <inputDir>/_convert-3d-for-web/ unless -o is passed.
 Use --flat or --glb-dir / --tsx-dir / --optimized-dir to change the layout.
 
-When run non-interactively (-y / piped stdin), -m is required (directory mode)
-and prompts default to: --tsx, --optimize.`,
+When run non-interactively (-y / piped stdin), prompts default to:
+-m ALL, --tsx, --optimize.`,
   )
   .argument("[input]", "Directory containing source models, or a glob pattern (alternative to -i)")
   .option("-i, --inputDir <path>", "Directory or glob pattern")
@@ -220,7 +220,9 @@ Examples:
       const allConverted: string[] = [];
       info("ℹ️ Generating .glb files...");
       for (const [key, { files }] of formats) {
-        if (shouldConvert(key)) {
+        // Under ALL, a format the input doesn't contain is not part of the run, so no warning.
+        const absentUnderAll = options.modelType === "ALL" && files.length === 0;
+        if (shouldConvert(key) && !absentUnderAll) {
           const r = await convertModels(key as InputFormats, files, inputDir, dirs);
           const done = isDryRun() ? r.planned : r.converted;
           allConverted.push(...done);

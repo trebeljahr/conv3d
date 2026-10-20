@@ -194,6 +194,26 @@ test("bulk with glob expands matches and defaults modelType to ALL", () => {
   }
 });
 
+test("bulk on a directory with -y and no -m defaults modelType to ALL", () => {
+  const { dir, cleanup } = makeTmp("dir-all");
+  try {
+    writeFileSync(path.join(dir, "a.obj"), OBJ_BODY);
+    writeFileSync(path.join(dir, "b.obj"), OBJ_BODY);
+    const r = run(["bulk", dir, "--tsx", "--optimize", "-y", "--dry-run", "--json"]);
+    assert.equal(r.status, 0, r.stderr);
+    const parsed = JSON.parse(r.stdout);
+    assert.equal(parsed.modelType, "ALL");
+    assert.equal(parsed.converted.length, 2);
+
+    // A folder with only OBJ files gets no warnings about GLTF or FBX.
+    const text = run(["bulk", dir, "--no-tsx", "--no-optimize", "-y", "--dry-run"]);
+    assert.equal(text.status, 0, text.stderr);
+    assert.doesNotMatch(text.stdout + text.stderr, /No (GLTF|FBX) models found/);
+  } finally {
+    cleanup();
+  }
+});
+
 test("bulk --flat writes outputs directly into outputDir (dry-run)", () => {
   const { dir, cleanup } = makeTmp("flat");
   try {

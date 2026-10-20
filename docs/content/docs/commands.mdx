@@ -115,7 +115,7 @@ conv3d bulk ./models -m ALL --tsx --optimize --dry-run --json       # preview
 | `[input]` (positional) | Directory, file, or glob pattern (e.g. `./models/**/*.fbx`). |
 | `-i, --inputDir <path>` | Same as positional form. |
 | `-o, --outputDir <path>` | Where to write outputs (default `<inputDir>/_convert-3d-for-web`). |
-| `-m, --modelType <type>` | `GLTF` \| `FBX` \| `OBJ` \| `ALL`. Required when `-y` in directory mode. |
+| `-m, --modelType <type>` | `GLTF` \| `FBX` \| `OBJ` \| `ALL`. With `-y` or glob input the default is `ALL`; otherwise conv3d asks. |
 | `-r, --recursive` | Recurse into subdirectories (directory mode only; globs choose scope). |
 
 When the input is a glob:

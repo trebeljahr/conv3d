@@ -2,7 +2,7 @@
 // Builds public/press/walkthrough.{mp4,webm} and walkthrough-poster.png:
 // about 30 seconds, muted, loops cleanly. Three parts, joined with crossfades:
 //
-//   1. terminal  a real `conv3d bulk ./models -m FBX --tsx --optimize -y` run
+//   1. terminal  a real `conv3d bulk ./models --tsx --optimize -y` run
 //                over the KayKit Adventurers FBXs (vhs, walkthrough-terminal.tape)
 //   2. code      the generated tsx/Barbarian.tsx with its gltfjsx header
 //   3. browser   that component rendered as-is in a react-three-fiber page
