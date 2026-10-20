@@ -5,6 +5,7 @@ import convertFbxToGlb from "fbx2gltf";
 import gltfPipeline from "gltf-pipeline";
 import gltfjsx from "gltfjsx/src/gltfjsx.js";
 import obj2gltf from "obj2gltf";
+import { explainFbxError } from "./fbxReadiness.js";
 import { createSpinner, err, info, warn } from "./log.js";
 import type { OutputDirs } from "./outputDirs.js";
 import {
@@ -340,7 +341,11 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
   };
 
   try {
-    await convertFbxToGlb(inputPath, outputPath, ["--binary", "--pbr-metallic-roughness"]);
+    try {
+      await convertFbxToGlb(inputPath, outputPath, ["--binary", "--pbr-metallic-roughness"]);
+    } catch (error) {
+      throw explainFbxError(error);
+    }
     await runPostProcess(outputPath, inputPath);
   } finally {
     await cleanup();

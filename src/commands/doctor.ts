@@ -3,6 +3,7 @@ import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { readPackageUpSync } from "read-package-up";
+import { checkFbxReadiness, type FbxReadiness } from "../fbxReadiness.js";
 import { emitJson, isJson } from "../log.js";
 import { isDryRun, program } from "../program.js";
 
@@ -19,7 +20,8 @@ type DependencyReport = {
 
 type DoctorReport = {
   command: "doctor";
-  ok: true;
+  /** False when FBX conversion cannot run on this machine; OBJ and glTF still work. */
+  ok: boolean;
   conv3d: string;
   node: string;
   platform: string;
@@ -27,6 +29,7 @@ type DoctorReport = {
   installRoot: string;
   dryRun: boolean;
   dependencies: DependencyReport[];
+  fbx: FbxReadiness;
 };
 
 const TRACKED_DEPS = [
@@ -77,6 +80,12 @@ function formatMarkdownReport(report: DoctorReport): string {
     lines.push(`- ${d.name}: declared ${d.declared}; ${status}`);
   }
 
+  lines.push(
+    "",
+    `fbx conversion: ${report.fbx.ready ? `ready (FBX2glTF ${report.fbx.version ?? "unknown"})` : "cannot run"}`,
+  );
+  if (report.fbx.hint) lines.push(report.fbx.hint);
+
   lines.push("```");
   return `${lines.join("\n")}\n`;
 }
@@ -113,9 +122,10 @@ Examples:
       installed: readInstalledVersion(name, conv3dRoot),
     }));
 
+    const fbx = checkFbxReadiness();
     const report: DoctorReport = {
       command: "doctor",
-      ok: true,
+      ok: fbx.ready,
       conv3d: conv3dVersion,
       node: process.version,
       platform: `${process.platform}-${process.arch}`,
@@ -123,6 +133,7 @@ Examples:
       installRoot: conv3dRoot,
       dryRun: !!isDryRun(),
       dependencies: deps,
+      fbx,
     };
 
     if (isJson()) {
@@ -146,4 +157,9 @@ Examples:
       const installed = d.installed ?? yellow("not found");
       console.log(`  ${d.name.padEnd(16)} declared ${gray(d.declared)}  installed ${installed}`);
     }
+    console.log("");
+    console.log(
+      `fbx     ${fbx.ready ? green(`ready (FBX2glTF ${fbx.version ?? "unknown"})`) : yellow("cannot run")}`,
+    );
+    if (fbx.hint) console.log(`        ${yellow(fbx.hint)}`);
   });

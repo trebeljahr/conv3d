@@ -117,9 +117,17 @@ runtime output in CI, so key drift fails the build.
       "declared": "^14.0.3",
       "installed": "14.0.3"
     }
-  ]
+  ],
+  "fbx": {
+    "ready": true,
+    "binary": "/abs/path/conv3d/node_modules/fbx2gltf/bin/Darwin/FBX2glTF",
+    "version": "0.9.7",
+    "hint": null
+  }
 }
 ```
+
+`ok` and `fbx.ready` are `false` when the bundled FBX2glTF binary cannot run on this machine (Apple Silicon without Rosetta, arm64 Linux). `fbx.hint` then says what to do; OBJ and glTF conversion still work.
 
 On a **fatal** error (bad args, missing input):
 
