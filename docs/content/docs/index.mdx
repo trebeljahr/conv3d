@@ -5,7 +5,7 @@ description: Convert FBX, OBJ, and glTF models to GLB and generate matching Reac
 
 A command-line tool for converting 3D models (`.fbx`, `.obj`, `.gltf`) into `.glb` files and generating matching React Three Fiber components — so you can drop them straight into a [react-three-fiber](https://github.com/pmndrs/react-three-fiber) / [three.js](https://threejs.org) project without a round-trip through Blender.
 
-[**Get started →**](./getting-started) &nbsp;·&nbsp; [GitHub](https://github.com/trebeljahr/conv3d) &nbsp;·&nbsp; [npm](https://www.npmjs.com/package/conv3d)
+[**Get started →**](/docs/getting-started) &nbsp;·&nbsp; [GitHub](https://github.com/trebeljahr/conv3d) &nbsp;·&nbsp; [npm](https://www.npmjs.com/package/conv3d)
 
 ---
 
@@ -40,18 +40,18 @@ conv3d is and will remain a local-first CLI; there is no hosted or paid tier.
 
 ## Next steps
 
-- [Getting Started](./getting-started) — install and convert your first model.
-- [Commands reference](./commands) — `bulk`, `single`, `tsx-gen`, `doctor`.
-- [Output layout](./output) — where files land and how to redirect them.
-- [Using conv3d from scripts & agents](./agents) — `--yes`, `--json`, exit codes, recipes.
-- [FBX texture recovery](./textures) — how conv3d rescues stripped textures.
-- [Recipes](./recipes) — copy-paste invocations for the conversions you'll actually run.
-- [Troubleshooting](./troubleshooting) — common failures and how to read `doctor` output.
-- [Architecture](./architecture) — what runs when, and why.
-- [Changelog](./changelog) — what's new between releases.
+- [Getting Started](/docs/getting-started) — install and convert your first model.
+- [Commands reference](/docs/commands) — `bulk`, `single`, `tsx-gen`, `doctor`.
+- [Output layout](/docs/output) — where files land and how to redirect them.
+- [Using conv3d from scripts & agents](/docs/agents) — `--yes`, `--json`, exit codes, recipes.
+- [FBX texture recovery](/docs/textures) — how conv3d rescues stripped textures.
+- [Recipes](/docs/recipes) — copy-paste invocations for the conversions you'll actually run.
+- [Troubleshooting](/docs/troubleshooting) — common failures and how to read `doctor` output.
+- [Architecture](/docs/architecture) — what runs when, and why.
+- [Changelog](/docs/changelog) — what's new between releases.
 
 ## Common questions
 
-- **Is there a programmatic / Node API?** No — conv3d is a CLI only. The supported way to call it from another program (Node script, build tool, CI job, AI agent) is `--json` + `--yes` + parsing the exit code. See [Scripts & agents](./agents) for the full contract.
+- **Is there a programmatic / Node API?** No — conv3d is a CLI only. The supported way to call it from another program (Node script, build tool, CI job, AI agent) is `--json` + `--yes` + parsing the exit code. See [Scripts & agents](/docs/agents) for the full contract.
 - **Can I run it without prompts?** Yes — pass `-y` (or `--yes`). Non-interactive mode is also inferred automatically when stdin is not a TTY.
 - **Can I preview without writing files?** Yes — `--dry-run` prints the plan and exits `0` without touching disk.
