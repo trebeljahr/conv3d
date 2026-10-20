@@ -40,3 +40,29 @@ cd docs/scripts && vhs terminal-screenshot.tape
 ```
 
 Output: `docs/public/press/terminal-screenshot.png`. `_screenshot-setup.sh` unpacks a few `docs/public/models/conv3d-funnel/` GLBs into `.gltf` sources in a fresh `/tmp/conv3d.*` dir, so the run converts real geometry and writes nothing into the repo. The throwaway GIF goes to `/tmp` and takes a few minutes to encode at this size.
+
+## Press video: walkthrough
+
+```sh
+pnpm build                       # repo root: dist/conv3d.js
+cd docs && pnpm press:walkthrough
+```
+
+Writes `public/press/walkthrough.mp4`, `walkthrough.webm` and `walkthrough-poster.png`: about 30 seconds at 1920x1080, no sound, and the last frame matches the first, so it loops cleanly. Three parts, joined with ffmpeg crossfades:
+
+1. `walkthrough-terminal.tape` (vhs): a real `conv3d bulk ./models -m FBX --tsx --optimize -y` run. `_walkthrough-setup.sh` copies the KayKit Adventurers character FBXs and textures into `/tmp/conv3d-walkthrough/models`.
+2. The generated `tsx/Barbarian.tsx`, highlighted with shiki in an editor-style page, scrolled from the gltfjsx header to the JSX.
+3. `_press-r3f-page.tsx`: that component, unchanged, rendered in a react-three-fiber canvas. esbuild bundles it with the docs site's own three, r3f and drei; Playwright steps the turntable frame by frame.
+
+`SKIP_TERMINAL=1` reuses the last terminal recording.
+
+## Press screenshot: before and after texture recovery
+
+```sh
+pnpm build                       # repo root: dist/conv3d.js
+cd docs && pnpm press:before-after
+```
+
+Writes `public/press/before-after.png` (1920x1080). It converts `Barbarian.fbx` twice from the same folder, with its texture next to it: once with the bundled FBX2glTF binary and conv3d's flags, and once with `conv3d bulk`. `_press-viewer.js` shows both GLBs in one plain three.js GLTFLoader viewer with the same lights.
+
+Both press scripts need the KayKit Adventurers pack by Kay Lousberg (CC0, https://kaylousberg.itch.io/kaykit-adventurers). Set `KAYKIT_FBX_DIR` to its `characters/fbx` folder if it is not at the default path in `_press-lib.mjs`. FBX2glTF is x86-64 only, so Apple Silicon needs Rosetta. Every image or video that shows the model carries the credit "Model: KayKit Adventurers by Kay Lousberg (CC0)".

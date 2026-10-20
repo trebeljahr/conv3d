@@ -131,6 +131,32 @@
   align-self: center;
 }
 
+.heroCredit {
+  position: absolute;
+  /* Right edge of .heroInner, under the scene, on wide screens too. */
+  right: max(1.5rem, calc((100% - 1180px) / 2));
+  bottom: 0.8rem;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--c3-fg-dim);
+}
+
+.heroCredit a,
+.showcaseCredit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.showcaseCredit {
+  margin: 0;
+  padding: 0.55rem 1rem;
+  font-size: 0.72rem;
+  color: var(--c3-fg-dim);
+  border-top: 1px solid var(--c3-border);
+  background: var(--c3-bg-alt);
+}
+
 .heroEyebrow {
   margin: 0 0 0.8rem;
   font-family: var(--c3-font-mono);
@@ -1060,7 +1086,8 @@
 }
 
 @media (max-width: 720px) {
-  .heroScene {
+  .heroScene,
+  .heroCredit {
     display: none;
   }
 }

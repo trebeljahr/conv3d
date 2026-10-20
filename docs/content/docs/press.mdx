@@ -130,7 +130,55 @@ If you write about conv3d, please credit `gltfjsx` and pmndrs in the same paragr
 
 ## Image and Video Kit
 
-Coming soon. Until image and video assets exist, link to [the docs home](/) or contact [hello@trebeljahr.com](mailto:hello@trebeljahr.com) for current screenshots and usage guidance.
+You can use these files for editorial coverage under CC0. Credit is welcome but not required. Where a file shows a 3D model, the maker's credit sits next to it. Those models are CC0 too.
+
+### Walkthrough video
+
+<video
+  controls
+  muted
+  loop
+  playsInline
+  preload="metadata"
+  poster="/press/walkthrough-poster.png"
+  aria-label="conv3d walkthrough, 30 seconds, no sound"
+  style={{ width: "100%", borderRadius: "8px" }}
+>
+  <source src="/press/walkthrough.webm" type="video/webm" />
+  <source src="/press/walkthrough.mp4" type="video/mp4" />
+</video>
+
+30 seconds, 1920×1080, no sound, loops. A terminal runs `conv3d bulk ./models -m FBX --tsx --optimize -y` on six FBX characters and recovers one placeholder texture per file. The editor then opens the generated `tsx/Barbarian.tsx` with its gltfjsx header. A react-three-fiber page renders that component unchanged.
+
+Model: KayKit Adventurers by [Kay Lousberg](https://kaylousberg.itch.io/kaykit-adventurers) (CC0).
+
+Files: [walkthrough.mp4](/press/walkthrough.mp4), [walkthrough.webm](/press/walkthrough.webm), [walkthrough-poster.png](/press/walkthrough-poster.png).
+
+### Texture recovery, before and after
+
+<figure>
+  <img
+    src="/press/before-after.png"
+    width={1920}
+    height={1080}
+    alt="Two renders of the same Barbarian character, converted from one FBX file. Left, converted by FBX2glTF alone: the whole model is flat yellow, because a 1×1 placeholder texture replaced its texture. Right, converted by conv3d: the model shows its brown bear hat, skin, grey beard and leather belt."
+    style={{ width: "100%", height: "auto", borderRadius: "8px" }}
+  />
+  <figcaption>
+    Model: KayKit Adventurers by <a href="https://kaylousberg.itch.io/kaykit-adventurers">Kay Lousberg</a> (CC0).
+  </figcaption>
+</figure>
+
+1920×1080. The same FBX and texture file, converted by FBX2glTF alone (left) and by conv3d (right), shown in the same three.js viewer. File: [before-after.png](/press/before-after.png).
+
+### Screenshots
+
+- [docs-hero.png](/press/docs-hero.png): 1920×1080, the landing page of this site. Models: [Quaternius](https://quaternius.com) (CC0).
+- [terminal-screenshot.png](/press/terminal-screenshot.png): 1920×1080, an interactive `conv3d bulk` run.
+- [terminal-json.png](/press/terminal-json.png): 1920×1080, `conv3d bulk … --yes --json` piped to `jq`.
+- [og-card.png](/press/og-card.png): 1200×630, the social card of this site.
+
+The scripts that make these files are in [`docs/scripts`](https://github.com/trebeljahr/conv3d/tree/main/docs/scripts).
 
 ## Press Contact
 

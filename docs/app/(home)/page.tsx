@@ -9,6 +9,9 @@ import styles from "./page.module.css";
 type FileRow = { name: string; before: number; after: number };
 
 const REPO_URL = "https://github.com/trebeljahr/conv3d";
+// Every model on this page is from a CC0 Quaternius pack; see
+// public/models/conv3d-funnel/CREDITS.md.
+const QUATERNIUS_URL = "https://quaternius.com";
 
 // data: KAYKIT Adventurers 2.0 FREE characters pack, conv3d bulk --optimize, measured 2026-05-16
 const heroFiles: FileRow[] = [
@@ -67,6 +70,9 @@ function Hero() {
           <ProjectFacts />
         </div>
       </div>
+      <p className={styles.heroCredit}>
+        Models: <a href={QUATERNIUS_URL}>Quaternius</a> (CC0)
+      </p>
     </header>
   );
 }
@@ -229,7 +235,7 @@ function ComponentShowcase() {
                 ▣
               </span>
               <div>
-                {/* data: Quaternius RPG Asset Pack (May 2017), KnightHelmet, measured 2026-05-16 */}
+                {/* data: Quaternius RPG Essentials Pack (May 2017), KnightHelmet, measured 2026-05-16 */}
                 <div className={styles.fileChipName}>KnightHelmet.fbx</div>
                 <div className={styles.fileChipMeta}>32 KB · low-poly</div>
               </div>
@@ -268,6 +274,10 @@ function ComponentShowcase() {
               <div className={styles.showcaseCanvasBody}>
                 <KnightShowcaseSceneLazy />
               </div>
+              <p className={styles.showcaseCredit}>
+                Model: Knight Helmet, RPG Essentials Pack by <a href={QUATERNIUS_URL}>Quaternius</a>{" "}
+                (CC0)
+              </p>
             </div>
 
             <div className={styles.codeFrame}>

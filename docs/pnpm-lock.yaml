@@ -71,9 +71,15 @@ importers:
       '@types/three':
         specifier: ^0.159.0
         version: 0.159.0
+      esbuild:
+        specifier: 0.28.1
+        version: 0.28.1
       postcss:
         specifier: 8.5.28
         version: 8.5.28
+      shiki:
+        specifier: 4.0.2
+        version: 4.0.2
       tailwindcss:
         specifier: ^4.3.0
         version: 4.3.0
