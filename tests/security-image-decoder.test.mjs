@@ -3,10 +3,9 @@ import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 
-// Exercise the exact decoder used by gltfjsx's texture pipeline.
+// Exercise the exact decoder used by the --optimize texture pipeline.
 const require = createRequire(import.meta.url);
-const gltfRequire = createRequire(require.resolve('gltfjsx'));
-const functionsRequire = createRequire(gltfRequire.resolve('@gltf-transform/functions'));
+const functionsRequire = createRequire(require.resolve('@gltf-transform/functions'));
 const pixelsPath = functionsRequire.resolve('ndarray-pixels');
 const pixelsRequire = createRequire(pixelsPath);
 const { getPixels } = await import(pathToFileURL(pixelsPath).href);

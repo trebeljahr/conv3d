@@ -23,13 +23,14 @@ cwd     /Users/you/project
 install /usr/local/lib/node_modules/conv3d
 
 dependencies:
-  obj2gltf         declared ^3.1.6   installed 3.1.6
-  gltf-pipeline    declared ^4.1.0   installed 4.1.0
-  fbx2gltf         declared ^0.9.7   installed 0.9.7
-  gltfjsx          declared ^6.5.3   installed 6.5.3
-  commander        declared ^14.0.2  installed 14.0.2
-  inquirer         declared ^12.10.0 installed 12.10.0
-  fast-glob        declared ^3.3.3   installed 3.3.3
+  obj2gltf             declared ^3.1.6   installed 3.1.6
+  gltf-pipeline        declared ^4.1.0   installed 4.1.0
+  fbx2gltf             declared ^0.9.7   installed 0.9.7
+  @gltf-transform/core declared ^4.5.1   installed 4.5.1
+  sharp                declared ^0.35.5  installed 0.35.5
+  commander            declared ^14.0.2  installed 14.0.2
+  inquirer             declared ^12.10.0 installed 12.10.0
+  fast-glob            declared ^3.3.3   installed 3.3.3
 ```
 
 Read each line:
@@ -293,6 +294,16 @@ npm install -g conv3d   # default includes optionals
 ```
 
 The banner is also suppressed (intentionally) when stdout isn't a TTY, or when any of `--help` / `--version` / `--quiet` / `--json` is passed — agents and pipes never see it.
+
+## `npm audit` reports 5 moderate findings
+
+**Symptom:** `npm audit` on a clean install lists `minimatch`, `glob`, `rimraf`, `fbx2gltf` and `conv3d`, with no fix available. All five are one advisory, [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+
+**Cause:** `fbx2gltf` needs `rimraf` 2, which brings in `glob` 7 and `minimatch` 3.1.5. The advisory covers every `minimatch` below 11.0.1. `fbx2gltf` has no newer release, and conv3d cannot change the versions in your install.
+
+**Effect on you:** none from this advisory. It describes code that minimatch 3.1.5 does not contain (`firstPhasePreProcess`). `fbx2gltf` uses `rimraf` for one thing: deleting the `.fbm` folder next to your `.fbx`.
+
+**Fix:** no action needed. conv3d's install test fails a release on any high or critical finding.
 
 ## Still stuck?
 

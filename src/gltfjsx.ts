@@ -1,17 +1,40 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { DRACOLoader } from "gltfjsx/src/bin/DRACOLoader.js";
-import { GLTFLoader } from "gltfjsx/src/bin/GLTFLoader.js";
-import parse from "gltfjsx/src/utils/parser.js";
-import transform from "gltfjsx/src/utils/transform.js";
+import { Logger, NodeIO, PropertyType } from "@gltf-transform/core";
+import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
+import {
+  dedup,
+  dequantize,
+  draco,
+  flatten,
+  join,
+  palette,
+  prune,
+  reorder,
+  resample,
+  sparse,
+  textureCompress,
+  unpartition,
+  weld,
+} from "@gltf-transform/functions";
+import draco3d from "draco3dgltf";
+import { ready as resampleReady, resample as resampleWasm } from "keyframe-resample";
+import { MeshoptDecoder, MeshoptEncoder } from "meshoptimizer";
+import sharp from "sharp";
+import { DRACOLoader } from "./vendor/gltfjsx/DRACOLoader.js";
+import { GLTFLoader } from "./vendor/gltfjsx/GLTFLoader.js";
+import parse from "./vendor/gltfjsx/parser.js";
 
-// conv3d calls gltfjsx's parts directly instead of its default export. That
-// export prints its header to stdout, writes local paths into the .tsx, and
-// never settles when a file cannot be parsed. A patch-package patch cannot fix
-// this for everyone: it misses gltfjsx when npm hoists it, as npx and project
-// installs do. These are internal paths, so package.json pins the version.
+// conv3d cannot depend on the gltfjsx package. gltfjsx 6.5.3 pins
+// @gltf-transform/functions 4.1.0 and asks for sharp ^0.33.5, so every install
+// gets a sharp with known libvips, libheif and librsvg vulnerabilities, whatever
+// conv3d itself declares. npm overrides never reach users.
+//
+// So src/vendor/gltfjsx holds gltfjsx's parser and loaders, and optimizeGlb below
+// is gltfjsx's transform with only the options conv3d passes. Calling these parts
+// directly also keeps gltfjsx's header off stdout and local paths out of the .tsx.
 
-DRACOLoader.getDecoderModule = () => {};
+Object.assign(DRACOLoader, { getDecoderModule: () => {} });
 const loader = new GLTFLoader();
 loader.setDRACOLoader(new DRACOLoader());
 
@@ -20,6 +43,72 @@ export type GltfjsxOptions = {
   resolution?: number;
   keepmaterials?: boolean;
 };
+
+// weld() ran this cleanup itself until @gltf-transform 4.2. Without it, primitives
+// that share vertex data each keep their own copy in the .glb.
+const cleanupAfterWeld = () => [
+  prune({
+    propertyTypes: [PropertyType.ACCESSOR, PropertyType.NODE],
+    keepAttributes: true,
+    keepIndices: true,
+    keepLeaves: false,
+  }),
+  dedup({ propertyTypes: [PropertyType.ACCESSOR] }),
+];
+
+async function optimizeGlb(
+  inputPath: string,
+  outputPath: string,
+  { resolution = 1024, keepmaterials }: GltfjsxOptions,
+): Promise<void> {
+  await MeshoptDecoder.ready;
+  await MeshoptEncoder.ready;
+  const io = new NodeIO()
+    .registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({
+      "draco3d.decoder": await draco3d.createDecoderModule(),
+      "draco3d.encoder": await draco3d.createEncoderModule(),
+      "meshopt.decoder": MeshoptDecoder,
+      "meshopt.encoder": MeshoptEncoder,
+    })
+    .setLogger(new Logger(Logger.Verbosity.WARN));
+
+  const document = await io.read(inputPath);
+  await document.transform(
+    unpartition(),
+    ...(keepmaterials ? [] : [palette({ min: 5 })]),
+    reorder({ encoder: MeshoptEncoder }),
+    dedup(),
+    flatten(),
+    dequantize(),
+    join(),
+    weld(),
+    ...cleanupAfterWeld(),
+    resample({ ready: resampleReady, resample: resampleWasm }),
+    prune({ keepAttributes: false, keepLeaves: false }),
+    sparse(),
+    // @gltf-transform 4.3 switched non-color textures to 4:4:4 JPEG, which makes
+    // normal maps about 75% bigger. conv3d keeps 4:2:0, as gltfjsx's version did.
+    // Normal maps keep a resolution of at least 2048.
+    textureCompress({
+      slots: /^(?!normalTexture).*$/,
+      encoder: sharp,
+      chromaSubsampling: "4:2:0",
+      resize: [resolution, resolution],
+    }),
+    textureCompress({
+      slots: /^(?=normalTexture).*$/,
+      encoder: sharp,
+      targetFormat: "jpeg",
+      chromaSubsampling: "4:2:0",
+      resize: [Math.max(resolution, 2048), Math.max(resolution, 2048)],
+    }),
+    // draco() welds again before it compresses.
+    draco(),
+    ...cleanupAfterWeld(),
+  );
+  await io.write(outputPath, document);
+}
 
 function loadGltf(data: Buffer): Promise<unknown> {
   const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
@@ -50,7 +139,7 @@ export async function generateTsx(
   if (options.transform) {
     const { name } = path.parse(inputPath);
     glbPath = path.join(path.dirname(path.resolve(outputPath)), `${name}-transformed.glb`);
-    await transform(inputPath, glbPath, options);
+    await optimizeGlb(inputPath, glbPath, options);
   }
 
   const gltf = await loadGltf(await readFile(glbPath));

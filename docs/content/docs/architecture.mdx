@@ -11,7 +11,8 @@ conv3d/
 │  ├─ conv3d.ts            # entry point
 │  ├─ program.ts           # commander setup, global flags, helpers
 │  ├─ converters.ts        # the format-specific conversion runners
-│  ├─ gltfjsx.ts           # calls gltfjsx's loader, transform and parser
+│  ├─ gltfjsx.ts           # generates the .tsx, runs the --optimize steps
+│  ├─ vendor/gltfjsx/      # copy of gltfjsx's parser and loaders
 │  ├─ commands/
 │  │  ├─ single.ts         # `conv3d single`
 │  │  ├─ bulk.ts           # `conv3d bulk`
@@ -39,8 +40,8 @@ input file
         └─ .gltf → gltf-pipeline  → in-memory glTF
   └─> serialize as .glb
   └─> [if FBX] texture-recovery pass
-  └─> [if --tsx] gltfjsx → .tsx
-  └─> [if --optimize] gltfjsx --transform → web-optimized .glb
+  └─> [if --tsx] gltfjsx parser → .tsx
+  └─> [if --optimize] glTF Transform + sharp → web-optimized .glb
   └─> emit JSON record (or progress line) for this file
 ```
 
@@ -97,8 +98,12 @@ The split matters because agents can re-run on partial failure (`errors[]` is en
 
 A pre-push git hook (`.githooks/pre-push`) runs `npm test`. `npm install` wires the hook via `core.hooksPath`.
 
-## Why conv3d calls gltfjsx's parts directly
+## Why conv3d ships a copy of gltfjsx's parser
 
-gltfjsx's default export prints its header to stdout, writes local paths into the `.tsx`, and never settles when it cannot parse a `.glb`. `src/gltfjsx.ts` calls gltfjsx's loader, transform and parser directly and handles these cases itself. These are internal paths, so `package.json` pins the exact gltfjsx version.
+gltfjsx's default export prints its header to stdout, writes local paths into the `.tsx`, and never settles when it cannot parse a `.glb`. So conv3d calls gltfjsx's loader and parser directly and handles these cases itself.
 
-Through v1.0.7, a `patch-package` patch handled this. The patch reached global installs only, because npm hoists gltfjsx in `npx` and project installs. `scripts/test-install.mjs` now installs the packed tarball in a temp project and runs the CLI. CI and the release script run it.
+conv3d cannot depend on the gltfjsx package either. gltfjsx 6.5.3 pins `@gltf-transform/functions` 4.1.0 and asks for sharp `^0.33.5`, so every install gets a sharp with known high-severity advisories. `overrides` in conv3d's `package.json` do not reach users, and adding a newer sharp to `dependencies` only installs a second copy.
+
+So `src/vendor/gltfjsx` holds four files copied unchanged from gltfjsx 6.5.3, under its MIT licence ([`THIRD-PARTY-NOTICES.md`](https://github.com/trebeljahr/conv3d/blob/main/THIRD-PARTY-NOTICES.md)). `optimizeGlb` in `src/gltfjsx.ts` runs gltfjsx's transform steps with `@gltf-transform` directly. It adds two things back to match gltfjsx's output: the cleanup that `weld()` dropped in glTF Transform 4.2, and 4:2:0 JPEG for non-color textures, which glTF Transform 4.3 changed to 4:4:4. `three` and `prettier` stay pinned at gltfjsx's exact versions, because the copied code and the `.tsx` formatting depend on them.
+
+`scripts/test-install.mjs` installs the packed tarball in a temp project, runs the CLI, and fails on any high or critical `npm audit` finding. CI and the release script run it.

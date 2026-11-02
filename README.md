@@ -294,7 +294,8 @@ Each command: bumps the version (tagged commit), builds, runs tests, publishes t
 - [obj2gltf](https://www.npmjs.com/package/obj2gltf) — OBJ → GLB
 - [gltf-pipeline](https://www.npmjs.com/package/gltf-pipeline) — GLTF → GLB
 - [fbx2gltf](https://www.npmjs.com/package/fbx2gltf) — FBX → GLTF
-- [gltfjsx](https://www.npmjs.com/package/gltfjsx) — `.glb` → React component + web optimization
+- [gltfjsx](https://www.npmjs.com/package/gltfjsx) — `.glb` → React component. conv3d ships a copy of its parser and loaders ([notices](./THIRD-PARTY-NOTICES.md)).
+- [glTF Transform](https://www.npmjs.com/package/@gltf-transform/core) and [sharp](https://www.npmjs.com/package/sharp) — web optimization
 - [fast-glob](https://www.npmjs.com/package/fast-glob) — glob-pattern expansion
 
 ### FBX texture recovery

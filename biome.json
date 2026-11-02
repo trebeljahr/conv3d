@@ -13,7 +13,8 @@
       "!**/node_modules",
       "!**/.next",
       "!**/out",
-      "!**/coverage"
+      "!**/coverage",
+      "!src/vendor"
     ]
   },
   "formatter": {

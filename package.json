@@ -8,7 +8,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "THIRD-PARTY-NOTICES.md"
   ],
   "repository": {
     "type": "git",
@@ -70,16 +71,24 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "chalk": "^5.4.1",
     "commander": "^14.0.3",
+    "draco3dgltf": "^1.5.7",
     "fast-glob": "^3.3.3",
     "fbx2gltf": "^0.9.7-p1",
     "gltf-pipeline": "^4.1.0",
-    "gltfjsx": "6.5.3",
     "inquirer": "^13.4.3",
+    "keyframe-resample": "^0.1.0",
+    "meshoptimizer": "^0.22.0",
     "obj2gltf": "^3.1.6",
     "ora": "^9.4.0",
-    "read-package-up": "^12.0.0"
+    "prettier": "3.1.1",
+    "read-package-up": "^12.0.0",
+    "sharp": "^0.35.5",
+    "three": "0.159.0"
   },
   "optionalDependencies": {
     "figlet": "^1.5.2",
@@ -99,11 +108,5 @@
     "*.{js,jsx,ts,tsx,json,jsonc,css}": [
       "biome check --write --no-errors-on-unmatched"
     ]
-  },
-  "pnpm": {
-    "overrides": {
-      "gltfjsx>sharp": "0.35.4",
-      "ndarray-pixels>sharp": "0.35.4"
-    }
   }
 }

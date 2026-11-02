@@ -60,7 +60,7 @@ Override with --flat or --glb-dir / --tsx-dir / --optimized-dir.`,
   )
   .option("--tsx", "Create .tsx React components (otherwise prompts)")
   .option("--no-tsx", "Do not create .tsx files (skips the prompt)")
-  .option("--optimize", "Produce web-optimized .glb files via gltfjsx (otherwise prompts)")
+  .option("--optimize", "Produce web-optimized .glb files (otherwise prompts)")
   .option("--no-optimize", "Skip the optimized .glb output (skips the prompt)")
   .option(
     "-f, --force-overwrite",

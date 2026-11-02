@@ -36,7 +36,8 @@ const TRACKED_DEPS = [
   "obj2gltf",
   "gltf-pipeline",
   "fbx2gltf",
-  "gltfjsx",
+  "@gltf-transform/core",
+  "sharp",
   "commander",
   "inquirer",
   "fast-glob",
@@ -155,7 +156,7 @@ Examples:
     console.log("dependencies:");
     for (const d of deps) {
       const installed = d.installed ?? yellow("not found");
-      console.log(`  ${d.name.padEnd(16)} declared ${gray(d.declared)}  installed ${installed}`);
+      console.log(`  ${d.name.padEnd(20)} declared ${gray(d.declared)}  installed ${installed}`);
     }
     console.log("");
     console.log(

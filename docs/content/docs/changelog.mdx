@@ -7,7 +7,16 @@ What changed between conv3d releases. The [full commit history](https://github.c
 
 ## Unreleased
 
-Future changes will appear here before the next release.
+### Security
+
+- **A clean install has no high `npm audit` findings.** conv3d now installs sharp 0.35.5. Through v1.0.8 it installed sharp 0.33.5, which has high-severity advisories in libvips, libheif and librsvg. `--optimize` passes your model's textures to sharp, so these advisories apply to asset packs you did not make.
+- **5 moderate findings remain.** They are one chain through `fbx2gltf`, and the installed `minimatch` does not contain the code the advisory describes. See [Troubleshooting](/docs/troubleshooting#npm-audit-reports-5-moderate-findings).
+- **conv3d no longer installs the gltfjsx package.** It requires sharp 0.33, so conv3d now ships a copy of gltfjsx's parser and loaders. A clean install drops from 303 packages to 208.
+
+### `--optimize` output
+
+- **Skinned `.glb` files keep valid joints.** A Draco-compressed `.glb` whose `JOINTS_0` accessor stores no data was read as garbage, so a one-joint skin could reference joint 1022. It now reads as zeros, as glTF specifies. The output size of these files changes: one test model went from 6,632 to 7,584 bytes.
+- **Other output is unchanged.** `.tsx` files and non-optimized `.glb` files are byte-identical to v1.0.8. Optimized `.glb` files have a new `asset.generator` string. Some PNG textures encode a few bytes differently with the same pixels.
 
 ## v1.0.8 — 2026-11-02
 

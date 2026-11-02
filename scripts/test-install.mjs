@@ -2,10 +2,12 @@
 /*
  * test-install — run the packed tarball the way a user gets it.
  *
- * tests/ run from a checkout, where pnpm nests gltfjsx under conv3d. npx and
- * project installs hoist it to the top level. That difference hid a broken
+ * tests/ run from a checkout, where pnpm nests dependencies under conv3d. npx
+ * and project installs hoist them to the top level. That difference hid a broken
  * --json on every route except global installs through 1.0.7. This script
  * packs the tarball, installs it with npm in a temp project, and runs the CLI.
+ * It also fails on any high or critical `npm audit` finding, because overrides
+ * in this repo never reach that install.
  *
  * It needs the network, so CI and the release script run it, not pre-push.
  */
@@ -26,6 +28,24 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+const TEXTURED_OBJ = `mtllib quad.mtl
+v 0 0 0
+v 1 0 0
+v 1 1 0
+v 0 1 0
+vt 0 0
+vt 1 0
+vt 1 1
+vt 0 1
+vn 0 0 1
+usemtl mat
+f 1/1/1 2/2/1 3/3/1
+f 1/1/1 3/3/1 4/4/1
+`;
+// Four colors, because prune() replaces a solid-color texture with a material color.
+const FOUR_COLOR_PNG =
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEklEQVQImWP4z8AAQmDqPwgAAEnICfcck8vhAAAAAElFTkSuQmCC";
 
 function npm(args, cwd) {
   const r = spawnSync("npm", args, { cwd, encoding: "utf8" });
@@ -49,9 +69,17 @@ try {
   npm(["init", "-y"], project);
   npm(["install", join(tmp, filename), "--no-audit", "--no-fund"], project);
   assert.ok(
-    existsSync(join(project, "node_modules", "gltfjsx")),
-    "gltfjsx must be hoisted, or this does not test the npx and project-install layout",
+    existsSync(join(project, "node_modules", "three")),
+    "three must be hoisted, or this does not test the npx and project-install layout",
   );
+
+  // Exit code 1 is expected: the moderate findings through fbx2gltf have no fix.
+  const audit = spawnSync("npm", ["audit", "--omit=dev", "--json"], {
+    cwd: project,
+    encoding: "utf8",
+  });
+  const { high, critical } = JSON.parse(audit.stdout).metadata.vulnerabilities;
+  assert.deepEqual({ high, critical }, { high: 0, critical: 0 }, audit.stdout);
 
   const conv3d = (args) =>
     spawnSync(join(project, "node_modules", ".bin", "conv3d"), args, {
@@ -76,6 +104,21 @@ try {
   assert.ok(
     walk(models).some((file) => file.endsWith("tri-transformed.glb")),
     "--optimize must write a transformed .glb",
+  );
+
+  // --optimize hands textures to sharp, and tri.obj above has none.
+  const textured = join(project, "textured");
+  mkdirSync(textured);
+  writeFileSync(join(textured, "quad.obj"), TEXTURED_OBJ);
+  writeFileSync(join(textured, "quad.mtl"), "newmtl mat\nKd 1 1 1\nmap_Kd quad.png\n");
+  writeFileSync(join(textured, "quad.png"), Buffer.from(FOUR_COLOR_PNG, "base64"));
+  const optimized = conv3d(["bulk", "./textured", "--tsx", "--optimize", "-y", "--json"]);
+  assert.equal(optimized.status, 0, `bulk stderr: ${optimized.stderr}`);
+  const [transformed] = walk(textured).filter((file) => file.endsWith("quad-transformed.glb"));
+  assert.ok(transformed, "--optimize must write a transformed .glb");
+  assert.ok(
+    readFileSync(transformed).includes("image/png"),
+    "the transformed .glb must keep its texture",
   );
 
   const bad = join(project, "bad");
