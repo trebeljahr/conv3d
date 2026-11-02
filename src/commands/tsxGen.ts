@@ -6,7 +6,7 @@ import { convertModels } from "../converters.js";
 import { emitJsonIfRequested, err, fail, info, warn } from "../log.js";
 import { resolveOutputDirs } from "../outputDirs.js";
 import { globalOptions, isDryRun, program } from "../program.js";
-import { isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
+import { isAppleDouble, isDirectory, outDirPrefix, setupOutputDirs } from "../utils.js";
 
 const { red, yellow } = chalk;
 
@@ -56,7 +56,7 @@ Examples:
         recursive: subOptions.recursive,
       });
       const glbFiles = files.filter(
-        (file) => file.endsWith(".glb") && !file.includes(outDirPrefix),
+        (file) => file.endsWith(".glb") && !isAppleDouble(file) && !file.includes(outDirPrefix),
       );
 
       const outputDirBase = path.resolve(resolvedInputDir, outDirPrefix);

@@ -17,7 +17,7 @@ import {
 } from "./program.js";
 import { askForFileOverwrite } from "./prompts.js";
 import { type PostProcessOptions, postProcessGlb } from "./recovery.js";
-import { checkFileExists } from "./utils.js";
+import { checkFileExists, isAppleDouble } from "./utils.js";
 
 export { recoverFbxTextures } from "./recovery.js";
 
@@ -309,7 +309,7 @@ export async function convertModels(
 
 export async function collectFiles(files: string[], { modelType }: { modelType: InputFormats }) {
   const inputEnding = "." + modelType.toLowerCase();
-  const modelFiles = files.filter((file) => file.endsWith(inputEnding));
+  const modelFiles = files.filter((file) => file.endsWith(inputEnding) && !isAppleDouble(file));
   return modelFiles;
 }
 

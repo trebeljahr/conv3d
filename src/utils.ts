@@ -1,5 +1,6 @@
 import { access, constants, lstat, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
+import path from "node:path";
 import { exit } from "node:process";
 import chalk from "chalk";
 import inquirer from "inquirer";
@@ -23,6 +24,10 @@ export const home = homedir();
 
 export const isDirectory = async (strPath: string) =>
   (await checkFileExists(strPath)) ? (await lstat(strPath)).isDirectory() : false;
+
+// macOS keeps metadata in ._name files beside the real ones, and zips and tars
+// made on a Mac can carry them. They share the real file's extension.
+export const isAppleDouble = (file: string) => path.basename(file).startsWith("._");
 
 export type SetupOptions = {
   tsx?: boolean;

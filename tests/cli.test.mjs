@@ -170,6 +170,41 @@ test("bulk --json exits 2 on partial failure while converting valid models", () 
   }
 });
 
+test("bulk skips macOS ._ metadata files, including with --recursive", () => {
+  const { dir, cleanup } = makeTmp("bulk-appledouble");
+  try {
+    writeFileSync(path.join(dir, "good.obj"), OBJ_BODY);
+    writeFileSync(path.join(dir, "._good.obj"), "Mac OS X metadata");
+    writeFileSync(path.join(dir, "._model.fbx"), "Mac OS X metadata");
+    mkdirSync(path.join(dir, "__MACOSX"));
+    writeFileSync(path.join(dir, "__MACOSX", "._good.gltf"), "Mac OS X metadata");
+    const r = run(["bulk", dir, "-r", "--no-tsx", "--no-optimize", "-y", "--json"]);
+    assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+    const parsed = JSON.parse(r.stdout);
+    assert.equal(parsed.ok, true);
+    assert.deepEqual(parsed.errors, []);
+    assert.equal(parsed.converted.length, 1);
+    assert.match(parsed.converted[0], /good\.glb$/);
+  } finally {
+    cleanup();
+  }
+});
+
+test("tsx-gen skips macOS ._ metadata files", () => {
+  const { dir, cleanup } = makeTmp("tsx-gen-appledouble");
+  try {
+    writeFileSync(path.join(dir, "._model.glb"), "Mac OS X metadata");
+    const r = run(["tsx-gen", dir, "--no-optimize", "-y", "--json"]);
+    assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+    const parsed = JSON.parse(r.stdout);
+    assert.equal(parsed.ok, true);
+    assert.deepEqual(parsed.errors, []);
+    assert.deepEqual(parsed.tsx, []);
+  } finally {
+    cleanup();
+  }
+});
+
 test("bulk with glob expands matches and defaults modelType to ALL", () => {
   const { dir, cleanup } = makeTmp("glob");
   try {

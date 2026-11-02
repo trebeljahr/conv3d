@@ -13,6 +13,10 @@ What changed between conv3d releases. The [full commit history](https://github.c
 - **5 moderate findings remain.** They are one chain through `fbx2gltf`, and the installed `minimatch` does not contain the code the advisory describes. See [Troubleshooting](/docs/troubleshooting#npm-audit-reports-5-moderate-findings).
 - **conv3d no longer installs the gltfjsx package.** It requires sharp 0.33, so conv3d now ships a copy of gltfjsx's parser and loaders. A clean install drops from 303 packages to 208.
 
+### Bulk conversion
+
+- **`bulk` and `tsx-gen` skip macOS `._*` files.** Zips and tars made on a Mac can carry metadata files such as `._model.fbx` beside the real models. conv3d tried to convert them, and the run exited `2` with `does not have any geometry data`. Both commands now ignore them.
+
 ### `--optimize` output
 
 - **Skinned `.glb` files keep valid joints.** A Draco-compressed `.glb` whose `JOINTS_0` accessor stores no data was read as garbage, so a one-joint skin could reference joint 1022. It now reads as zeros, as glTF specifies. The output size of these files changes: one test model went from 6,632 to 7,584 bytes.
