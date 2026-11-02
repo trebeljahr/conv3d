@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Stage 1 (placeholder recovery) + Stage 2 (missing-texture seeding).
 //
-//   1. recoverFbxPlaceholders — swap 1×1 magenta placeholders (baked by
+//   1. recoverFbxPlaceholders — swap 1×1 placeholders (baked by
 //      fbx2gltf when it can't resolve an external path) for real sibling
 //      images, matched by filename + texture-slot heuristics.
 //   2. seedMissingTextures    — for materials with UVs but no baseColorTexture,

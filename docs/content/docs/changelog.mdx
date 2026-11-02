@@ -34,7 +34,7 @@ Future changes will appear here before the next release.
 
 ### FBX texture recovery
 
-`fbx2gltf` strips embedded textures down to 1×1 magenta placeholders whenever the source FBX references a Windows path it can't resolve on macOS or Linux. conv3d now repairs that on the way out:
+`fbx2gltf` replaces textures with a 1×1 placeholder whenever the source FBX references a Windows path it can't resolve on macOS or Linux. conv3d now repairs that on the way out:
 
 - **Texture rescue.** When a baked texture is a 1×1 placeholder, conv3d locates the matching image in the FBX's own directory and swaps it back in before writing the `.glb`.
 - **Scored source-stem fallback for `seedMissingTextures`.** Quaternius-style packs (generic material name "Material", sibling `<Stem>Texture.png`) used to fail the strict "exactly-one-image-contains-stem" heuristic. Replaced with a scored matcher (exact → "texture" suffix → alpha → digits-stripped → contains) that picks the best unique winner and refuses ties rather than guessing.

@@ -47,7 +47,7 @@ input file
 Key invariants:
 
 - **`.glb` always lands first.** The other two artefacts are derived from the GLB, never from the raw input. This means `tsx-gen` can operate on already-converted GLBs interchangeably.
-- **Texture recovery runs after conversion, before optimization.** Otherwise the optimizer would already have replaced the magenta placeholders with palette atlases.
+- **Texture recovery runs after conversion, before optimization.** Otherwise the optimizer would already have replaced the placeholder textures with palette atlases.
 - **The optimization pass is independent of TSX generation.** You can request either, both, or neither.
 
 ## Configuration surface

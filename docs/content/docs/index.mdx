@@ -31,7 +31,7 @@ conv3d folds the whole pipeline into one command, on top of the best-of-breed op
 
 - **Interactive when you want it, scripted when you don't.** Prompts guide first-time use; flags skip them entirely. The same binary serves humans and agents.
 - **Predictable output layout.** `glb/`, `tsx/`, `glb-for-web/` subdirs by default. Override per-bucket or go `--flat`.
-- **Texture recovery for FBX.** When `fbx2gltf` bakes a 1×1 magenta placeholder (because the FBX referenced a Windows path), conv3d swaps in the matching texture from the FBX's own directory.
+- **Texture recovery for FBX.** When `fbx2gltf` bakes a 1×1 placeholder texture (because the FBX referenced a Windows path), conv3d swaps in the matching texture from the FBX's own directory.
 - **Stable contract for agents.** `--json` on stdout, errors on stderr, exit codes `0` / `1` / `2`, and `--dry-run` that never touches the filesystem.
 
 ## Project scope

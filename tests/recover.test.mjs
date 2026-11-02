@@ -10,19 +10,19 @@ const { recoverFbxTextures } = await import(path.resolve(__dirname, "..", "dist"
 const { applyFoliageHints, applyMaterialColors, parseGlbMinimal, seedMissingTextures } =
   await import(path.resolve(__dirname, "..", "dist", "recovery.js"));
 
-// 1×1 magenta PNG, base64-encoded — this is the exact byte sequence fbx2gltf
+// 1×1 yellow PNG (255, 255, 0, 127), base64-encoded — this is the exact byte sequence fbx2gltf
 // emits when it can't resolve an external texture.
 const PLACEHOLDER_B64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
 
-// Minimal 8×8 PNG (uniform red). Distinguishable from the 1×1 magenta
+// Minimal 8×8 PNG (uniform red). Distinguishable from the 1×1 yellow
 // placeholder by both size and bytes.
 const REAL_PNG_B64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX/AAD///9BHTQRAAAADElEQVQI12NgIAYAABkAAdF/EwsAAAAASUVORK5CYII=";
 
 function buildPlaceholderGlb() {
   // Tiny gltf 2.0 JSON: one material with a baseColorTexture pointing to a
-  // 1×1 magenta data-URI image. Mirrors what fbx2gltf produces.
+  // 1×1 yellow data-URI image. Mirrors what fbx2gltf produces.
   const gltf = {
     asset: { version: "2.0" },
     images: [{ name: "base_color_texture", uri: `data:image/png;base64,${PLACEHOLDER_B64}` }],

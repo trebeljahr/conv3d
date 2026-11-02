@@ -1,6 +1,6 @@
 ---
 title: FBX texture recovery
-description: Why FBX files sometimes export with magenta placeholders, and how conv3d puts the real textures back.
+description: Why FBX files sometimes export with placeholder textures, and how conv3d puts the real textures back.
 ---
 
 When you convert an FBX file with conv3d, you'll sometimes see a line like:
@@ -19,9 +19,9 @@ Lots of freely distributed FBX packs record their texture paths as absolute Wind
 C:\Files\Work\pack\barbarian\textures\barbarian_color.png
 ```
 
-When you run `fbx2gltf` on Linux or macOS, the FBX SDK can't find that path. Worse, it doesn't fall back to looking for the basename (`barbarian_color.png`) **next to the FBX**. Instead, it silently bakes a **1×1 magenta placeholder** into the resulting `.glb` and moves on.
+When you run `fbx2gltf` on Linux or macOS, the FBX SDK can't find that path. Worse, it doesn't fall back to looking for the basename (`barbarian_color.png`) **next to the FBX**. Instead, it silently bakes a **1×1 yellow placeholder** into the resulting `.glb` and moves on.
 
-You don't notice until you load the model in three.js and see a solid pink mesh. By then the original texture isn't even on disk inside the `.glb` anymore — it's been replaced with a 1×1 PNG.
+You don't notice until you load the model in three.js and see a flat yellow mesh. By then the original texture isn't even on disk inside the `.glb` anymore — it's been replaced with a 1×1 PNG.
 
 If you then run conv3d's `--optimize` pass on top, the palette merge step happily turns that 1×1 placeholder into a single-pixel atlas, and the texture is gone for good.
 
@@ -69,7 +69,7 @@ There's a Blender script under `scripts/blender/extract-material-colors.py` in t
 
 ## Turning it off
 
-Texture recovery runs by default. To opt out — say, you intentionally want the magenta placeholders for debugging:
+Texture recovery runs by default. To opt out — say, you intentionally want the placeholders for debugging:
 
 ```bash
 conv3d bulk ./models -m FBX --no-recover-textures -y

@@ -6,7 +6,7 @@
 // once they reach a glTF/GLB output:
 //
 //  - Some packs reference textures via absolute Windows paths the FBX SDK
-//    can't resolve, so fbx2gltf bakes a 1×1 magenta placeholder.
+//    can't resolve, so fbx2gltf bakes a 1×1 yellow placeholder.
 //  - Some packs (Quaternius 2017-era) ship FBX files with no texture
 //    bindings at all but a sibling Textures/ folder containing the assets.
 //  - Some packs lost per-material diffuse colors entirely — the only

@@ -299,7 +299,7 @@ Each command: bumps the version (tagged commit), builds, runs tests, publishes t
 
 ### FBX texture recovery
 
-Some freely distributed FBX packs record texture paths in their `.fbx` files as absolute Windows paths like `C:\Files\Work\...\barbarian_texture.png` — and the FBX SDK doesn't fall back to looking for the basename next to the `.fbx`. The result: `fbx2gltf` silently bakes a 1×1 magenta placeholder into the GLB, which then survives (or gets pruned to a solid color) by the optimization step.
+Some freely distributed FBX packs record texture paths in their `.fbx` files as absolute Windows paths like `C:\Files\Work\...\barbarian_texture.png` — and the FBX SDK doesn't fall back to looking for the basename next to the `.fbx`. The result: `fbx2gltf` silently bakes a 1×1 yellow placeholder into the GLB, which then survives (or gets pruned to a solid color) by the optimization step.
 
 After every FBX conversion, conv3d scans the output GLB for 1×1 placeholder PNGs. For each one it finds an image file in the FBX's directory that best matches the texture's slot (baseColor / normal / metallicRoughness / etc.) and replaces the placeholder bytes. You'll see a `✨ Recovered N external texture(s)` line per affected FBX.
 
