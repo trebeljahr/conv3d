@@ -47,3 +47,6 @@ jobs:
 
       - name: Audit JSON schema
         run: pnpm run audit:schema
+
+      - name: Test the packed tarball in a project install
+        run: node scripts/test-install.mjs

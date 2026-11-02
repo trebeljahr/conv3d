@@ -377,3 +377,17 @@ test("tsx-gen reports an unparseable .glb in errors[] with exit 2 instead of exi
     cleanup();
   }
 });
+
+test("an .obj that names a missing .mtl warns on stderr, and stdout stays one JSON object", () => {
+  const { dir, cleanup } = makeTmp("missing-mtl");
+  try {
+    const objPath = path.join(dir, "cube.obj");
+    writeFileSync(objPath, `mtllib missing.mtl\nusemtl a\n${OBJ_BODY}`);
+    const r = run(["single", objPath, "--no-tsx", "--no-optimize", "-y", "--json"]);
+    assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+    assert.equal(JSON.parse(r.stdout).converted.length, 1);
+    assert.match(r.stderr, /missing\.mtl/);
+  } finally {
+    cleanup();
+  }
+});

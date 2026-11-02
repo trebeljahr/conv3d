@@ -11,6 +11,7 @@ conv3d/
 │  ├─ conv3d.ts            # entry point
 │  ├─ program.ts           # commander setup, global flags, helpers
 │  ├─ converters.ts        # the format-specific conversion runners
+│  ├─ gltfjsx.ts           # calls gltfjsx's loader, transform and parser
 │  ├─ commands/
 │  │  ├─ single.ts         # `conv3d single`
 │  │  ├─ bulk.ts           # `conv3d bulk`
@@ -22,8 +23,7 @@ conv3d/
 │  ├─ log.ts               # stdout / stderr / --json discipline
 │  └─ utils.ts             # shared helpers
 ├─ tests/                  # smoke tests against the compiled CLI
-├─ patches/                # patch-package patches for upstream libs
-├─ scripts/                # release prep, Blender helpers
+├─ scripts/                # release prep, install test, Blender helpers
 └─ docs/                   # this site (Next.js + Fumadocs)
 ```
 
@@ -97,11 +97,8 @@ The split matters because agents can re-run on partial failure (`errors[]` is en
 
 A pre-push git hook (`.githooks/pre-push`) runs `npm test`. `npm install` wires the hook via `core.hooksPath`.
 
-## Why patches?
+## Why conv3d calls gltfjsx's parts directly
 
-The `patches/` directory contains `patch-package` patches for upstream tools that don't quite behave the way conv3d needs:
+gltfjsx's default export prints its header to stdout, writes local paths into the `.tsx`, and never settles when it cannot parse a `.glb`. `src/gltfjsx.ts` calls gltfjsx's loader, transform and parser directly and handles these cases itself. These are internal paths, so `package.json` pins the exact gltfjsx version.
 
-- `fbx2gltf` — patched to write to the temp dir conv3d asks for rather than CWD-relative paths.
-- `gltfjsx` — patched for API stability around the transform pipeline.
-
-Patches are applied automatically by `npm install` via `postinstall: patch-package`.
+Through v1.0.7, a `patch-package` patch handled this. The patch reached global installs only, because npm hoists gltfjsx in `npx` and project installs. `scripts/test-install.mjs` now installs the packed tarball in a temp project and runs the CLI. CI and the release script run it.

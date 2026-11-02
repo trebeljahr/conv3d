@@ -8,7 +8,6 @@
   },
   "files": [
     "dist",
-    "patches",
     "README.md"
   ],
   "repository": {
@@ -37,7 +36,6 @@
     "docs:dev": "pnpm --dir docs dev",
     "docs:build": "pnpm --dir docs build",
     "docs:start": "pnpm --dir docs start",
-    "postinstall": "patch-package",
     "conv3d": "npm run build && node ./dist/conv3d.js",
     "install-local": "npm run build && npm install -g .",
     "pub": "npm version patch && npm run build && npm publish --access public",
@@ -45,10 +43,11 @@
     "release:patch": "node scripts/release-prep.mjs && npm version patch -m \"chore: release v%s\" && pnpm run _release:finish",
     "release:minor": "node scripts/release-prep.mjs && npm version minor -m \"chore: release v%s\" && pnpm run _release:finish",
     "release:major": "node scripts/release-prep.mjs && npm version major -m \"chore: release v%s\" && pnpm run _release:finish",
-    "_release:finish": "pnpm run build && pnpm test && npm publish --access public && git push --follow-tags && npm install -g .",
+    "_release:finish": "pnpm run build && pnpm test && node scripts/test-install.mjs && npm publish --access public && git push --follow-tags && npm install -g .",
     "prepare": "husky",
     "audit:schema": "node scripts/audit-json-schema.mjs",
     "test": "npm run build && node --test \"tests/**/*.test.mjs\" && pnpm run audit:schema",
+    "test:install": "npm run build && node scripts/test-install.mjs",
     "format": "biome format --write .",
     "lint": "biome lint src scripts tests package.json README.md",
     "check": "biome check --write ."
@@ -76,11 +75,10 @@
     "fast-glob": "^3.3.3",
     "fbx2gltf": "^0.9.7-p1",
     "gltf-pipeline": "^4.1.0",
-    "gltfjsx": "^6.5.3",
+    "gltfjsx": "6.5.3",
     "inquirer": "^13.4.3",
     "obj2gltf": "^3.1.6",
     "ora": "^9.4.0",
-    "patch-package": "^8.0.0",
     "read-package-up": "^12.0.0"
   },
   "optionalDependencies": {

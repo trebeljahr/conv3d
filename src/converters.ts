@@ -3,9 +3,9 @@ import path from "node:path";
 import chalk from "chalk";
 import convertFbxToGlb from "fbx2gltf";
 import gltfPipeline from "gltf-pipeline";
-import gltfjsx from "gltfjsx/src/gltfjsx.js";
 import obj2gltf from "obj2gltf";
 import { explainFbxError } from "./fbxReadiness.js";
+import { generateTsx } from "./gltfjsx.js";
 import { createSpinner, err, info, warn } from "./log.js";
 import type { OutputDirs } from "./outputDirs.js";
 import {
@@ -318,7 +318,8 @@ export async function convertSingleObj(inputPath: string, outputPath: string) {
   // textures and geometry). Without it, obj2gltf returns a glTF JSON object
   // and we'd be writing JSON into a .glb file — parseable by lenient tools,
   // but semantically wrong.
-  const glb = (await obj2gltf(inputPath, { binary: true })) as Buffer;
+  // obj2gltf logs warnings to stdout by default, and stdout belongs to --json.
+  const glb = (await obj2gltf(inputPath, { binary: true, logger: warn })) as Buffer;
   await writeFile(outputPath, glb);
   await runPostProcess(outputPath, inputPath);
 }
@@ -354,7 +355,7 @@ export async function convertSingleFbx(inputPath: string, outputPath: string) {
 
 export async function convertSingleGltf(inputPath: string, outputPath: string) {
   const gltf = JSON.parse(await readFile(inputPath, "utf8"));
-  const options = { resourceDirectory: path.dirname(inputPath) };
+  const options = { resourceDirectory: path.dirname(inputPath), logger: warn };
   const results = await gltfToGlb(gltf, options);
   await writeFile(outputPath, results.glb);
   await runPostProcess(outputPath, inputPath);
@@ -385,10 +386,8 @@ async function runPostProcess(glbPath: string, sourcePath: string): Promise<void
 }
 
 export async function prepareGlbForWeb(inputPath: string, outputPath: string) {
-  await gltfjsx(inputPath, outputPath, {
+  await generateTsx(inputPath, outputPath, {
     transform: !!globalOptions.optimize,
-    debug: false,
-    types: true,
     ...(globalOptions.resolution !== undefined ? { resolution: globalOptions.resolution } : {}),
     ...(globalOptions.keepMaterials ? { keepmaterials: true } : {}),
   });

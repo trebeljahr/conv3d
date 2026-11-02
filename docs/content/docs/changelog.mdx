@@ -9,6 +9,17 @@ What changed between conv3d releases. The [full commit history](https://github.c
 
 Future changes will appear here before the next release.
 
+## v1.0.8 — 2026-11-02
+
+### npx and project installs
+
+- **`--json` output now parses when you run conv3d through `npx` or a project install.** v1.0.7 fixed `--json`, the `.tsx` header and unparseable `.glb` files for global installs only. On the other two routes, conv3d still printed the gltfjsx header to stdout, wrote local paths into each `.tsx`, and exited `0` on an unparseable `.glb`. All three routes now behave the same.
+- **conv3d has no install script.** It no longer runs `patch-package` after install.
+
+### Warnings
+
+- **OBJ warnings no longer break `--json`.** An `.obj` that names a missing `.mtl` file printed a warning to stdout. These warnings now go to stderr.
+
 ## v1.0.7 — 2026-11-02
 
 ### Bulk conversion
