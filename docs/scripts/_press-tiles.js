@@ -2,10 +2,12 @@
 // room environment and key light as _press-viewer.js, no material changes,
 // transparent background. window.renderSheet() draws a list of GLBs into
 // fixed cells of one image, so the FBX2glTF-alone sheet and the conv3d sheet
-// line up model for model.
+// line up model for model. A .fbx url loads the source file itself with
+// FBXLoader, which finds the texture PNG next to it.
 
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const renderer = new THREE.WebGLRenderer({
@@ -19,7 +21,28 @@ const environment = new THREE.PMREMGenerator(renderer).fromScene(
   new RoomEnvironment(),
   0.04,
 ).texture;
-const loader = new GLTFLoader();
+const gltfLoader = new GLTFLoader();
+
+// Resolves once the model and every texture it references have loaded.
+async function load(url) {
+  if (!url.endsWith(".fbx")) return (await gltfLoader.loadAsync(url)).scene;
+  const manager = new THREE.LoadingManager();
+  const textures = new Promise((resolve) => {
+    manager.onLoad = resolve;
+  });
+  const model = await new FBXLoader(manager).loadAsync(url);
+  await textures;
+  // FBXLoader makes Phong materials, which ignore the room environment that
+  // lights the GLB renders. Draw the FBX's own texture and colour with the
+  // same PBR model instead: metalness 0, roughness 0.5.
+  model.traverse((o) => {
+    if (!o.isMesh) return;
+    const swap = (m) =>
+      new THREE.MeshStandardMaterial({ map: m.map, color: m.color, metalness: 0, roughness: 0.5 });
+    o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+  });
+  return model;
+}
 
 // World-space points that outline the model: every vertex of a static mesh,
 // the 8 box corners of a skinned one (its bind-pose vertices can sit elsewhere).
@@ -60,8 +83,7 @@ async function renderModel(url, w, h, { yaw = 0.35, pitch = 0.12, fill = 0.82 } 
   key.position.set(2, 4, 3);
   scene.add(key);
 
-  const gltf = await loader.loadAsync(url);
-  const model = gltf.scene;
+  const model = await load(url);
   model.rotation.y = yaw;
   scene.add(model);
   model.updateMatrixWorld(true);

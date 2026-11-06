@@ -69,14 +69,14 @@ Writes `public/press/before-after.png` (1920x1080). It converts `Barbarian.fbx` 
 
 ```sh
 pnpm build                       # repo root: dist/conv3d.js
-cd docs && pnpm press:bulk
+cd docs && pnpm press:bulk       # or: pnpm press:bulk --only r3
 ```
 
 `press-bulk-run.mjs` copies the KayKit Adventurers `characters/fbx` and `assets/fbx` folders (37 FBX files with their textures) into `/tmp/conv3d-bulk/kaykit-adventurers/`, then:
 
-1. records `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y` with vhs twice, once in a dark and once in a light terminal theme, and keeps the last screen of each run;
+1. records `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y` with vhs twice, once in a dark and once in a light terminal theme, and keeps the last screen of each run. With `--only r3` it runs the same command once without vhs, because round 3 shows no terminal;
 2. converts the same 37 files with the bundled FBX2glTF binary alone, with conv3d's flags and no post-processing;
-3. renders both sets with `_press-tiles.js` (three.js GLTFLoader, the lights of `_press-viewer.js`, orthographic camera, transparent background) into two grids with the same layout, plus the Barbarian pair on its own.
+3. renders both sets with `_press-tiles.js` (three.js GLTFLoader, the lights of `_press-viewer.js`, orthographic camera, transparent background). Round 2 (`r2`): two grids of all 37 models with the same layout, plus the Barbarian pair on its own. Round 3 (`r3`): a 6-column grid of 18 conv3d GLBs, and Mage.fbx twice: through FBX2glTF alone, and loaded straight from the FBX with three.js FBXLoader and the texture PNG next to it. FBXLoader makes Phong materials, which ignore the room environment, so that one render draws the FBX's own texture with a plain PBR material (metalness 0, roughness 0.5) under the same lights.
 
 Output goes to `docs/marketing/social-preview/renders/`, where `press:social` picks it up. `SKIP_TERMINAL=1` reuses the last run in `/tmp/conv3d-bulk` and only redoes the renders.
 

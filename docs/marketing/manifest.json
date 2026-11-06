@@ -84,8 +84,8 @@
     },
     {
       "file": "docs/marketing/social-preview/social-preview-a.png",
-      "purpose": "GitHub social preview, round 1 A (current pick): texture before/after",
-      "madeBy": "pnpm press:social",
+      "purpose": "GitHub social preview, round 1 A: texture before/after",
+      "madeBy": "pnpm press:social --only a",
       "width": 1280,
       "height": 640,
       "bytes": 257782,
@@ -95,7 +95,7 @@
     {
       "file": "docs/marketing/social-preview/social-preview-a2.png",
       "purpose": "GitHub social preview, round 2 A (dark): Barbarian before/after + end of the bulk run",
-      "madeBy": "pnpm press:social",
+      "madeBy": "pnpm press:social --only a2",
       "width": 1280,
       "height": 640,
       "bytes": 406415,
@@ -103,9 +103,19 @@
       "changed": "2026-11-07"
     },
     {
+      "file": "docs/marketing/social-preview/social-preview-a3.png",
+      "purpose": "GitHub social preview, round 3 A (dark): Mage.fbx -> FBX2glTF beside 18 conv3d GLBs",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 319712,
+      "sha256": "e25f5a6e434b89eab3897caea89ced4748a0a4bcb00e791a5d559a967042dab3",
+      "changed": "2026-11-07"
+    },
+    {
       "file": "docs/marketing/social-preview/social-preview-b2.png",
       "purpose": "GitHub social preview, round 2 B (light): Barbarian before/after + end of the bulk run",
-      "madeBy": "pnpm press:social",
+      "madeBy": "pnpm press:social --only b2",
       "width": 1280,
       "height": 640,
       "bytes": 392082,
@@ -113,9 +123,19 @@
       "changed": "2026-11-07"
     },
     {
+      "file": "docs/marketing/social-preview/social-preview-b3.png",
+      "purpose": "GitHub social preview, round 3 B (light): A in the light palette",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 315082,
+      "sha256": "30ada59a0716cc2caa13e1e2ce2c2c582961c3f8821828c73e580f663aa385cc",
+      "changed": "2026-11-07"
+    },
+    {
       "file": "docs/marketing/social-preview/social-preview-c2.png",
       "purpose": "GitHub social preview, round 2 C (dark): all 37 pack models, split before/after",
-      "madeBy": "pnpm press:social",
+      "madeBy": "pnpm press:social --only c2",
       "width": 1280,
       "height": 640,
       "bytes": 357188,
@@ -123,9 +143,19 @@
       "changed": "2026-11-07"
     },
     {
+      "file": "docs/marketing/social-preview/social-preview-c3.png",
+      "purpose": "GitHub social preview, round 3 C (dark, name only): FBX2glTF's Mage -> the conv3d grid",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 305479,
+      "sha256": "6e182bf8e6491137f5e2744dff43ffc2af5c9a957d62bd8af53a703401fdd38c",
+      "changed": "2026-11-07"
+    },
+    {
       "file": "docs/marketing/social-preview/social-preview-d2.png",
       "purpose": "GitHub social preview, round 2 D (light): all 37 pack models, split before/after",
-      "madeBy": "pnpm press:social",
+      "madeBy": "pnpm press:social --only d2",
       "width": 1280,
       "height": 640,
       "bytes": 349830,
@@ -150,6 +180,36 @@
       "height": 600,
       "bytes": 29504,
       "sha256": "fb34dd522ce834a12c38c5f8da6bcba640474b1e04e3773d325926a8ee42359a",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/grid-after.webp",
+      "purpose": "18 KayKit Adventurers GLBs from the bulk run (conv3d), 6-column grid, transparent",
+      "madeBy": "pnpm press:bulk",
+      "width": 1400,
+      "height": 820,
+      "bytes": 84944,
+      "sha256": "f26ce273bbcdd71367704c0a6711c4ee7963766c316bdbc055ea3eeba0f5d155",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/mage-before.webp",
+      "purpose": "Mage.fbx through FBX2glTF alone, transparent",
+      "madeBy": "pnpm press:bulk",
+      "width": 400,
+      "height": 440,
+      "bytes": 18226,
+      "sha256": "7c214970116a5294bccbd3f27f8cb0037ad9c29265471fe306a0134a1914593a",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/mage-fbx.webp",
+      "purpose": "Mage.fbx itself, loaded with three.js FBXLoader and its own texture, transparent",
+      "madeBy": "pnpm press:bulk",
+      "width": 400,
+      "height": 440,
+      "bytes": 15116,
+      "sha256": "c4a70df27c67575f3799019f4a98eef218e5032cb0c82c69a73c47eadcc9ff4d",
       "changed": "2026-11-07"
     },
     {

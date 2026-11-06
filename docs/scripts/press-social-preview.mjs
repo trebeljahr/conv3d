@@ -5,13 +5,13 @@
 //
 //   cd docs && pnpm press:social [--only a2,b2] [--review-dir <dir>]
 //
-// By default it renders the round-2 cards a2-d2, which embed
-// social-preview/renders/ (made by press:bulk from one real bulk run).
-// `--only a` re-renders the round-1 card, which embeds
-// public/press/before-after.png. Re-run those scripts first when their inputs
-// change. With --review-dir, the round-2 cards are also copied there as
-// social-preview-a.png ... -d.png with a labelled review-sheet.jpg. Fonts load
-// from Google Fonts (needs network).
+// By default it renders the round-3 cards a3-c3. Rounds 2 and 3 embed
+// social-preview/renders/ (made by press:bulk from one real bulk run);
+// `--only a2,b2,c2,d2` re-renders round 2. `--only a` re-renders the round-1
+// card, which embeds public/press/before-after.png. Re-run those scripts first
+// when their inputs change. With --review-dir, the round-3 cards are also
+// copied there as social-preview-a.png ... -c.png with a labelled
+// review-sheet.jpg. Fonts load from Google Fonts (needs network).
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -34,17 +34,20 @@ const RENDERS_DIR = join(SOCIAL_DIR, "renders");
 const PRESS_DIR = join(DOCS_DIR, "public", "press");
 const FONTS_HREF = "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=block";
 
-// [template id, review letter (round 2 only), review label]
+// [template id, review letter (current round only), review label]
 const VARIANTS = [
   ["a", null, "Round 1 A: texture before/after"],
-  ["a2", "a", "A (dark): Barbarian before/after + the bulk run"],
-  ["b2", "b", "B (light): Barbarian before/after + the bulk run"],
-  ["c2", "c", "C (dark): the whole pack, split before/after"],
-  ["d2", "d", "D (light): the whole pack, split before/after"],
+  ["a2", null, "Round 2 A (dark): Barbarian before/after + the bulk run"],
+  ["b2", null, "Round 2 B (light): Barbarian before/after + the bulk run"],
+  ["c2", null, "Round 2 C (dark): the whole pack, split before/after"],
+  ["d2", null, "Round 2 D (light): the whole pack, split before/after"],
+  ["a3", "a", "A (dark): Mage.fbx → FBX2glTF, beside 18 conv3d models"],
+  ["b3", "b", "B (light): A in the light palette"],
+  ["c3", "c", "C (dark, name only): FBX2glTF's Mage → the conv3d grid"],
 ];
 
 const onlyIdx = process.argv.indexOf("--only");
-const only = onlyIdx > -1 ? process.argv[onlyIdx + 1].split(",") : ["a2", "b2", "c2", "d2"];
+const only = onlyIdx > -1 ? process.argv[onlyIdx + 1].split(",") : ["a3", "b3", "c3"];
 const reviewIdx = process.argv.indexOf("--review-dir");
 const reviewDir = reviewIdx > -1 ? process.argv[reviewIdx + 1] : null;
 
@@ -136,24 +139,48 @@ const PURPOSE = {
   ],
   "public/press/walkthrough.webm": ["Same walkthrough, WebM", "pnpm press:walkthrough"],
   "marketing/social-preview/social-preview-a.png": [
-    "GitHub social preview, round 1 A (current pick): texture before/after",
-    "pnpm press:social",
+    "GitHub social preview, round 1 A: texture before/after",
+    "pnpm press:social --only a",
   ],
   "marketing/social-preview/social-preview-a2.png": [
     "GitHub social preview, round 2 A (dark): Barbarian before/after + end of the bulk run",
-    "pnpm press:social",
+    "pnpm press:social --only a2",
   ],
   "marketing/social-preview/social-preview-b2.png": [
     "GitHub social preview, round 2 B (light): Barbarian before/after + end of the bulk run",
-    "pnpm press:social",
+    "pnpm press:social --only b2",
   ],
   "marketing/social-preview/social-preview-c2.png": [
     "GitHub social preview, round 2 C (dark): all 37 pack models, split before/after",
-    "pnpm press:social",
+    "pnpm press:social --only c2",
   ],
   "marketing/social-preview/social-preview-d2.png": [
     "GitHub social preview, round 2 D (light): all 37 pack models, split before/after",
+    "pnpm press:social --only d2",
+  ],
+  "marketing/social-preview/social-preview-a3.png": [
+    "GitHub social preview, round 3 A (dark): Mage.fbx -> FBX2glTF beside 18 conv3d GLBs",
     "pnpm press:social",
+  ],
+  "marketing/social-preview/social-preview-b3.png": [
+    "GitHub social preview, round 3 B (light): A in the light palette",
+    "pnpm press:social",
+  ],
+  "marketing/social-preview/social-preview-c3.png": [
+    "GitHub social preview, round 3 C (dark, name only): FBX2glTF's Mage -> the conv3d grid",
+    "pnpm press:social",
+  ],
+  "marketing/social-preview/renders/grid-after.webp": [
+    "18 KayKit Adventurers GLBs from the bulk run (conv3d), 6-column grid, transparent",
+    "pnpm press:bulk",
+  ],
+  "marketing/social-preview/renders/mage-fbx.webp": [
+    "Mage.fbx itself, loaded with three.js FBXLoader and its own texture, transparent",
+    "pnpm press:bulk",
+  ],
+  "marketing/social-preview/renders/mage-before.webp": [
+    "Mage.fbx through FBX2glTF alone, transparent",
+    "pnpm press:bulk",
   ],
   "marketing/social-preview/renders/barbarian-after.webp": [
     "Barbarian.glb from the bulk run (conv3d), transparent",

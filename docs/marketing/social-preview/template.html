@@ -1,12 +1,15 @@
 <!doctype html>
 <!--
   GitHub social preview card, 1280x640, picked with ?v=<id>:
-    a   round 1 (current pick): "FBX in, textured GLB out." beside a crop of press/before-after.png
+    a   round 1: "FBX in, textured GLB out." beside a crop of press/before-after.png
     a2  dark,  stacked: Barbarian before/after above the last screen of the bulk run
     b2  light, stacked: the same in the light palette
     c2  dark,  pack: all 37 models of the pack, split between FBX2glTF alone and conv3d
     d2  light, pack: the same in the light palette
-  Round-2 images come from one real `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y`
+    a3  dark,  vignette: Mage.fbx -> FBX2glTF -> yellow Mage, beside a grid of 18 conv3d GLBs
+    b3  light, vignette: the same in the light palette
+    c3  dark,  flow, name only: the yellow Mage from FBX2glTF, an arrow into the conv3d grid
+  Round-2 and round-3 images come from one real `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y`
   run over the KayKit Adventurers pack (docs/scripts/press-bulk-run.mjs, files in renders/).
   Rendered by docs/scripts/press-social-preview.mjs. Key content stays inside
   the 64 px safe margin. Images that show a model carry its credit.
@@ -60,7 +63,7 @@
   .term::before { left: 0; right: 0; top: 0; height: 30px; background: linear-gradient(var(--term), transparent); }
   .term::after { top: 0; bottom: 0; right: 0; width: 72px; background: linear-gradient(90deg, transparent, var(--term)); }
 
-  /* Round 1 A, kept as the current pick */
+  /* Round 1 A */
   .a .text { width: 470px; }
   .a h1 { margin-top: 52px; font-size: 62px; line-height: 1.04; }
   .a p { margin-top: 24px; font-size: 24px; }
@@ -103,6 +106,39 @@
   .pack .sheet .term::before { display: none; }
   .pack .sheet .term img { top: -287px; left: -4px; clip-path: inset(297px 0 63px 0); }
   .pack .credit { position: absolute; left: 568px; top: 566px; }
+
+  /* Round 3. One model and its FBX2glTF result, and a clean grid of conv3d GLBs. */
+  .arrow { display: block; overflow: visible; }
+  .arrow path { fill: none; stroke: var(--muted); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .grid { position: absolute; }
+  .grid img { position: absolute; display: block; }
+
+  /* Vignette: name and one line, the before pair under them, the grid right of them */
+  .vig .text { width: 392px; bottom: 80px; }
+  .vig .brand svg { width: 72px; height: 72px; }
+  .vig .brand span { font-size: 50px; letter-spacing: -1.5px; }
+  .vig h1 { margin-top: 38px; font-size: 43px; line-height: 1.1; letter-spacing: -1.5px; }
+  .vig .pair { margin-top: auto; height: 220px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
+  .vig .pair img { width: 152px; height: 167px; display: block; }
+  .vig .pair .step { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .vig .pair .tool { font-size: 19px; }
+  .vig .grid { left: 488px; top: 64px; width: 728px; height: 496px; }
+  .vig .grid .tool { position: absolute; left: 24px; top: 16px; }
+  .vig .grid img { left: 20px; top: 52px; width: 688px; height: 403px; }
+  .vig .credit { position: absolute; right: 64px; top: 572px; }
+
+  /* Flow: the FBX2glTF result, an arrow into the grid, the name only */
+  .flow .alone { position: absolute; left: 64px; top: 64px; width: 260px; height: 304px; }
+  .flow .alone .tool { position: absolute; left: 22px; top: 16px; }
+  .flow .alone img { position: absolute; left: 20px; top: 54px; width: 220px; height: 242px; display: block; }
+  .flow .arrow { position: absolute; left: 336px; top: 185px; }
+  .flow .arrow path { stroke: var(--accent); stroke-width: 4; }
+  .flow .grid { left: 440px; top: 64px; width: 776px; height: 496px; }
+  .flow .grid img { left: 18px; top: 32px; width: 740px; height: 433px; }
+  .flow .brand { position: absolute; left: 64px; bottom: 80px; gap: 20px; }
+  .flow .brand svg { width: 88px; height: 88px; }
+  .flow .brand span { font-size: 62px; letter-spacing: -2px; }
+  .flow .credit { position: absolute; right: 64px; top: 572px; }
 </style>
 </head>
 <body>
@@ -126,8 +162,10 @@
 
 <script>
   const v = new URLSearchParams(location.search).get("v") || "a2";
-  const layout = { a: "a", a2: "stacked", b2: "stacked", c2: "pack", d2: "pack" }[v];
-  const theme = { b2: "light", d2: "light" }[v] || "dark";
+  const layout = {
+    a: "a", a2: "stacked", b2: "stacked", c2: "pack", d2: "pack", a3: "vig", b3: "vig", c3: "flow",
+  }[v];
+  const theme = { b2: "light", d2: "light", b3: "light" }[v] || "dark";
   const logo = document.getElementById("logo").innerHTML;
   const brand = `<div class="brand">${logo}<span>conv3d</span></div>`;
   const url = `<div class="url"><i></i>conv3d.trebeljahr.com</div>`;
@@ -171,6 +209,21 @@
           <span class="tool after">conv3d</span>
           <div class="term"><img src="${term}" alt=""></div>
         </div>
+        <div class="credit">${credit}</div>`,
+    vig: `<div class="text">${brand}
+          <h1>FBX packs in,<br>textured GLBs out.</h1>
+          <div class="pair panel">
+            <img src="renders/mage-fbx.webp" alt="">
+            <div class="step"><span class="tool before">FBX2glTF</span>
+              <svg class="arrow" width="96" height="20" viewBox="0 0 96 20"><path d="M4 10 H90 M80 2 L90 10 L80 18"/></svg></div>
+            <img src="renders/mage-before.webp" alt="">
+          </div></div>
+        <div class="grid panel"><span class="tool after">conv3d</span><img src="renders/grid-after.webp" alt=""></div>
+        <div class="credit">${credit}</div>`,
+    flow: `<div class="alone panel"><span class="tool before">FBX2glTF</span><img src="renders/mage-before.webp" alt=""></div>
+        <svg class="arrow" width="96" height="28" viewBox="0 0 96 28"><path d="M4 14 H88 M76 3 L88 14 L76 25"/></svg>
+        <div class="grid panel"><img src="renders/grid-after.webp" alt=""></div>
+        ${brand}
         <div class="credit">${credit}</div>`,
   };
   const card = document.getElementById("card");
