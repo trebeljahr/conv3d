@@ -1,15 +1,29 @@
-![banner image for conv3d](https://raw.githubusercontent.com/trebeljahr/conv3d/refs/heads/main/image.png)
-
 # conv3d
 
-A command-line tool for converting 3D models (GLTF, FBX, OBJ) into GLB and generating matching React Three Fiber components — so you can drop them into a react-three-fiber / three.js project without a round-trip through Blender.
+> Turn FBX, OBJ and glTF asset packs into GLB files and React Three Fiber components, in one command.
+
+[![CI](https://github.com/trebeljahr/conv3d/actions/workflows/ci.yml/badge.svg)](https://github.com/trebeljahr/conv3d/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/conv3d.svg)](https://www.npmjs.com/package/conv3d)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Many free 3D asset packs ship as FBX or OBJ. A react-three-fiber or three.js scene wants GLB, ideally small, and a component that loads it. Converting a pack by hand means a trip through Blender for every model, and FBX files often lose their textures on the way.
+
+conv3d converts a single file, a folder or a glob pattern in one run. It writes a `.glb` for every model and, when you ask, a typed `.tsx` component and a smaller web-optimized `.glb`. When an FBX file points at a texture path from another machine, conv3d finds the matching image in the FBX's own folder instead of keeping a 1×1 placeholder.
+
+Use it with prompts, or pass `--yes --json --dry-run` to call it from scripts, CI and AI coding agents.
 
 [Docs](https://conv3d.trebeljahr.com) · [npm](https://www.npmjs.com/package/conv3d) · [Issues](https://github.com/trebeljahr/conv3d/issues)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/trebeljahr/conv3d/main/docs/public/press/before-after.png" width="820" alt="Two renders of the same Barbarian character in one three.js viewer. Left, converted by FBX2glTF alone: the whole model is solid yellow because a 1×1 placeholder replaced its texture. Right, converted by conv3d: the model shows its real texture with skin, beard, bear-skin hood and belt.">
+  <br>
+  <sub>The same FBX and texture file, converted by FBX2glTF alone (left) and by conv3d (right). Model: KayKit Adventurers by Kay Lousberg (CC0).</sub>
+</p>
+
 - **Inputs:** `.fbx`, `.obj`, `.gltf` — directories, single files, or glob patterns
 - **Outputs:** `.glb` (always), `.tsx` components (optional), web-optimized `.glb` (optional)
-- **Works interactively** (prompts guide you) **or fully non-interactively** (`--yes`, `--json`, `--dry-run` — ideal for scripts, CI, and AI coding agents)
-- **Parallel conversion** with a sensible default, tunable via `--concurrency`
+- **Works interactively** (prompts guide you) **or fully non-interactively** (`--yes`, `--json`, `--dry-run` for scripts, CI and AI coding agents)
+- **Parallel conversion** with a default of `min(cpus, 4)`, tunable via `--concurrency`
 
 ## Installation
 
@@ -34,6 +48,12 @@ conv3d bulk "./assets/**/*.fbx" -o ./public/models --tsx --optimize --yes
 # Preview the plan without touching disk, machine-readable
 conv3d bulk ./models -m ALL --tsx --optimize --dry-run --json
 ```
+
+<p align="center">
+  <a href="https://conv3d.trebeljahr.com/press/walkthrough.mp4"><img src="https://raw.githubusercontent.com/trebeljahr/conv3d/main/docs/public/press/walkthrough-poster.png" width="720" alt="Terminal running conv3d bulk ./models --tsx --optimize -y on six KayKit character FBX files: one placeholder texture recovered per file, then 'Successfully converted 6/6 models'."></a>
+  <br>
+  <sub>A 30-second walkthrough (click to play): a bulk run, the generated <code>.tsx</code> component, and the model rendered in react-three-fiber. No sound.</sub>
+</p>
 
 ## Commands
 
@@ -271,23 +291,12 @@ conv3d doctor --json | jq '.dependencies[] | select(.installed == null)'
 ## Development
 
 ```bash
-npm install
-npm test              # build + run smoke tests against the compiled CLI
-npm run build         # just tsc
+pnpm install
+pnpm test              # build + run the tests against the compiled CLI
+pnpm build             # just tsc
 ```
 
-A pre-push git hook (in `.githooks/pre-push`) runs `npm test` before every push. `npm install` wires the hook via `core.hooksPath`; skip it per-push with `git push --no-verify` if you really must.
-
-## Releasing
-
-```bash
-npm run release          # patch bump (default)
-npm run release:patch    # 1.0.5 → 1.0.6
-npm run release:minor    # 1.0.5 → 1.1.0
-npm run release:major    # 1.0.5 → 2.0.0
-```
-
-Each command: bumps the version (tagged commit), builds, runs tests, publishes to npm, pushes the tag to GitHub, and re-installs conv3d globally so your `PATH` matches what was just published.
+Husky runs Biome on staged files before each commit (`.husky/pre-commit`) and `pnpm test` before each push (`.husky/pre-push`). Skip the push check with `git push --no-verify` only when you have a reason. [CONTRIBUTING.md](CONTRIBUTING.md) covers pull requests and how releases are cut.
 
 ## What's under the hood
 
@@ -318,6 +327,12 @@ conv3d converts the models in these projects by the same author:
 
 conv3d is and will remain a local-first CLI; there is no hosted or paid tier.
 
+## Contributing
+
+Bug reports and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first, and report security issues privately as described in [SECURITY.md](SECURITY.md).
+
+conv3d is free and MIT-licensed. If it saves you time, you can support its development at [ricos.site/donate](https://ricos.site/donate).
+
 ## License
 
-MIT
+MIT, see [LICENSE](LICENSE). conv3d ships a copy of gltfjsx's parser and loaders; their licence terms are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The sample models in the docs site and press images are CC0: Quaternius packs ([credits](docs/public/models/conv3d-funnel/CREDITS.md)) and KayKit Adventurers by Kay Lousberg.
