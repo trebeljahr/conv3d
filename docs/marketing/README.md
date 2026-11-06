@@ -20,22 +20,38 @@ How each press script works, and the sample packs it needs, is in [`docs/scripts
 
 ## Social preview candidates (in `social-preview/`)
 
+Round 2 (2026-11-07) keeps round 1's A concept, the texture before/after, and adds what the round-1 card left out: one command converts a whole pack. Every image comes from one real run over the KayKit Adventurers pack (6 characters and 31 props, 37 FBX files):
+
+```bash
+conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y
+```
+
+It wrote 37 `.glb`, 37 `.tsx` and 37 optimized `.glb` files, and recovered one placeholder texture per FBX file. The "FBX2glTF alone" images come from the FBX2glTF binary conv3d ships with, with the same flags and no post-processing.
+
 | File | Purpose | Pixels | Made by | Date |
 | --- | --- | --- | --- | --- |
-| [`social-preview-a.png`](social-preview/social-preview-a.png) | A: screenshot-led. "FBX in, textured GLB out." beside a crop of `before-after.png`. | 1280×640 | `pnpm press:social` | 2026-11-06 |
-| [`social-preview-b.png`](social-preview/social-preview-b.png) | B: typographic. "Asset packs in. Web-sized GLBs out." with the bulk command. | 1280×640 | `pnpm press:social` | 2026-11-06 |
-| [`social-preview-c.png`](social-preview/social-preview-c.png) | C: the docs-site funnel (crop of `docs-hero.png`) beside the component headline. | 1280×640 | `pnpm press:social` | 2026-11-06 |
-| [`template.html`](social-preview/template.html) | Source for the three cards (`?v=a`, `b`, `c`). | 1280×640 | hand-written | 2026-11-06 |
+| [`social-preview-a.png`](social-preview/social-preview-a.png) | Round 1 A, the current pick: "FBX in, textured GLB out." beside a crop of `before-after.png`. | 1280×640 | `pnpm press:social --only a` | 2026-11-06 |
+| [`social-preview-a2.png`](social-preview/social-preview-a2.png) | Round 2 A, dark: Barbarian before/after above the last screen of the bulk run, and "37 .fbx → 37 .glb + 37 .tsx". | 1280×640 | `pnpm press:social` | 2026-11-07 |
+| [`social-preview-b2.png`](social-preview/social-preview-b2.png) | Round 2 B: A in the light palette. | 1280×640 | `pnpm press:social` | 2026-11-07 |
+| [`social-preview-c2.png`](social-preview/social-preview-c2.png) | Round 2 C, dark: all 37 models of the pack in one grid, FBX2glTF alone left of the split and conv3d right of it, with the run's "Successfully converted 37/37 models" line. | 1280×640 | `pnpm press:social` | 2026-11-07 |
+| [`social-preview-d2.png`](social-preview/social-preview-d2.png) | Round 2 D: C in the light palette. | 1280×640 | `pnpm press:social` | 2026-11-07 |
+| [`template.html`](social-preview/template.html) | Source for the cards (`?v=a`, `a2`, `b2`, `c2`, `d2`). | 1280×640 | hand-written | 2026-11-07 |
+| [`renders/terminal-dark.webp`](social-preview/renders/terminal-dark.webp), [`-light.webp`](social-preview/renders/terminal-light.webp) | Last screen of the bulk run, recorded with vhs in a dark and a light theme. | 2000×760 | `pnpm press:bulk` | 2026-11-07 |
+| [`renders/pack-before.webp`](social-preview/renders/pack-before.webp), [`pack-after.webp`](social-preview/renders/pack-after.webp) | The 37 models in the same grid: FBX2glTF alone, and the run's `glb/` output. Transparent. | 1280×830 | `pnpm press:bulk` | 2026-11-07 |
+| [`renders/barbarian-before.webp`](social-preview/renders/barbarian-before.webp), [`-after.webp`](social-preview/renders/barbarian-after.webp) | The same pair for one model, larger. Transparent. | 640×600 | `pnpm press:bulk` | 2026-11-07 |
 
-No candidate is uploaded to GitHub yet. Repository Settings → Social preview takes the chosen PNG.
+The round-1 candidates B (typographic) and C (docs-site funnel) were not picked and are removed; they stay in the git history. No candidate is uploaded to GitHub yet. Repository Settings → Social preview takes the chosen PNG.
 
 ## Regenerate the cards
 
 ```bash
+pnpm build                             # repo root: dist/conv3d.js
 cd docs
 pnpm install
-pnpm press:social                      # cards + manifest.json
-pnpm press:social --review-dir <dir>   # also copies the cards there with a labelled review-sheet.jpg
+pnpm press:bulk                        # the bulk run, its terminal screens and the renders
+pnpm press:social                      # round-2 cards + manifest.json
+pnpm press:social --only a             # the round-1 card
+pnpm press:social --review-dir <dir>   # also copies the round-2 cards there as -a … -d with a labelled review-sheet.jpg
 ```
 
-The cards embed `before-after.png` and `docs-hero.png`, so re-run `press:before-after` or `press:hero` first when those change. Fonts load from Google Fonts, so rendering needs a network connection. When Playwright's own Chromium is missing, the script uses the installed Google Chrome, headless.
+`press:bulk` needs vhs, the KayKit Adventurers pack and, on Apple Silicon, Rosetta for FBX2glTF (see [`docs/scripts/README.md`](../scripts/README.md)). The round-1 card embeds `before-after.png`, so re-run `press:before-after` first when that changes. Fonts load from Google Fonts, so rendering needs a network connection. When Playwright's own Chromium is missing, `press:social` uses the installed Google Chrome, headless.

@@ -1,14 +1,17 @@
 #!/usr/bin/env node
-// Renders the three GitHub social preview candidates (1280x640 PNG) from
+// Renders the GitHub social preview candidates (1280x640 PNG) from
 // docs/marketing/social-preview/template.html, then rewrites
 // docs/marketing/manifest.json for every press and marketing image.
 //
-//   cd docs && pnpm press:social [--review-dir <dir>]
+//   cd docs && pnpm press:social [--only a2,b2] [--review-dir <dir>]
 //
-// The cards embed the existing press images (public/press/before-after.png
-// and docs-hero.png), so re-run press:before-after / press:hero first when
-// those change. With --review-dir, the three PNGs are also copied there with
-// a labelled review-sheet.jpg. Fonts load from Google Fonts (needs network).
+// By default it renders the round-2 cards a2-d2, which embed
+// social-preview/renders/ (made by press:bulk from one real bulk run).
+// `--only a` re-renders the round-1 card, which embeds
+// public/press/before-after.png. Re-run those scripts first when their inputs
+// change. With --review-dir, the round-2 cards are also copied there as
+// social-preview-a.png ... -d.png with a labelled review-sheet.jpg. Fonts load
+// from Google Fonts (needs network).
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -27,15 +30,21 @@ import { chromium } from "@playwright/test";
 const DOCS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MARKETING_DIR = join(DOCS_DIR, "marketing");
 const SOCIAL_DIR = join(MARKETING_DIR, "social-preview");
+const RENDERS_DIR = join(SOCIAL_DIR, "renders");
 const PRESS_DIR = join(DOCS_DIR, "public", "press");
 const FONTS_HREF = "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=block";
 
+// [template id, review letter (round 2 only), review label]
 const VARIANTS = [
-  ["a", "A: screenshot-led, texture before/after"],
-  ["b", "B: typographic, docs-site brand"],
-  ["c", "C: docs-site 3D funnel"],
+  ["a", null, "Round 1 A: texture before/after"],
+  ["a2", "a", "A (dark): Barbarian before/after + the bulk run"],
+  ["b2", "b", "B (light): Barbarian before/after + the bulk run"],
+  ["c2", "c", "C (dark): the whole pack, split before/after"],
+  ["d2", "d", "D (light): the whole pack, split before/after"],
 ];
 
+const onlyIdx = process.argv.indexOf("--only");
+const only = onlyIdx > -1 ? process.argv[onlyIdx + 1].split(",") : ["a2", "b2", "c2", "d2"];
 const reviewIdx = process.argv.indexOf("--review-dir");
 const reviewDir = reviewIdx > -1 ? process.argv[reviewIdx + 1] : null;
 
@@ -51,7 +60,7 @@ async function launch() {
 const browser = await launch();
 try {
   const template = pathToFileURL(join(SOCIAL_DIR, "template.html")).href;
-  for (const [v] of VARIANTS) {
+  for (const [v] of VARIANTS.filter(([id]) => only.includes(id))) {
     const page = await browser.newPage({
       viewport: { width: 1280, height: 640 },
       deviceScaleFactor: 1,
@@ -68,21 +77,23 @@ try {
 
   if (reviewDir) {
     mkdirSync(reviewDir, { recursive: true });
-    const tiles = VARIANTS.map(([v, label]) => {
-      const file = `social-preview-${v}.png`;
-      copyFileSync(join(SOCIAL_DIR, file), join(reviewDir, file));
-      const data = readFileSync(join(SOCIAL_DIR, file)).toString("base64");
-      return `<figure><img src="data:image/png;base64,${data}"><figcaption>${label}</figcaption></figure>`;
-    }).join("");
+    const tiles = VARIANTS.filter(([, letter]) => letter)
+      .map(([v, letter, label]) => {
+        const file = `social-preview-${v}.png`;
+        copyFileSync(join(SOCIAL_DIR, file), join(reviewDir, `social-preview-${letter}.png`));
+        const data = readFileSync(join(SOCIAL_DIR, file)).toString("base64");
+        return `<figure><img src="data:image/png;base64,${data}"><figcaption>${label}</figcaption></figure>`;
+      })
+      .join("");
     const html = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS_HREF}">
 <style>body{margin:0;background:#e9ecee;font-family:Inter,sans-serif}
-.sheet{display:flex;gap:32px;padding:40px;width:max-content}
+.sheet{display:grid;grid-template-columns:640px 640px;gap:36px 32px;padding:40px;width:max-content}
 figure{margin:0;display:flex;flex-direction:column;gap:14px}
 img{width:640px;height:320px;display:block;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.18)}
 figcaption{font-size:22px;font-weight:600;color:#0a1014}</style></head>
 <body><div class="sheet">${tiles}</div></body></html>`;
     const page = await browser.newPage({
-      viewport: { width: 2100, height: 460 },
+      viewport: { width: 1400, height: 900 },
       deviceScaleFactor: 1,
     });
     await page.setContent(html, { waitUntil: "networkidle" });
@@ -125,25 +136,60 @@ const PURPOSE = {
   ],
   "public/press/walkthrough.webm": ["Same walkthrough, WebM", "pnpm press:walkthrough"],
   "marketing/social-preview/social-preview-a.png": [
-    "GitHub social preview candidate A: texture before/after",
+    "GitHub social preview, round 1 A (current pick): texture before/after",
     "pnpm press:social",
   ],
-  "marketing/social-preview/social-preview-b.png": [
-    "GitHub social preview candidate B: typographic",
+  "marketing/social-preview/social-preview-a2.png": [
+    "GitHub social preview, round 2 A (dark): Barbarian before/after + end of the bulk run",
     "pnpm press:social",
   ],
-  "marketing/social-preview/social-preview-c.png": [
-    "GitHub social preview candidate C: docs-site 3D funnel",
+  "marketing/social-preview/social-preview-b2.png": [
+    "GitHub social preview, round 2 B (light): Barbarian before/after + end of the bulk run",
     "pnpm press:social",
+  ],
+  "marketing/social-preview/social-preview-c2.png": [
+    "GitHub social preview, round 2 C (dark): all 37 pack models, split before/after",
+    "pnpm press:social",
+  ],
+  "marketing/social-preview/social-preview-d2.png": [
+    "GitHub social preview, round 2 D (light): all 37 pack models, split before/after",
+    "pnpm press:social",
+  ],
+  "marketing/social-preview/renders/barbarian-after.webp": [
+    "Barbarian.glb from the bulk run (conv3d), transparent",
+    "pnpm press:bulk",
+  ],
+  "marketing/social-preview/renders/barbarian-before.webp": [
+    "Barbarian.fbx through FBX2glTF alone, transparent",
+    "pnpm press:bulk",
+  ],
+  "marketing/social-preview/renders/pack-after.webp": [
+    "All 37 KayKit Adventurers GLBs from the bulk run (conv3d), one grid",
+    "pnpm press:bulk",
+  ],
+  "marketing/social-preview/renders/pack-before.webp": [
+    "The same 37 FBX files through FBX2glTF alone, same grid",
+    "pnpm press:bulk",
+  ],
+  "marketing/social-preview/renders/terminal-dark.webp": [
+    "Last screen of `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y` (vhs, dark theme)",
+    "pnpm press:bulk",
+  ],
+  "marketing/social-preview/renders/terminal-light.webp": [
+    "Last screen of the same bulk run (vhs, light theme)",
+    "pnpm press:bulk",
   ],
 };
 
-// PNG sizes come from the IHDR chunk. The walkthrough videos are recorded at
-// 1920x1080 (see scripts/README.md).
-function pngSize(buf) {
-  return buf.readUInt32BE(0) === 0x89504e47
-    ? [buf.readUInt32BE(16), buf.readUInt32BE(20)]
-    : [1920, 1080];
+// PNG sizes come from the IHDR chunk, WebP sizes from the VP8X chunk (the
+// renders all carry alpha, so Chromium writes VP8X). The walkthrough videos
+// are recorded at 1920x1080 (see scripts/README.md).
+function imageSize(buf) {
+  if (buf.readUInt32BE(0) === 0x89504e47) return [buf.readUInt32BE(16), buf.readUInt32BE(20)];
+  if (buf.toString("ascii", 8, 16) === "WEBPVP8X") {
+    return [buf.readUIntLE(24, 3) + 1, buf.readUIntLE(27, 3) + 1];
+  }
+  return [1920, 1080];
 }
 
 // Last commit date of a file, or today for a file not committed yet.
@@ -152,18 +198,18 @@ function changed(abs) {
     cwd: DOCS_DIR,
     encoding: "utf8",
   }).trim();
-  return out || new Date().toISOString().slice(0, 10);
+  return out || new Date().toLocaleDateString("sv-SE"); // local YYYY-MM-DD, as git's %cs
 }
 
 const files = [];
-for (const dir of [PRESS_DIR, SOCIAL_DIR]) {
+for (const dir of [PRESS_DIR, SOCIAL_DIR, RENDERS_DIR]) {
   for (const name of readdirSync(dir).sort()) {
     if (!/\.(png|jpe?g|webp|mp4|webm)$/.test(name)) continue;
     const abs = join(dir, name);
     const rel = relative(DOCS_DIR, abs);
     const buf = readFileSync(abs);
     const [purpose, madeBy] = PURPOSE[rel] ?? ["", ""];
-    const [width, height] = pngSize(buf);
+    const [width, height] = imageSize(buf);
     files.push({
       file: `docs/${rel}`,
       purpose,

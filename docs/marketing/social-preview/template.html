@@ -1,9 +1,13 @@
 <!doctype html>
 <!--
-  GitHub social preview card, 1280x640. Three variants, picked with ?v=a|b|c:
-    a  screenshot-led: the FBX2glTF vs conv3d texture comparison (press/before-after.png)
-    b  typographic: logo, headline and the bulk command, in the docs site's brand
-    c  the docs site's 3D funnel (press/docs-hero.png) beside the component headline
+  GitHub social preview card, 1280x640, picked with ?v=<id>:
+    a   round 1 (current pick): "FBX in, textured GLB out." beside a crop of press/before-after.png
+    a2  dark,  stacked: Barbarian before/after above the last screen of the bulk run
+    b2  light, stacked: the same in the light palette
+    c2  dark,  pack: all 37 models of the pack, split between FBX2glTF alone and conv3d
+    d2  light, pack: the same in the light palette
+  Round-2 images come from one real `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y`
+  run over the KayKit Adventurers pack (docs/scripts/press-bulk-run.mjs, files in renders/).
   Rendered by docs/scripts/press-social-preview.mjs. Key content stays inside
   the 64 px safe margin. Images that show a model carry its credit.
 -->
@@ -13,13 +17,22 @@
 <title>conv3d social preview</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=block">
 <style>
-  :root { --bg: #0a1014; --hatch: #0f1e1c; --fg: #ffffff; --muted: #94a8b0; --accent: #2dd4bf; --accent-soft: #5eead4; }
+  :root {
+    --bg: #0a1014; --hatch: #0f1e1c; --glow: rgba(20,184,166,.34); --glow-mid: rgba(20,184,166,.04); --fg: #ffffff; --body: #c4d0d4; --muted: #94a8b0;
+    --faint: #6f828a; --accent: #2dd4bf; --accent-text: #5eead4; --panel: #0d171b; --line: #1d2c30;
+    --before: #fde68a; --after: #5eead4; --term: #0d171b; --shadow: 0 24px 70px rgba(0,0,0,.5);
+  }
+  .light {
+    --bg: #f3f7f7; --hatch: #e3ecea; --glow: rgba(45,212,191,.2); --glow-mid: rgba(45,212,191,.03); --fg: #0a1014; --body: #2c3c42; --muted: #4f6168;
+    --faint: #6a7c82; --accent: #14b8a6; --accent-text: #0f766e; --panel: #ffffff; --line: #d3dfdd;
+    --before: #a16207; --after: #0f766e; --term: #ffffff; --shadow: 0 18px 50px rgba(10,16,20,.12);
+  }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { width: 1280px; height: 640px; overflow: hidden; font-family: Inter, sans-serif; color: var(--fg); background: var(--bg); }
-  .card { position: relative; width: 1280px; height: 640px; overflow: hidden; background: var(--bg); }
+  body { width: 1280px; height: 640px; overflow: hidden; font-family: Inter, sans-serif; }
+  .card { position: relative; width: 1280px; height: 640px; overflow: hidden; background: var(--bg); color: var(--fg); }
   .hatch { position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 34px); }
-  .glow { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 30% 0%, rgba(20,184,166,.34), rgba(20,184,166,.04) 60%, transparent 100%); }
+  .glow { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 30% 0%, var(--glow), var(--glow-mid) 60%, transparent 100%); }
   .topline { position: absolute; left: 0; top: 0; right: 0; height: 4px; background: var(--accent); }
   .brand { display: flex; align-items: center; gap: 18px; }
   .brand svg { width: 64px; height: 64px; flex: none; }
@@ -27,13 +40,30 @@
   code { font-family: "JetBrains Mono", monospace; font-variant-ligatures: none; }
   .url { display: flex; align-items: center; gap: 12px; font: 500 22px "JetBrains Mono", monospace; color: var(--muted); }
   .url i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); display: block; }
-  .credit { font-size: 15px; color: #6f828a; }
+  .credit { font-size: 15px; color: var(--faint); }
+  .tool { font: 700 19px "JetBrains Mono", monospace; }
+  .tool.before { color: var(--before); }
+  .tool.after { color: var(--after); }
+  .panel { background: var(--panel); border-radius: 14px; box-shadow: var(--shadow), 0 0 0 1px var(--line); overflow: hidden; }
+  .text { position: absolute; left: 64px; top: 64px; bottom: 64px; display: flex; flex-direction: column; }
+  .text h1 { margin: 44px 0 0; font-size: 58px; line-height: 1.05; letter-spacing: -2px; font-weight: 800; }
+  .text p { margin: 22px 0 0; font-size: 23px; line-height: 1.4; color: var(--body); }
+  .text .url { margin-top: auto; }
+  .stat { margin-top: 28px; align-self: flex-start; display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-radius: 10px;
+    background: var(--panel); box-shadow: 0 0 0 1px var(--line); font: 600 21px "JetBrains Mono", monospace; font-variant-ligatures: none; white-space: nowrap; }
+  .stat i { font-style: normal; color: var(--accent-text); }
 
-  /* A: before/after */
-  .a .text { position: absolute; left: 64px; top: 64px; width: 470px; bottom: 64px; display: flex; flex-direction: column; }
-  .a h1 { margin: 52px 0 0; font-size: 62px; line-height: 1.04; letter-spacing: -2px; font-weight: 800; }
-  .a p { margin: 24px 0 0; font-size: 24px; line-height: 1.4; color: #c4d0d4; }
-  .a .url { margin-top: auto; }
+  /* Terminal crop: the bottom of the real vhs screenshot (2000x760, shown at half size). */
+  .term { position: relative; overflow: hidden; background: var(--term); }
+  .term img { position: absolute; left: 0; display: block; width: 1000px; }
+  .term::before, .term::after { content: ""; position: absolute; pointer-events: none; z-index: 1; }
+  .term::before { left: 0; right: 0; top: 0; height: 30px; background: linear-gradient(var(--term), transparent); }
+  .term::after { top: 0; bottom: 0; right: 0; width: 72px; background: linear-gradient(90deg, transparent, var(--term)); }
+
+  /* Round 1 A, kept as the current pick */
+  .a .text { width: 470px; }
+  .a h1 { margin-top: 52px; font-size: 62px; line-height: 1.04; }
+  .a p { margin-top: 24px; font-size: 24px; }
   .a .shot { position: absolute; left: 566px; top: 150px; width: 650px; }
   .a .crop { width: 650px; height: 242px; overflow: hidden; border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,.5), 0 0 0 1px #1d2c30; }
   .a .crop img { display: block; width: 703px; margin: -65px 0 0 -26px; }
@@ -42,26 +72,37 @@
   .a .labels span:last-child { color: #86efac; }
   .a .credit { margin-top: 12px; }
 
-  /* B: typographic */
-  .b .wrap { position: absolute; inset: 64px; display: flex; flex-direction: column; }
-  .b h1 { margin: 40px 0 0; font-size: 78px; line-height: 1.02; letter-spacing: -3px; font-weight: 800;
-    background: linear-gradient(#ffffff, #ccfbf1); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .b p { margin: 22px 0 0; max-width: 980px; font-size: 25px; line-height: 1.4; color: var(--muted); }
-  .b .cmd { margin-top: 24px; align-self: flex-start; padding: 14px 22px; border-radius: 12px; background: #0d171b; border: 1px solid #1d2c30;
-    font: 500 24px "JetBrains Mono", monospace; font-variant-ligatures: none; color: #e6f2f1; }
-  .b .cmd b { color: var(--accent); font-weight: 700; }
-  .b .url { margin-top: auto; }
+  /* Stacked: before/after pair above the end of the bulk run */
+  .stacked .text { width: 500px; }
+  .stacked h1, .pack h1 { font-size: 55px; margin-top: 48px; }
+  .stacked .pair { position: absolute; left: 584px; top: 64px; width: 632px; height: 216px; display: flex; }
+  .stacked .pair figure { position: relative; margin: 0; flex: 1; }
+  .stacked .pair figure + figure { border-left: 1px solid var(--line); }
+  .stacked .pair img { position: absolute; left: 50%; top: 4px; width: 190px; transform: translateX(-50%); }
+  .stacked .pair figcaption { position: absolute; left: 18px; bottom: 12px; }
+  .stacked .run { position: absolute; left: 584px; top: 296px; width: 632px; height: 280px; display: flex; flex-direction: column; }
+  .stacked .run .term { flex: 1; }
+  .stacked .run .term img { top: -120px; left: -6px; }
+  .stacked .credit { position: absolute; left: 584px; top: 588px; }
+  .runbar { flex: none; height: 36px; padding: 0 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line);
+    font: 500 15px "JetBrains Mono", monospace; font-variant-ligatures: none; color: var(--muted); white-space: nowrap; }
+  .runbar b { color: var(--accent-text); }
 
-  /* C: docs-site funnel */
-  .c .text { position: absolute; left: 64px; top: 64px; width: 640px; bottom: 64px; display: flex; flex-direction: column; }
-  .c h1 { margin: 52px 0 0; font-size: 60px; line-height: 1.06; letter-spacing: -2px; font-weight: 800; }
-  .c h1 code { color: var(--accent-soft); font-size: 54px; letter-spacing: -1px; }
-  .c p { margin: 24px 0 0; font-size: 24px; line-height: 1.4; color: #c4d0d4; max-width: 600px; }
-  .c .url { margin-top: auto; }
-  .c .funnel { position: absolute; left: 760px; top: 40px; width: 460px; height: 520px; overflow: hidden; border-radius: 18px;
-    background: #050708; box-shadow: 0 0 0 1px #1d2c30; }
-  .c .funnel img { display: block; width: 1920px; margin: -200px 0 0 -950px; }
-  .c .fcredit { position: absolute; left: 760px; top: 572px; width: 460px; text-align: right; }
+  /* Pack: every model of the pack, FBX2glTF alone left of the split, conv3d right of it */
+  .pack .text { width: 480px; }
+  .pack .sheet { position: absolute; left: 568px; top: 64px; width: 648px; height: 490px; }
+  .pack .sheet .imgs { position: absolute; left: 14px; top: 44px; width: 620px; height: 402px; }
+  .pack .sheet .imgs img { position: absolute; inset: 0; width: 620px; height: 402px; }
+  .pack .sheet .imgs .before { clip-path: inset(0 58.33% 0 0); }
+  .pack .sheet .imgs .after { clip-path: inset(0 0 0 41.67%); }
+  .pack .split { position: absolute; top: 0; height: 450px; left: calc(14px + 620px * .4167); width: 2px; margin-left: -1px; background: var(--accent); }
+  .pack .sheet .tool { position: absolute; top: 14px; }
+  .pack .sheet .tool.before { right: calc(648px - 14px - 620px * .4167 + 14px); }
+  .pack .sheet .tool.after { left: calc(14px + 620px * .4167 + 14px); }
+  .pack .sheet .term { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; border-top: 1px solid var(--line); overflow: hidden; }
+  .pack .sheet .term::before { display: none; }
+  .pack .sheet .term img { top: -287px; left: -4px; clip-path: inset(297px 0 63px 0); }
+  .pack .credit { position: absolute; left: 568px; top: 566px; }
 </style>
 </head>
 <body>
@@ -84,11 +125,17 @@
 </template>
 
 <script>
-  const v = new URLSearchParams(location.search).get("v") || "a";
+  const v = new URLSearchParams(location.search).get("v") || "a2";
+  const layout = { a: "a", a2: "stacked", b2: "stacked", c2: "pack", d2: "pack" }[v];
+  const theme = { b2: "light", d2: "light" }[v] || "dark";
   const logo = document.getElementById("logo").innerHTML;
   const brand = `<div class="brand">${logo}<span>conv3d</span></div>`;
   const url = `<div class="url"><i></i>conv3d.trebeljahr.com</div>`;
-  const variants = {
+  const credit = "Models: KayKit Adventurers by Kay Lousberg (CC0)";
+  const term = `renders/terminal-${theme}.webp`;
+  const command = "conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y";
+
+  const layouts = {
     a: `<div class="text">${brand}
           <h1>FBX in, textured GLB out.</h1>
           <p>conv3d restores the texture that FBX2glTF swaps for a 1×1 placeholder, and can write the React Three Fiber component too.</p>
@@ -98,19 +145,38 @@
           <div class="labels"><span>FBX2glTF alone</span><span>conv3d</span></div>
           <div class="credit">Model: KayKit Adventurers by Kay Lousberg (CC0)</div>
         </div>`,
-    b: `<div class="wrap">${brand}
-          <h1>Asset packs in.<br>Web-sized GLBs out.</h1>
-          <p>Convert folders of FBX, OBJ and glTF files to GLB, plus the typed React Three Fiber components to use them.</p>
-          <div class="cmd"><b>$</b> conv3d bulk ./models --tsx --optimize -y</div>
-          ${url}</div>`,
-    c: `<div class="text">${brand}
-          <h1>From <code>.fbx</code> to a typed React Three Fiber component.</h1>
-          <p>One command for a file, a folder or a glob. Prompts for people, <code>--yes --json</code> for scripts and agents.</p>
+    stacked: `<div class="text">${brand}
+          <h1>FBX packs in,<br>textured GLBs out.</h1>
+          <p>One command converts the whole folder, puts back the textures FBX2glTF loses, and writes a typed React Three Fiber component per model.</p>
+          <div class="stat"><span>37 .fbx</span><i>→</i><span>37 .glb + 37 .tsx</span></div>
           ${url}</div>
-        <div class="funnel"><img src="../../public/press/docs-hero.png" alt=""></div><div class="credit fcredit">Models: Quaternius (CC0)</div>`,
+        <div class="pair panel">
+          <figure><img src="renders/barbarian-before.webp" alt=""><figcaption class="tool before">FBX2glTF alone</figcaption></figure>
+          <figure><img src="renders/barbarian-after.webp" alt=""><figcaption class="tool after">conv3d</figcaption></figure>
+        </div>
+        <div class="run panel"><div class="runbar"><b>$</b>${command}</div><div class="term"><img src="${term}" alt=""></div></div>
+        <div class="credit">${credit}</div>`,
+    pack: `<div class="text">${brand}
+          <h1>FBX packs in,<br>textured GLBs out.</h1>
+          <p>One run converts every model in the folder, puts back the textures FBX2glTF loses, and writes typed React Three Fiber components.</p>
+          <div class="stat"><span>37 .fbx</span><i>→</i><span>37 .glb + 37 .tsx</span></div>
+          ${url}</div>
+        <div class="sheet panel">
+          <div class="imgs">
+            <img class="before" src="renders/pack-before.webp" alt="">
+            <img class="after" src="renders/pack-after.webp" alt="">
+          </div>
+          <div class="split"></div>
+          <span class="tool before">FBX2glTF alone</span>
+          <span class="tool after">conv3d</span>
+          <div class="term"><img src="${term}" alt=""></div>
+        </div>
+        <div class="credit">${credit}</div>`,
   };
-  document.getElementById("card").classList.add(v);
-  document.getElementById("content").innerHTML = variants[v];
+  const card = document.getElementById("card");
+  card.classList.add(layout);
+  if (theme === "light") card.classList.add("light");
+  document.getElementById("content").innerHTML = layouts[layout];
 </script>
 </body>
 </html>

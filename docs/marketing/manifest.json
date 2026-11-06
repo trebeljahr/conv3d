@@ -84,7 +84,7 @@
     },
     {
       "file": "docs/marketing/social-preview/social-preview-a.png",
-      "purpose": "GitHub social preview candidate A: texture before/after",
+      "purpose": "GitHub social preview, round 1 A (current pick): texture before/after",
       "madeBy": "pnpm press:social",
       "width": 1280,
       "height": 640,
@@ -93,24 +93,104 @@
       "changed": "2026-11-06"
     },
     {
-      "file": "docs/marketing/social-preview/social-preview-b.png",
-      "purpose": "GitHub social preview candidate B: typographic",
+      "file": "docs/marketing/social-preview/social-preview-a2.png",
+      "purpose": "GitHub social preview, round 2 A (dark): Barbarian before/after + end of the bulk run",
       "madeBy": "pnpm press:social",
       "width": 1280,
       "height": 640,
-      "bytes": 231065,
-      "sha256": "f44196f8329c0e7404336037e6a2697c4df03ce3d0d1cd7cd01265499a60a07a",
-      "changed": "2026-11-06"
+      "bytes": 406415,
+      "sha256": "f031eec1dee65b6c7d2e13efaf22852dece5b562f7b16e5434a24ed4246876a3",
+      "changed": "2026-11-07"
     },
     {
-      "file": "docs/marketing/social-preview/social-preview-c.png",
-      "purpose": "GitHub social preview candidate C: docs-site 3D funnel",
+      "file": "docs/marketing/social-preview/social-preview-b2.png",
+      "purpose": "GitHub social preview, round 2 B (light): Barbarian before/after + end of the bulk run",
       "madeBy": "pnpm press:social",
       "width": 1280,
       "height": 640,
-      "bytes": 284937,
-      "sha256": "f2fc24556e3168c4cf219b06bba9984ce406abec41930907cdbf9b195e0465dc",
-      "changed": "2026-11-06"
+      "bytes": 392082,
+      "sha256": "82c14ea46ba81933dd20531c92de536b23ea0ebba7716f8832d2978942812185",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/social-preview-c2.png",
+      "purpose": "GitHub social preview, round 2 C (dark): all 37 pack models, split before/after",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 357188,
+      "sha256": "2875e2e4926b9c86a876e02dbf1db4321ed5a4f7cd2cc73ca00f7e68d56b7a30",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/social-preview-d2.png",
+      "purpose": "GitHub social preview, round 2 D (light): all 37 pack models, split before/after",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 349830,
+      "sha256": "6e7d6e1d3bec8de81c47f80aa6966618cb9022c5361d9ef084e2fb2df2bef41e",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/barbarian-after.webp",
+      "purpose": "Barbarian.glb from the bulk run (conv3d), transparent",
+      "madeBy": "pnpm press:bulk",
+      "width": 640,
+      "height": 600,
+      "bytes": 24922,
+      "sha256": "567b11014aaec9731e492c8b4ee48b86160eca37ce17e6efd8b70974d8a77575",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/barbarian-before.webp",
+      "purpose": "Barbarian.fbx through FBX2glTF alone, transparent",
+      "madeBy": "pnpm press:bulk",
+      "width": 640,
+      "height": 600,
+      "bytes": 29504,
+      "sha256": "fb34dd522ce834a12c38c5f8da6bcba640474b1e04e3773d325926a8ee42359a",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/pack-after.webp",
+      "purpose": "All 37 KayKit Adventurers GLBs from the bulk run (conv3d), one grid",
+      "madeBy": "pnpm press:bulk",
+      "width": 1280,
+      "height": 830,
+      "bytes": 99196,
+      "sha256": "8af22538cc3888b90ff289e8ee86f8dc5bd626a8d00838bcb367546991f081d1",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/pack-before.webp",
+      "purpose": "The same 37 FBX files through FBX2glTF alone, same grid",
+      "madeBy": "pnpm press:bulk",
+      "width": 1280,
+      "height": 830,
+      "bytes": 110492,
+      "sha256": "343b7c48d4b5cd646f1e9778e37065154b967b7137438ea05682d8a97f22ad60",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/terminal-dark.webp",
+      "purpose": "Last screen of `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y` (vhs, dark theme)",
+      "madeBy": "pnpm press:bulk",
+      "width": 2000,
+      "height": 760,
+      "bytes": 215594,
+      "sha256": "0cdf4e830730f2ca0fbf8016ee757b2ed8b3bf33be34f3b38c9fb522e2c826a9",
+      "changed": "2026-11-07"
+    },
+    {
+      "file": "docs/marketing/social-preview/renders/terminal-light.webp",
+      "purpose": "Last screen of the same bulk run (vhs, light theme)",
+      "madeBy": "pnpm press:bulk",
+      "width": 2000,
+      "height": 760,
+      "bytes": 210450,
+      "sha256": "ae649fdbe34a8304af70b37ab12ac555a65262cdfa34218b36c8408e065bd425",
+      "changed": "2026-11-07"
     }
   ]
 }

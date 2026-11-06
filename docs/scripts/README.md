@@ -65,4 +65,19 @@ cd docs && pnpm press:before-after
 
 Writes `public/press/before-after.png` (1920x1080). It converts `Barbarian.fbx` twice from the same folder, with its texture next to it: once with the bundled FBX2glTF binary and conv3d's flags, and once with `conv3d bulk`. `_press-viewer.js` shows both GLBs in one plain three.js GLTFLoader viewer with the same lights.
 
-Both press scripts need the KayKit Adventurers pack by Kay Lousberg (CC0, https://kaylousberg.itch.io/kaykit-adventurers). Set `KAYKIT_FBX_DIR` to its `characters/fbx` folder if it is not at the default path in `_press-lib.mjs`. FBX2glTF is x86-64 only, so Apple Silicon needs Rosetta. Every image or video that shows the model carries the credit "Model: KayKit Adventurers by Kay Lousberg (CC0)".
+## Social preview inputs: one bulk run over a whole pack
+
+```sh
+pnpm build                       # repo root: dist/conv3d.js
+cd docs && pnpm press:bulk
+```
+
+`press-bulk-run.mjs` copies the KayKit Adventurers `characters/fbx` and `assets/fbx` folders (37 FBX files with their textures) into `/tmp/conv3d-bulk/kaykit-adventurers/`, then:
+
+1. records `conv3d bulk ./kaykit-adventurers -r --tsx --optimize -y` with vhs twice, once in a dark and once in a light terminal theme, and keeps the last screen of each run;
+2. converts the same 37 files with the bundled FBX2glTF binary alone, with conv3d's flags and no post-processing;
+3. renders both sets with `_press-tiles.js` (three.js GLTFLoader, the lights of `_press-viewer.js`, orthographic camera, transparent background) into two grids with the same layout, plus the Barbarian pair on its own.
+
+Output goes to `docs/marketing/social-preview/renders/`, where `press:social` picks it up. `SKIP_TERMINAL=1` reuses the last run in `/tmp/conv3d-bulk` and only redoes the renders.
+
+The press scripts need the KayKit Adventurers pack by Kay Lousberg (CC0, https://kaylousberg.itch.io/kaykit-adventurers). Set `KAYKIT_FBX_DIR` to its `characters/fbx` folder if it is not at the default path in `_press-lib.mjs`. FBX2glTF is x86-64 only, so Apple Silicon needs Rosetta. Every image or video that shows the model carries the credit "Model: KayKit Adventurers by Kay Lousberg (CC0)".

@@ -14,6 +14,7 @@
     "press:hero": "next build && node scripts/docs-hero.mjs",
     "press:before-after": "node scripts/press-before-after.mjs",
     "press:walkthrough": "node scripts/press-walkthrough.mjs",
+    "press:bulk": "node scripts/press-bulk-run.mjs",
     "press:social": "node scripts/press-social-preview.mjs"
   },
   "dependencies": {
