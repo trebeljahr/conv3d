@@ -13,7 +13,8 @@
     "test:e2e:ui": "playwright test --ui",
     "press:hero": "next build && node scripts/docs-hero.mjs",
     "press:before-after": "node scripts/press-before-after.mjs",
-    "press:walkthrough": "node scripts/press-walkthrough.mjs"
+    "press:walkthrough": "node scripts/press-walkthrough.mjs",
+    "press:social": "node scripts/press-social-preview.mjs"
   },
   "dependencies": {
     "@hatchkit/dev-plugin-next": "^0.1.43",

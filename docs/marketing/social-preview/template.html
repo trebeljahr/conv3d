@@ -1,0 +1,116 @@
+<!doctype html>
+<!--
+  GitHub social preview card, 1280x640. Three variants, picked with ?v=a|b|c:
+    a  screenshot-led: the FBX2glTF vs conv3d texture comparison (press/before-after.png)
+    b  typographic: logo, headline and the bulk command, in the docs site's brand
+    c  the docs site's 3D funnel (press/docs-hero.png) beside the component headline
+  Rendered by docs/scripts/press-social-preview.mjs. Key content stays inside
+  the 64 px safe margin. Images that show a model carry its credit.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>conv3d social preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=block">
+<style>
+  :root { --bg: #0a1014; --hatch: #0f1e1c; --fg: #ffffff; --muted: #94a8b0; --accent: #2dd4bf; --accent-soft: #5eead4; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { width: 1280px; height: 640px; overflow: hidden; font-family: Inter, sans-serif; color: var(--fg); background: var(--bg); }
+  .card { position: relative; width: 1280px; height: 640px; overflow: hidden; background: var(--bg); }
+  .hatch { position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 34px); }
+  .glow { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 30% 0%, rgba(20,184,166,.34), rgba(20,184,166,.04) 60%, transparent 100%); }
+  .topline { position: absolute; left: 0; top: 0; right: 0; height: 4px; background: var(--accent); }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand svg { width: 64px; height: 64px; flex: none; }
+  .brand span { font-size: 40px; font-weight: 700; letter-spacing: -1px; }
+  code { font-family: "JetBrains Mono", monospace; font-variant-ligatures: none; }
+  .url { display: flex; align-items: center; gap: 12px; font: 500 22px "JetBrains Mono", monospace; color: var(--muted); }
+  .url i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); display: block; }
+  .credit { font-size: 15px; color: #6f828a; }
+
+  /* A: before/after */
+  .a .text { position: absolute; left: 64px; top: 64px; width: 470px; bottom: 64px; display: flex; flex-direction: column; }
+  .a h1 { margin: 52px 0 0; font-size: 62px; line-height: 1.04; letter-spacing: -2px; font-weight: 800; }
+  .a p { margin: 24px 0 0; font-size: 24px; line-height: 1.4; color: #c4d0d4; }
+  .a .url { margin-top: auto; }
+  .a .shot { position: absolute; left: 566px; top: 150px; width: 650px; }
+  .a .crop { width: 650px; height: 242px; overflow: hidden; border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,.5), 0 0 0 1px #1d2c30; }
+  .a .crop img { display: block; width: 703px; margin: -65px 0 0 -26px; }
+  .a .labels { display: flex; justify-content: space-between; margin-top: 16px; font: 600 19px "JetBrains Mono", monospace; }
+  .a .labels span:first-child { color: #fde68a; }
+  .a .labels span:last-child { color: #86efac; }
+  .a .credit { margin-top: 12px; }
+
+  /* B: typographic */
+  .b .wrap { position: absolute; inset: 64px; display: flex; flex-direction: column; }
+  .b h1 { margin: 40px 0 0; font-size: 78px; line-height: 1.02; letter-spacing: -3px; font-weight: 800;
+    background: linear-gradient(#ffffff, #ccfbf1); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .b p { margin: 22px 0 0; max-width: 980px; font-size: 25px; line-height: 1.4; color: var(--muted); }
+  .b .cmd { margin-top: 24px; align-self: flex-start; padding: 14px 22px; border-radius: 12px; background: #0d171b; border: 1px solid #1d2c30;
+    font: 500 24px "JetBrains Mono", monospace; font-variant-ligatures: none; color: #e6f2f1; }
+  .b .cmd b { color: var(--accent); font-weight: 700; }
+  .b .url { margin-top: auto; }
+
+  /* C: docs-site funnel */
+  .c .text { position: absolute; left: 64px; top: 64px; width: 640px; bottom: 64px; display: flex; flex-direction: column; }
+  .c h1 { margin: 52px 0 0; font-size: 60px; line-height: 1.06; letter-spacing: -2px; font-weight: 800; }
+  .c h1 code { color: var(--accent-soft); font-size: 54px; letter-spacing: -1px; }
+  .c p { margin: 24px 0 0; font-size: 24px; line-height: 1.4; color: #c4d0d4; max-width: 600px; }
+  .c .url { margin-top: auto; }
+  .c .funnel { position: absolute; left: 760px; top: 40px; width: 460px; height: 520px; overflow: hidden; border-radius: 18px;
+    background: #050708; box-shadow: 0 0 0 1px #1d2c30; }
+  .c .funnel img { display: block; width: 1920px; margin: -200px 0 0 -950px; }
+  .c .fcredit { position: absolute; left: 760px; top: 572px; width: 460px; text-align: right; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="hatch"></div>
+  <div class="glow"></div>
+  <div class="topline"></div>
+  <div id="content"></div>
+</div>
+
+<template id="logo">
+  <svg viewBox="0 0 120 120" aria-hidden="true">
+    <rect width="120" height="120" rx="28" fill="#2dd4bf"/>
+    <g stroke="#0a1014" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M60 22 L93 41 L60 60 L27 41 Z"/>
+      <path d="M27 41 L27 79 L60 98 L60 60"/>
+      <path d="M93 41 L93 79 L60 98"/>
+    </g>
+  </svg>
+</template>
+
+<script>
+  const v = new URLSearchParams(location.search).get("v") || "a";
+  const logo = document.getElementById("logo").innerHTML;
+  const brand = `<div class="brand">${logo}<span>conv3d</span></div>`;
+  const url = `<div class="url"><i></i>conv3d.trebeljahr.com</div>`;
+  const variants = {
+    a: `<div class="text">${brand}
+          <h1>FBX in, textured GLB out.</h1>
+          <p>conv3d restores the texture that FBX2glTF swaps for a 1×1 placeholder, and can write the React Three Fiber component too.</p>
+          ${url}</div>
+        <div class="shot">
+          <div class="crop"><img src="../../public/press/before-after.png" alt=""></div>
+          <div class="labels"><span>FBX2glTF alone</span><span>conv3d</span></div>
+          <div class="credit">Model: KayKit Adventurers by Kay Lousberg (CC0)</div>
+        </div>`,
+    b: `<div class="wrap">${brand}
+          <h1>Asset packs in.<br>Web-sized GLBs out.</h1>
+          <p>Convert folders of FBX, OBJ and glTF files to GLB, plus the typed React Three Fiber components to use them.</p>
+          <div class="cmd"><b>$</b> conv3d bulk ./models --tsx --optimize -y</div>
+          ${url}</div>`,
+    c: `<div class="text">${brand}
+          <h1>From <code>.fbx</code> to a typed React Three Fiber component.</h1>
+          <p>One command for a file, a folder or a glob. Prompts for people, <code>--yes --json</code> for scripts and agents.</p>
+          ${url}</div>
+        <div class="funnel"><img src="../../public/press/docs-hero.png" alt=""></div><div class="credit fcredit">Models: Quaternius (CC0)</div>`,
+  };
+  document.getElementById("card").classList.add(v);
+  document.getElementById("content").innerHTML = variants[v];
+</script>
+</body>
+</html>

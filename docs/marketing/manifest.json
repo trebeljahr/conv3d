@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "project": "conv3d",
+  "files": [
+    {
+      "file": "docs/public/press/before-after.png",
+      "purpose": "FBX2glTF alone vs conv3d on Barbarian.fbx (texture recovery); README hero",
+      "madeBy": "pnpm press:before-after",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 316847,
+      "sha256": "4ebb61cc5b284c5e42630511d7a4aa7aed71eac2e9ca561ef84a7422a65302a8",
+      "changed": "2026-10-20"
+    },
+    {
+      "file": "docs/public/press/docs-hero.png",
+      "purpose": "Docs site hero with the 3D model funnel",
+      "madeBy": "pnpm press:hero",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 400002,
+      "sha256": "18dc5113061b9cd6eb9e7c9d685f9029fefbee3698bc362b014881438fade14b",
+      "changed": "2026-10-20"
+    },
+    {
+      "file": "docs/public/press/og-card.png",
+      "purpose": "Docs site Open Graph card",
+      "madeBy": "export of docs/app/opengraph-image.tsx (commit 85f28ac)",
+      "width": 1200,
+      "height": 630,
+      "bytes": 132598,
+      "sha256": "5a53f374e549ae1e51eb40a25c86b9728f00a9338c4ab9ac9ebad0bcd28d47a5",
+      "changed": "2026-10-08"
+    },
+    {
+      "file": "docs/public/press/terminal-json.png",
+      "purpose": "`conv3d bulk ... --dry-run --json | jq` output",
+      "madeBy": "vhs scripts/terminal-json.tape",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 488255,
+      "sha256": "be67d921e3098156927da03452e13abb89c58c814f9b27e320aea645a1f80560",
+      "changed": "2026-10-08"
+    },
+    {
+      "file": "docs/public/press/terminal-screenshot.png",
+      "purpose": "Interactive `conv3d bulk ./models` run",
+      "madeBy": "vhs scripts/terminal-screenshot.tape",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 618243,
+      "sha256": "88328a0677a664f4d4062604ee87c1c49f2af79de297b79a0376bab1b170b868",
+      "changed": "2026-10-08"
+    },
+    {
+      "file": "docs/public/press/walkthrough-poster.png",
+      "purpose": "First frame of the walkthrough video; README quick start",
+      "madeBy": "pnpm press:walkthrough",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 842498,
+      "sha256": "0bfce0f683b6422824110553bf8c4950fbc0271b8c6f4057829566046d1cf19a",
+      "changed": "2026-10-20"
+    },
+    {
+      "file": "docs/public/press/walkthrough.mp4",
+      "purpose": "30 s walkthrough: bulk run, generated .tsx, r3f render (no sound)",
+      "madeBy": "pnpm press:walkthrough",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 2785328,
+      "sha256": "ef55d0f1fc321c2853e310d82c9d3ed908a34a69df4c83f52c0542fdfc37e105",
+      "changed": "2026-10-20"
+    },
+    {
+      "file": "docs/public/press/walkthrough.webm",
+      "purpose": "Same walkthrough, WebM",
+      "madeBy": "pnpm press:walkthrough",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 2745957,
+      "sha256": "ff1730aa49d9ae5c72e2092ffdbe42b91d09ceaa11e708d79301392e99de65a6",
+      "changed": "2026-10-20"
+    },
+    {
+      "file": "docs/marketing/social-preview/social-preview-a.png",
+      "purpose": "GitHub social preview candidate A: texture before/after",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 257782,
+      "sha256": "abeb21e057c2f70a2ad47d0678a0d7c78ff92cb55fec50fde8d22031c63fc6b8",
+      "changed": "2026-11-06"
+    },
+    {
+      "file": "docs/marketing/social-preview/social-preview-b.png",
+      "purpose": "GitHub social preview candidate B: typographic",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 231065,
+      "sha256": "f44196f8329c0e7404336037e6a2697c4df03ce3d0d1cd7cd01265499a60a07a",
+      "changed": "2026-11-06"
+    },
+    {
+      "file": "docs/marketing/social-preview/social-preview-c.png",
+      "purpose": "GitHub social preview candidate C: docs-site 3D funnel",
+      "madeBy": "pnpm press:social",
+      "width": 1280,
+      "height": 640,
+      "bytes": 284937,
+      "sha256": "f2fc24556e3168c4cf219b06bba9984ce406abec41930907cdbf9b195e0465dc",
+      "changed": "2026-11-06"
+    }
+  ]
+}
