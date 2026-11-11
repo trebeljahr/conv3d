@@ -61,6 +61,26 @@ const VARIANTS = [
 // squashed. [file name, template id, override CSS, page script]
 const OG_TALL =
   "html, body { width: 1280px !important; height: 672px !important; } .card { height: 672px; }";
+// Both og:image cards mark the two ways: a red cross badge on the yellow,
+// untextured Mage that FBX2glTF alone makes, and a green check badge on the
+// conv3d grid. 44 px circles with a white ring, placed from the rendered boxes.
+function markBadWayAndGoodWay() {
+  const badge = (x, y, color, path) => {
+    const d = document.createElement("div");
+    d.style.cssText = `position:absolute;left:${x - 22}px;top:${y - 22}px;width:44px;height:44px;border-radius:50%;background:${color};box-shadow:0 4px 12px rgba(0,0,0,.18),0 0 0 3px #fff;z-index:20`;
+    d.innerHTML = `<svg viewBox="0 0 24 24" width="44" height="44"><path d="${path}" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    document.body.appendChild(d);
+  };
+  const bad = [...document.querySelectorAll('img[src*="mage-before"]')]
+    .find((img) => img.offsetParent)
+    .getBoundingClientRect();
+  const grid = (
+    document.querySelector(".clean-grid") ?? document.querySelector(".vig .grid")
+  ).getBoundingClientRect();
+  badge(bad.right - 14, bad.top + 18, "#e5484d", "M8 8 L16 16 M16 8 L8 16");
+  badge(grid.right - 30, grid.top + 30, "#16a34a", "M7 12.5 L10.5 16 L17 8.5");
+}
+
 const OG = [
   // b3 as it is: the grid panel grows 32 px (its image centred in it), the
   // pair and credit move down 32 px, so every margin stays as it was.
@@ -148,6 +168,7 @@ try {
     await page.evaluate(() =>
       Promise.all([...document.images].map((i) => i.decode().catch(() => {}))),
     );
+    await page.evaluate(markBadWayAndGoodWay);
     await page.waitForTimeout(400);
     const out = join(SOCIAL_DIR, `${name}.png`);
     try {

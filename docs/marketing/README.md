@@ -36,8 +36,8 @@ Round 3 (2026-11-07) answers the feedback on round 2 C: far less text, one model
 
 | File | Purpose | Pixels | Made by | Date |
 | --- | --- | --- | --- | --- |
-| [`og-wordmark.png`](social-preview/og-wordmark.png) | Round 3 B with its text: logo, name, headline, the Mage pair, the grid and the credit. | 1200×630 | `pnpm press:social` | 2026-11-11 |
-| [`og-clean.png`](social-preview/og-clean.png) | No text: Mage.fbx above its FBX2glTF result in one panel, the 18-model conv3d grid in the other. | 1200×630 | `pnpm press:social` | 2026-11-11 |
+| [`og-wordmark.png`](social-preview/og-wordmark.png) | Round 3 B with its text: logo, name, headline, the Mage pair, the grid and the credit; a red cross badge on FBX2glTF's yellow Mage, a green check on the conv3d grid. | 1200×630 | `pnpm press:social` | 2026-11-11 |
+| [`og-clean.png`](social-preview/og-clean.png) | No text: Mage.fbx above its FBX2glTF result in one panel, the 18-model conv3d grid in the other, with the same cross and check badges. | 1200×630 | `pnpm press:social` | 2026-11-11 |
 
 Round 2 (2026-11-07) keeps round 1's A concept, the texture before/after, and adds what the round-1 card left out: one command converts a whole pack. Every image comes from one real run over the KayKit Adventurers pack (6 characters and 31 props, 37 FBX files):
 
