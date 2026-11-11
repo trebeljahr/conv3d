@@ -116,10 +116,6 @@ export function headersFile(sha, releases = [sha]) {
     "/api/search",
     "  Content-Type: application/json",
     ...releases.flatMap((id) => [`/_release/${id}/api/search`, "  Content-Type: application/json"]),
-    "/opengraph-image",
-    "  Content-Type: image/png",
-    "/twitter-image",
-    "  Content-Type: image/png",
     "",
   ].join("\n");
 }

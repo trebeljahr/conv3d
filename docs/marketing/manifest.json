@@ -25,12 +25,12 @@
     {
       "file": "docs/public/press/og-card.png",
       "purpose": "Docs site Open Graph card",
-      "madeBy": "export of docs/app/opengraph-image.tsx (commit 85f28ac)",
+      "madeBy": "copy of docs/marketing/social-preview/og-wordmark.png",
       "width": 1200,
       "height": 630,
-      "bytes": 132598,
-      "sha256": "5a53f374e549ae1e51eb40a25c86b9728f00a9338c4ab9ac9ebad0bcd28d47a5",
-      "changed": "2026-10-08"
+      "bytes": 334136,
+      "sha256": "257fce15a69899624ff5a9f7656bcf288d8eea92d85c7853b35f84a4f4d39687",
+      "changed": "2026-11-11"
     },
     {
       "file": "docs/public/press/terminal-json.png",

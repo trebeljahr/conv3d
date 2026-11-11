@@ -230,7 +230,7 @@ const PURPOSE = {
   "public/press/docs-hero.png": ["Docs site hero with the 3D model funnel", "pnpm press:hero"],
   "public/press/og-card.png": [
     "Docs site Open Graph card",
-    "export of docs/app/opengraph-image.tsx (commit 85f28ac)",
+    "copy of docs/marketing/social-preview/og-wordmark.png",
   ],
   "public/press/terminal-json.png": [
     "`conv3d bulk ... --dry-run --json | jq` output",

@@ -1,0 +1,1 @@
+conv3d: FBX packs in, textured GLBs out. A mage converted by FBX2glTF alone comes out flat yellow, marked with a red cross; 18 models converted by conv3d keep their textures, marked with a green check

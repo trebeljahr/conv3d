@@ -14,7 +14,7 @@ Brand: the docs site's palette (near-black `#0a1014`, teal `#2dd4bf`, diagonal h
 | [`walkthrough-poster.png`](../public/press/walkthrough-poster.png) | First frame of the walkthrough. README quick start, linked to the video. | 1920×1080 | `pnpm press:walkthrough` | 2026-10-20 |
 | [`terminal-screenshot.png`](../public/press/terminal-screenshot.png) | Interactive `conv3d bulk ./models` run. | 1920×1080 | `vhs scripts/terminal-screenshot.tape` | 2026-10-08 |
 | [`terminal-json.png`](../public/press/terminal-json.png) | `conv3d bulk … --dry-run --json \| jq` output. | 1920×1080 | `vhs scripts/terminal-json.tape` | 2026-10-08 |
-| [`og-card.png`](../public/press/og-card.png) | The docs site's Open Graph card. | 1200×630 | export of `docs/app/opengraph-image.tsx` | 2026-10-08 |
+| [`og-card.png`](../public/press/og-card.png) | The docs site's Open Graph card. | 1200×630 | copy of [`og-wordmark.png`](social-preview/og-wordmark.png) | 2026-11-11 |
 
 How each press script works, and the sample packs it needs, is in [`docs/scripts/README.md`](../scripts/README.md).
 
