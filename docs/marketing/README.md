@@ -30,6 +30,15 @@ Round 3 (2026-11-07) answers the feedback on round 2 C: far less text, one model
 | [`renders/grid-after.webp`](social-preview/renders/grid-after.webp) | 18 GLBs from the run's `glb/` output: the 6 characters above 12 props, 6 columns. Transparent. | 1400×820 | `pnpm press:bulk --only r3` | 2026-11-07 |
 | [`renders/mage-fbx.webp`](social-preview/renders/mage-fbx.webp), [`mage-before.webp`](social-preview/renders/mage-before.webp) | Mage.fbx loaded with FBXLoader and its texture, and Mage.fbx through FBX2glTF alone. Transparent. | 400×440 | `pnpm press:bulk --only r3` | 2026-11-07 |
 
+### og:image cards
+
+1200×630 PNG, the og:image size, built on round 3 B (light). The template is laid out at 1280×672 (the same 1.91:1 shape), rendered at device scale 2 and downscaled to exactly 1200×630, so nothing is cropped or squashed.
+
+| File | Purpose | Pixels | Made by | Date |
+| --- | --- | --- | --- | --- |
+| [`og-wordmark.png`](social-preview/og-wordmark.png) | Round 3 B with its text: logo, name, headline, the Mage pair, the grid and the credit. | 1200×630 | `pnpm press:social` | 2026-11-11 |
+| [`og-clean.png`](social-preview/og-clean.png) | No text: Mage.fbx above its FBX2glTF result in one panel, the 18-model conv3d grid in the other. | 1200×630 | `pnpm press:social` | 2026-11-11 |
+
 Round 2 (2026-11-07) keeps round 1's A concept, the texture before/after, and adds what the round-1 card left out: one command converts a whole pack. Every image comes from one real run over the KayKit Adventurers pack (6 characters and 31 props, 37 FBX files):
 
 ```bash
@@ -60,10 +69,11 @@ cd docs
 pnpm install
 pnpm press:bulk                        # the bulk run, its terminal screens and every render
 pnpm press:bulk --only r3              # only the round-3 renders; runs the same command without vhs
-pnpm press:social                      # round-3 cards + manifest.json
+pnpm press:social                      # round-3 cards, og:image cards + manifest.json
+pnpm press:social --only og-wordmark,og-clean   # only the og:image cards
 pnpm press:social --only a2,b2,c2,d2   # the round-2 cards
 pnpm press:social --only a             # the round-1 card
 pnpm press:social --review-dir <dir>   # also copies the round-3 cards there as -a … -c with a labelled review-sheet.jpg
 ```
 
-`press:bulk` needs the KayKit Adventurers pack, on Apple Silicon Rosetta for FBX2glTF, and vhs for the round-2 terminal screens (see [`docs/scripts/README.md`](../scripts/README.md)). The round-1 card embeds `before-after.png`, so re-run `press:before-after` first when that changes. Fonts load from Google Fonts, so rendering needs a network connection. When Playwright's own Chromium is missing, `press:social` uses the installed Google Chrome, headless.
+`press:bulk` needs the KayKit Adventurers pack, on Apple Silicon Rosetta for FBX2glTF, and vhs for the round-2 terminal screens (see [`docs/scripts/README.md`](../scripts/README.md)). The round-1 card embeds `before-after.png`, so re-run `press:before-after` first when that changes. Fonts load from Google Fonts, so rendering needs a network connection. When Playwright's own Chromium is missing, `press:social` uses the installed Google Chrome, headless. Without the docs dependencies, set `PLAYWRIGHT_MODULE` to any `playwright` or `playwright-core` folder. The og:image cards also need ImageMagick (`magick`).

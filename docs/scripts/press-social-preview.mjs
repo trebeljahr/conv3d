@@ -1,17 +1,21 @@
 #!/usr/bin/env node
-// Renders the GitHub social preview candidates (1280x640 PNG) from
-// docs/marketing/social-preview/template.html, then rewrites
-// docs/marketing/manifest.json for every press and marketing image.
+// Renders the GitHub social preview candidates (1280x640 PNG) and the og:image
+// cards (1200x630 PNG) from docs/marketing/social-preview/template.html, then
+// rewrites docs/marketing/manifest.json for every press and marketing image.
 //
 //   cd docs && pnpm press:social [--only a2,b2] [--review-dir <dir>]
 //
-// By default it renders the round-3 cards a3-c3. Rounds 2 and 3 embed
+// By default it renders the round-3 cards a3-c3 and the og:image cards
+// og-wordmark and og-clean (both built on b3; the downscale needs ImageMagick's
+// `magick`). `--only og-wordmark,og-clean` renders only those. Rounds 2 and 3 embed
 // social-preview/renders/ (made by press:bulk from one real bulk run);
 // `--only a2,b2,c2,d2` re-renders round 2. `--only a` re-renders the round-1
 // card, which embeds public/press/before-after.png. Re-run those scripts first
 // when their inputs change. With --review-dir, the round-3 cards are also
 // copied there as social-preview-a.png ... -c.png with a labelled
-// review-sheet.jpg. Fonts load from Google Fonts (needs network).
+// review-sheet.jpg. Fonts load from Google Fonts (needs network). Playwright
+// comes from @playwright/test, or from PLAYWRIGHT_MODULE (any playwright or
+// playwright-core folder) when the docs dependencies are not installed.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -25,7 +29,12 @@ import {
 } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { chromium } from "@playwright/test";
+import { createRequire } from "node:module";
+
+const { chromium } = await import("@playwright/test").catch((error) => {
+  if (!process.env.PLAYWRIGHT_MODULE) throw error;
+  return createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE);
+});
 
 const DOCS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MARKETING_DIR = join(DOCS_DIR, "marketing");
@@ -46,8 +55,52 @@ const VARIANTS = [
   ["c3", "c", "C (dark, name only): FBX2glTF's Mage → the conv3d grid"],
 ];
 
+// og:image cards, both built on b3 (light, vignette). The card is laid out at
+// 1280x672, the 1200x630 shape on the template's 1280 px width, rendered at
+// device scale 2 and downscaled to exactly 1200x630, so nothing is cropped or
+// squashed. [file name, template id, override CSS, page script]
+const OG_TALL = "html, body { width: 1280px !important; height: 672px !important; } .card { height: 672px; }";
+const OG = [
+  // b3 as it is: the grid panel grows 32 px (its image centred in it), the
+  // pair and credit move down 32 px, so every margin stays as it was.
+  [
+    "og-wordmark",
+    "b3",
+    `${OG_TALL}
+    .vig .grid { height: 528px; }
+    .vig .grid img { top: 68px; }
+    .vig .credit { top: 604px; }`,
+  ],
+  // No logo, name, headline, tool labels or credit (the KayKit models are
+  // CC0): the Mage pair stacked in its own panel (textured FBX, arrow down,
+  // yellow FBX2glTF result) beside the grid panel, both full height, in a
+  // content box 64 px in from every edge (1152 x 544).
+  [
+    "og-clean",
+    "b3",
+    `${OG_TALL}
+    .clean-pair, .clean-grid { position: absolute; top: 64px; height: 544px; }
+    .clean-pair { left: 64px; width: 280px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px; }
+    .clean-pair img { width: 200px; height: 220px; display: block; }
+    .clean-pair .arrow path { stroke: var(--muted); }
+    .clean-grid { left: 368px; width: 848px; display: flex; align-items: center; justify-content: center; }
+    .clean-grid img { width: 800px; height: ${Math.round((800 * 820) / 1400)}px; display: block; }`,
+    () => {
+      document.getElementById("content").innerHTML = `
+        <div class="clean-pair panel">
+          <img src="renders/mage-fbx.webp" alt="">
+          <svg class="arrow" width="24" height="64" viewBox="0 0 24 64"><path d="M12 4 V58 M4 48 L12 58 L20 48"/></svg>
+          <img src="renders/mage-before.webp" alt="">
+        </div>
+        <div class="clean-grid panel"><img src="renders/grid-after.webp" alt=""></div>`;
+    },
+  ],
+];
+
 const onlyIdx = process.argv.indexOf("--only");
-const only = onlyIdx > -1 ? process.argv[onlyIdx + 1].split(",") : ["a3", "b3", "c3"];
+const only =
+  onlyIdx > -1 ? process.argv[onlyIdx + 1].split(",") : ["a3", "b3", "c3", "og-wordmark", "og-clean"];
 const reviewIdx = process.argv.indexOf("--review-dir");
 const reviewDir = reviewIdx > -1 ? process.argv[reviewIdx + 1] : null;
 
@@ -76,6 +129,33 @@ try {
     const kb = Math.round(statSync(out).size / 1024);
     if (kb > 1000) throw new Error(`${out} is ${kb} KB; GitHub wants under 1 MB`);
     console.log(`wrote ${relative(DOCS_DIR, out)} (${kb} KB)`);
+  }
+
+  for (const [name, v, css, script] of OG.filter(([id]) => only.includes(id))) {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 672 },
+      deviceScaleFactor: 2,
+      colorScheme: "light",
+    });
+    const page = await context.newPage();
+    await page.goto(`${template}?v=${v}`, { waitUntil: "networkidle" });
+    await page.evaluate(() => document.fonts.ready);
+    await page.addStyleTag({ content: css });
+    if (script) await page.evaluate(script);
+    await page.evaluate(() => Promise.all([...document.images].map((i) => i.decode().catch(() => {}))));
+    await page.waitForTimeout(400);
+    const out = join(SOCIAL_DIR, `${name}.png`);
+    try {
+      // No date chunks, so an unchanged card keeps its SHA-256.
+      execFileSync("magick", ["png:-", "-resize", "1200x630!", "-define", "png:exclude-chunks=date,time", out], {
+        input: await page.screenshot(),
+      });
+    } catch (error) {
+      if (error.code === "ENOENT") throw new Error("The og:image cards need ImageMagick: brew install imagemagick");
+      throw error;
+    }
+    await context.close();
+    console.log(`wrote ${relative(DOCS_DIR, out)} (${Math.round(statSync(out).size / 1024)} KB)`);
   }
 
   if (reviewDir) {
@@ -168,6 +248,14 @@ const PURPOSE = {
   ],
   "marketing/social-preview/social-preview-c3.png": [
     "GitHub social preview, round 3 C (dark, name only): FBX2glTF's Mage -> the conv3d grid",
+    "pnpm press:social",
+  ],
+  "marketing/social-preview/og-wordmark.png": [
+    "og:image (1200x630): round 3 B with logo, name, headline, Mage pair, grid and credit",
+    "pnpm press:social",
+  ],
+  "marketing/social-preview/og-clean.png": [
+    "og:image (1200x630) without text: the Mage pair (FBX -> FBX2glTF) beside the conv3d grid, light palette",
     "pnpm press:social",
   ],
   "marketing/social-preview/renders/grid-after.webp": [

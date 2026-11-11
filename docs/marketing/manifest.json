@@ -83,6 +83,26 @@
       "changed": "2026-10-20"
     },
     {
+      "file": "docs/marketing/social-preview/og-clean.png",
+      "purpose": "og:image (1200x630) without text: the Mage pair (FBX -> FBX2glTF) beside the conv3d grid, light palette",
+      "madeBy": "pnpm press:social",
+      "width": 1200,
+      "height": 630,
+      "bytes": 295621,
+      "sha256": "2a529abf075a0faa933a798435d4e40809d0a3e9eb7446a65be7ad5319fd5969",
+      "changed": "2026-11-11"
+    },
+    {
+      "file": "docs/marketing/social-preview/og-wordmark.png",
+      "purpose": "og:image (1200x630): round 3 B with logo, name, headline, Mage pair, grid and credit",
+      "madeBy": "pnpm press:social",
+      "width": 1200,
+      "height": 630,
+      "bytes": 328427,
+      "sha256": "9e5e08c9351500cd91e9771d7897fc2754e7d1d2059a3248fb9c1507be748d60",
+      "changed": "2026-11-11"
+    },
+    {
       "file": "docs/marketing/social-preview/social-preview-a.png",
       "purpose": "GitHub social preview, round 1 A: texture before/after",
       "madeBy": "pnpm press:social --only a",
