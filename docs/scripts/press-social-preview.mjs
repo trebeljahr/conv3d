@@ -27,9 +27,9 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createRequire } from "node:module";
 
 const { chromium } = await import("@playwright/test").catch((error) => {
   if (!process.env.PLAYWRIGHT_MODULE) throw error;
@@ -59,7 +59,8 @@ const VARIANTS = [
 // 1280x672, the 1200x630 shape on the template's 1280 px width, rendered at
 // device scale 2 and downscaled to exactly 1200x630, so nothing is cropped or
 // squashed. [file name, template id, override CSS, page script]
-const OG_TALL = "html, body { width: 1280px !important; height: 672px !important; } .card { height: 672px; }";
+const OG_TALL =
+  "html, body { width: 1280px !important; height: 672px !important; } .card { height: 672px; }";
 const OG = [
   // b3 as it is: the grid panel grows 32 px (its image centred in it), the
   // pair and credit move down 32 px, so every margin stays as it was.
@@ -100,7 +101,9 @@ const OG = [
 
 const onlyIdx = process.argv.indexOf("--only");
 const only =
-  onlyIdx > -1 ? process.argv[onlyIdx + 1].split(",") : ["a3", "b3", "c3", "og-wordmark", "og-clean"];
+  onlyIdx > -1
+    ? process.argv[onlyIdx + 1].split(",")
+    : ["a3", "b3", "c3", "og-wordmark", "og-clean"];
 const reviewIdx = process.argv.indexOf("--review-dir");
 const reviewDir = reviewIdx > -1 ? process.argv[reviewIdx + 1] : null;
 
@@ -142,16 +145,23 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await page.addStyleTag({ content: css });
     if (script) await page.evaluate(script);
-    await page.evaluate(() => Promise.all([...document.images].map((i) => i.decode().catch(() => {}))));
+    await page.evaluate(() =>
+      Promise.all([...document.images].map((i) => i.decode().catch(() => {}))),
+    );
     await page.waitForTimeout(400);
     const out = join(SOCIAL_DIR, `${name}.png`);
     try {
       // No date chunks, so an unchanged card keeps its SHA-256.
-      execFileSync("magick", ["png:-", "-resize", "1200x630!", "-define", "png:exclude-chunks=date,time", out], {
-        input: await page.screenshot(),
-      });
+      execFileSync(
+        "magick",
+        ["png:-", "-resize", "1200x630!", "-define", "png:exclude-chunks=date,time", out],
+        {
+          input: await page.screenshot(),
+        },
+      );
     } catch (error) {
-      if (error.code === "ENOENT") throw new Error("The og:image cards need ImageMagick: brew install imagemagick");
+      if (error.code === "ENOENT")
+        throw new Error("The og:image cards need ImageMagick: brew install imagemagick");
       throw error;
     }
     await context.close();
